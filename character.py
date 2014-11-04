@@ -37,6 +37,7 @@ class Foundation:
         self.weap_list = []
         self.armor = -1
         self.shield = -1
+        self.conditions = []
         self.armor_list = []
         self.ftr_wt = []
         self.rgr_fe = []
@@ -174,6 +175,14 @@ class Foundation:
         if "Improved Initiative" in self.feat_list:
             self.init = self.init + 4
 
+    def set_condition(self, condition):
+        if condition not in self.conditions:
+            self.conditions.append(condition)
+
+    def drop_condition(self, condition):
+        if condition in self.conditions:
+            self.conditions.remove(condition)
+
 ###################################################################
 #
 # Feat effect functions
@@ -273,6 +282,24 @@ class Foundation:
 
 ###################################################################
 #
+# Generic class ability functions
+
+    def uncanny_dodge(self):
+        if self.charClass == "Rogue" and self.level >= 4:
+            return True
+        if self.charClass == "Barbarian" and self.level >= 2:
+            return True
+        return False
+
+    def improved_uncanny_dodge(self):
+        if self.charClass == "Rogue" and self.level >= 8:
+            return True
+        if self.charClass == "Barbarian" and self.level >= 5:
+            return True
+        return False
+
+###################################################################
+#
 # Fighter class ability functions
 
     def set_fighter_weap_train(self, groups):
@@ -325,7 +352,7 @@ class Foundation:
 
 ###################################################################
 #
-# Statistic calculation functions
+# Statistic value functions
 
     def add_bon(self, bon_list, bon_type, bon_val):
         if not bon_type in bon_list:
@@ -336,9 +363,9 @@ class Foundation:
             else:
                 bon_list[bon_type] = max(bon_list[bon_type],bon_val)
 
-    def get_AC(self, type=None, subtype=None):
-
-        return 10 + sum(self.get_AC_bons(type=type, subtype=subtype).itervalues())
+    #############################
+    #
+    # AC functions
 
     def get_AC_bons(self, type=None, subtype=None):
 
@@ -346,7 +373,7 @@ class Foundation:
 
         stat_bon = min(self.armor_max_dex(), self.stat_bonus(self.dex))
 
-        self.add_bon(AC_bon,"stat",stat_bon)
+        self.add_bon(AC_bon,"Dex",stat_bon)
 
         #############################
         #
@@ -367,6 +394,50 @@ class Foundation:
             self.add_bon(AC_bon,"dodge",self_favored_defense_bon(type, subtype))
 
         return AC_bon
+
+    def get_AC(self, type=None, subtype=None, FF=False, touch=False):
+
+        temp_AC_bons = self.get_AC_bons(type=type, subtype=subtype)
+
+        if self.has("Flat-Footed") or FF:
+            temp_AC_bons = self.get_FF_AC_bons(temp_AC_bons)
+        if touch:
+            temp_AC_bons = self.get_touch_AC_bons(temp_AC_bons)
+
+        return 10 + sum(temp_AC_bons.itervalues())
+
+    def get_FF_AC_bons(self, temp_AC_bons):
+
+        if not self.uncanny_dodge():
+            temp_AC_bons.pop("Dex",None)
+            temp_AC_bons.pop("dodge",None)
+
+        return temp_AC_bons
+
+    def get_touch_AC_bons(self, temp_AC_bons):
+
+        temp_AC_bons.pop("armor",None)
+        temp_AC_bons.pop("natural",None)
+        temp_AC_bons.pop("shield",None)
+
+        return temp_AC_bons
+
+    #############################
+    #
+    # AoO functions
+
+    def can_aoo(self):
+        return not self.has("Flat-Footed") or self.uncanny_dodge()
+
+    def get_aoo_count(self):
+        if "Combat Reflexes" in self.feat_list:
+            return self.stat_bonus(self.dex)
+        else:
+            return 1
+
+    #############################
+    #
+    # Attack bonus functions
 
     def get_atk_bon(self, dist, FRA, type, subtype):
 
@@ -438,6 +509,10 @@ class Foundation:
         else:
             return atk_bon_list[0:1]
 
+    #############################
+    #
+    # Damage bonus functions
+
     def get_base_dmg_bon(self, dist, type, subtype):
 
         #############################
@@ -499,6 +574,17 @@ class Foundation:
 
         return dmg_bon
 
+    #############################
+    #
+    # Condition functions
+
+    def has(self, condition):
+        return condition in self.conditions
+
+    #############################
+    #
+    # Threat range functions
+
     def threat_range(self):
         tr = [0,0]
 
@@ -559,16 +645,6 @@ class Foundation:
         return hit_miss
 
     def roll_dmg(self, dist, crit=False, type=None, subtype=None):
-
-        #############################
-        #
-        # Check distance
-
-        if dist > self.weap_range() and self.weap_type() in ["M","2","O"]:
-            return 0
-
-        if dist > self.weap_range() * 5 and self.weap_type() in ["R","RT"]:
-            return 0
 
         #############################
         #
@@ -704,6 +780,10 @@ class Foundation:
                 AC_out = AC_out + "{:+d} {}, ".format(AC_bons[AC_type],AC_type)
 
         return AC_out[:-2]
+
+    def print_AC_line(self, type=None, subtype=None):
+
+        return "AC {}, touch {}, flat-footed {} ({})".format(self.get_AC(), self.get_AC(touch=True), self.get_AC(FF=True), self.print_AC_bons())
 
     def print_atk_line(self, dist=0, FRA=True, type=None, subtype=None):
 

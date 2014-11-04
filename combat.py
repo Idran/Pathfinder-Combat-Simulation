@@ -5,18 +5,34 @@ class Combat:
 
     def __init__(self):
         self.fighters = []
+        self.fighternames = []
+        self.aoo_counts = dict()
+        self.threat_tiles = dict()
         self.defeated = []
         self.combatlog = ""
         self.round = 1
+        self.has_acted = dict()
 
     def log(self,entry):
         self.combatlog = self.combatlog + entry
 
     def add_fighter(self, fighter):
+        if fighter.name in self.fighternames:
+            raise StandardError("Fighter named {} already fighting".format(fighter.name))
+
         fighter.target = None
         fighter.targeting = "Closest"
         fighter.action = "Attack"
         self.fighters.append(fighter)
+        self.fighternames.append(fighter.name)
+
+        self.aoo_counts[fighter.name] = 0
+        self.threat_tiles[fighter.name] = self.mat.threatened_tiles(fighter)
+        self.has_acted[fighter.name] = False
+        fighter.set_condition("Flat-Footed")
+
+        self.mat.add_token(fighter)
+
         self.log("{0} enters combat at {1}\n{0} at {2}\n".format(fighter.name, fighter.loc, fighter.print_hp()))
 
     def disable_fighter(self, fighter):
@@ -40,18 +56,45 @@ class Combat:
         self.log("{} targets no one\n".format(fighter.name))
         fighter.target = None
 
+    def check_for_aoo(self, fighter, tile):
+        for foe in self.fighters:
+            if foe.side == fighter.side:
+                continue
+
+            if tile in self.threat_tiles[foe.name] and foe.can_aoo() and self.aoo_counts[foe.name] < foe.get_aoo_count():
+                self.log("{} takes an AoO against {}\n".format(foe.name,fighter.name))
+                self.aoo_counts[foe.name] = self.aoo_counts[foe.name] + 1
+                self.attack(foe, fighter, False)
+
+        # Note: current test only works for 1x1 combatants, fix in future
+
+    def reset_aoo_count(self):
+        for fighter in self.fighters:
+            self.aoo_counts[fighter.name] = 0
+
     def move_path(self, fighter, path):
+        self.log("{} attempts to move to {}\n".format(fighter.name,path[-1]))
         for tile in path:
-            self.move_to_tile(fighter, tile)
+            survive = self.move_to_tile(fighter, tile)
+            if not survive:
+                break
+        return survive
 
     def move_to_tile(self, fighter, tile):
-        self.log("{} moves from {} to {}\n".format(fighter.name, fighter.loc, tile))
-        fighter.loc = tile
+        self.check_for_aoo(fighter, fighter.loc)
+
+        if not self.check_death(fighter):
+            self.log("{} moves from {} to {}\n".format(fighter.name, fighter.loc, tile))
+            fighter.loc = tile
+            self.threat_tiles[fighter.name] = self.mat.threatened_tiles(fighter)
+            return True
+        else:
+            return False
 
     def attack(self, fighter, target, FRA):
         dist_to_target = self.mat.dist_ft(fighter.loc, target.loc)
         self.log("{} attacks {}: {}\n".format(fighter.name, target.name,fighter.print_atk_line(dist_to_target, FRA)))
-        dmg = fighter.attack(target.get_AC(type=fighter.type, subtype=fighter.subtype), dist_to_target, FRA)
+        dmg = fighter.attack(target.get_AC(type=fighter.type, subtype=fighter.subtype), dist_to_target, FRA, fighter.type, fighter.subtype)
 
         self.log("{} takes {} damage\n".format(target.name, dmg[0]))
         self.log("  ({})\n".format(', '.join(dmg[1])))
@@ -78,8 +121,12 @@ class Combat:
 
     def combat_round(self):
         self.log("\nRound {}\n\n".format(self.round))
+        self.reset_aoo_count()
         for init_entry in self.init_order:
             fighter = init_entry[0]
+            if not self.has_acted[fighter.name]:
+                self.has_acted[fighter.name] = True
+                fighter.drop_condition("Flat-Footed")
 
             #############################
             #
@@ -97,6 +144,9 @@ class Combat:
                 #############################
                 #
                 # Determine target if necessary
+
+                if fighter.target in self.defeated:
+                    self.clear_target(fighter)
 
                 if fighter.target == None:
                     if fighter.targeting == "Closest":
@@ -124,13 +174,17 @@ class Combat:
                 else:
                     FRA = False
                     path = self.mat.partial_path(fighter, fighter.target, fighter.move)
-                    self.move_path(fighter, path)
+                    survive = self.move_path(fighter, path)
+                    if not survive:
+                        continue
 
                 if self.mat.can_attack(fighter, fighter.target):
                     self.attack(fighter, fighter.target, FRA)
                 else:
                     path = self.mat.partial_path(fighter, fighter.target, fighter.move)
-                    self.move_path(fighter, path)
+                    survive = self.move_path(fighter, path)
+                    if not survive:
+                        continue
 
             if self.check_death(fighter.target):
                 self.clear_target(fighter)

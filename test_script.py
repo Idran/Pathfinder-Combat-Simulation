@@ -7,7 +7,9 @@ jaya = character.Character(charClass="Bard", level=10, str=11, dex=18, con=14, i
 
 jayawep = equip.Weapon(name="shortbow", group=["Bows"], atk_damage=[1,6], atk_type="R", crit_mult=3, range=60)
 
-jaya.add_weapon(jayawep, active=True)
+jayawep2 = equip.Weapon(name="guisarme", group=["Polearms"], atk_damage=[2,4], atk_type="2", crit_range=20, crit_mult=3, weap_bon=1)
+
+jaya.add_weapon(jayawep2, active=True)
 
 jayaarm = equip.Armor(name="studded leather", type="Light", armor_bon=3, max_dex=5, armor_check=-1)
 
@@ -17,11 +19,11 @@ jayashld = equip.Armor(name="buckler", type="Shield", shield_bon=1, armor_check=
 
 jaya.add_shield(jayashld, active=True)
 
-monster = character.Character(charClass="Fighter", level=10, str=18, dex=10, con=8, int=14, wis=10, cha=12, feat_list=["Combat Expertise", "Critical Focus", "Dodge", "Improved Critical (guisarme)", "Improved Trip", "Intimidating Prowess", "Leadership", "Persuasive", "Power Attack", "Run", "Toughness"], ambi=True, name="Warlord", loc=[14,14], hp=55, AC=23, side=2)
+monster = character.Character(charClass="Fighter", level=10, str=18, dex=10, con=8, int=14, wis=10, cha=12, feat_list=["Combat Expertise", "Critical Focus", "Dodge", "Improved Critical (guisarme)", "Improved Trip", "Intimidating Prowess", "Leadership", "Persuasive", "Power Attack", "Run", "Toughness"], ambi=True, name="Warlord", loc=[5,5], hp=55, AC=23, side=2, reach=20)
 
 monster.set_fighter_weap_train(["Polearms","Close"])
 
-monsterwep = equip.Weapon(name="guisarme", group=["Polearms"], atk_damage=[2,4], atk_type="2", crit_range=20, crit_mult=3, weap_bon=1, range=5)
+monsterwep = equip.Weapon(name="guisarme", group=["Polearms"], atk_damage=[2,4], atk_type="2", crit_range=20, crit_mult=3, weap_bon=1)
 
 monster.add_weapon(monsterwep, active=True)
 
@@ -32,18 +34,18 @@ monster.add_armor(monsterarm, active=True)
 print "{}: {}".format(jaya.name,jaya.print_atk_line())
 print "{}: {}".format(monster.name,monster.print_atk_line())
 print ""
-print "{}: AC {} ({})".format(jaya.name,jaya.get_AC(),jaya.print_AC_bons())
-print "{}: AC {} ({})".format(monster.name,monster.get_AC(),monster.print_AC_bons())
+print "{}: {}".format(jaya.name,jaya.print_AC_line())
+print "{}: {}".format(monster.name,monster.print_AC_line())
 print ""
 
 mat = battlemat.Battlemat()
-mat.add_token(jaya)
-mat.add_token(monster)
-
 fight = combat.Combat()
+
+fight.set_mat(mat)
+
 fight.add_fighter(jaya)
 fight.add_fighter(monster)
-fight.set_mat(mat)
+
 fight.set_init()
 
 while not fight.check_combat_end() and fight.round < 50:
