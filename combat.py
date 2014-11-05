@@ -85,7 +85,7 @@ class Combat:
 
         if not self.check_death(fighter):
             self.log("{} moves from {} to {}\n".format(fighter.name, fighter.loc, tile))
-            fighter.loc = tile
+            self.mat.move_token(fighter, tile)
             self.threat_tiles[fighter.name] = self.mat.threatened_tiles(fighter)
             return True
         else:

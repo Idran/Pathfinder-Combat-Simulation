@@ -24,6 +24,15 @@ class Battlemat:
 
 ###################################################################
 #
+# Token manipulation functions
+
+    def move_token(self,token,tile):
+        start_loc = token.loc
+        token.loc = tile
+        return dist_ft(start_loc,tile)
+
+###################################################################
+#
 # Calculation functions
 
     def dist_tile(self, loc1, loc2):
