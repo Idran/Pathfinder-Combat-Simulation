@@ -166,11 +166,11 @@ class Foundation:
             self.damage_con = "Disabled"
         if self.damage > self.hp:
             self.damage_con = "Dying"
-        if self.damage > self.hp + self.con:
+        if self.damage > self.hp + self.contot():
             self.damage_con = "Dead"
 
     def set_init(self):
-        self.init = self.stat_bonus(self.dex)
+        self.init = self.stat_bonus(self.dextot())
 
         if "Improved Initiative" in self.feat_list:
             self.init = self.init + 4
@@ -206,7 +206,7 @@ class Foundation:
             return 0
 
     def deadly_aim_bon(self):
-        if self.dex < 13 or self.bab[0] < 1 or self.weap_type() in ["M","O","2"]:
+        if self.dextot() < 13 or self.bab[0] < 1 or self.weap_type() in ["M","O","2"]:
             return 0
 
         da_bon = ((self.bab[0] / 5) + 1) * 2
@@ -214,13 +214,13 @@ class Foundation:
         return da_bon
 
     def deadly_aim_pen(self):
-        if self.dex < 13 or self.bab[0] < 1 or self.weap_type() in ["M","O","2"]:
+        if self.dextot() < 13 or self.bab[0] < 1 or self.weap_type() in ["M","O","2"]:
             return 0
 
         return ((self.bab[0] / 5) + 1) * -1
 
     def dodge_bon(self):
-        if self.dex < 13:
+        if self.dextot() < 13:
             return 0
         else:
             return 1
@@ -233,7 +233,7 @@ class Foundation:
         return "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and self.bab[0] >= 6 and self.weap_type() in ["R","RT"]
 
     def power_attack_bon(self):
-        if self.str < 13 or self.bab[0] < 1 or self.weap_type() in ["R","RT"]:
+        if self.strtot() < 13 or self.bab[0] < 1 or self.weap_type() in ["R","RT"]:
             return 0
 
         pa_bon = ((self.bab[0] / 5) + 1) * 2
@@ -246,31 +246,31 @@ class Foundation:
         return pa_bon
 
     def power_attack_pen(self):
-        if self.str < 13 or self.bab[0] < 1 or self.weap_type() in ["R","RT"]:
+        if self.strtot() < 13 or self.bab[0] < 1 or self.weap_type() in ["R","RT"]:
             return 0
 
         return ((self.bab[0] / 5) + 1) * -1
 
     def pbs_bon(self, dist):
-        if dist<30 and self.weap_type() in ["R","RT"]:
+        if dist < 30 and self.weap_type() in ["R","RT"]:
             return 1
         else:
             return 0
 
     def rapid_shot(self, FRA):
-        return "Point-Blank Shot" in self.feat_list and self.dex >= 13 and FRA and self.weap_type() in ["R","RT"]
+        return "Point-Blank Shot" in self.feat_list and self.dextot() >= 13 and FRA and self.weap_type() in ["R","RT"]
 
     def rapid_shot_pen(self, FRA):
-        if "Point-Blank Shot" in self.feat_list and self.dex >= 13 and FRA and self.weap_type() in ["R","RT"]:
+        if "Point-Blank Shot" in self.feat_list and self.dextot() >= 13 and FRA and self.weap_type() in ["R","RT"]:
             return -2
         else:
             return 0
 
     def snap_shot(self):
-        return self.dex >= 13 and "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and "Weapon Focus ({})".format(self.weap_name()) in self.feat_list and self.bab[0]>=6
+        return self.dextot() >= 13 and "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and "Weapon Focus ({})".format(self.weap_name()) in self.feat_list and self.bab[0]>=6
 
     def snap_shot_imp(self):
-        return self.dex >= 15 and "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and "Snap Shot" in self.feat_list and "Weapon Focus ({})".format(self.weap_name()) in self.feat_list and self.bab[0]>=9
+        return self.dextot() >= 15 and "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and "Snap Shot" in self.feat_list and "Weapon Focus ({})".format(self.weap_name()) in self.feat_list and self.bab[0]>=9
 
     def toughness_bon(self):
         if self.HD <= 3:
@@ -365,13 +365,47 @@ class Foundation:
 
     #############################
     #
+    # Base stat functions
+
+    def strtot(self):
+        stat = self.str
+
+        return stat
+
+    def dextot(self):
+        stat = self.dex
+
+        return stat
+
+    def contot(self):
+        stat = self.con
+
+        return stat
+
+    def inttot(self):
+        stat = self.int
+
+        return stat
+
+    def wistot(self):
+        stat = self.wis
+
+        return stat
+
+    def chatot(self):
+        stat = self.cha
+
+        return stat
+
+    #############################
+    #
     # AC functions
 
     def get_AC_bons(self, type=None, subtype=None):
 
         AC_bon = dict()
 
-        stat_bon = min(self.armor_max_dex(), self.stat_bonus(self.dex))
+        stat_bon = min(self.armor_max_dex(), self.stat_bonus(self.dextot()))
 
         self.add_bon(AC_bon,"Dex",stat_bon)
 
@@ -431,7 +465,7 @@ class Foundation:
 
     def get_aoo_count(self):
         if "Combat Reflexes" in self.feat_list:
-            return self.stat_bonus(self.dex)
+            return self.stat_bonus(self.dextot())
         else:
             return 1
 
@@ -459,9 +493,9 @@ class Foundation:
         # Stat bonus
 
         if self.weap_type() in ["M","O","2"]:
-            self.add_bon(atk_bon,"stat",self.stat_bonus(self.str))
+            self.add_bon(atk_bon,"stat",self.stat_bonus(self.strtot()))
         elif self.weap_type() in ["R","RT"]:
-            self.add_bon(atk_bon,"stat",self.stat_bonus(self.dex))
+            self.add_bon(atk_bon,"stat",self.stat_bonus(self.dextot()))
             self.add_bon(atk_bon,"untyped",self.range_pen(dist))
 
         #############################
@@ -528,8 +562,8 @@ class Foundation:
         #
         # Stat bonus
 
-        str_bon = self.stat_bonus(self.str)
-        dex_bon = self.stat_bonus(self.dex)
+        str_bon = self.stat_bonus(self.strtot())
+        dex_bon = self.stat_bonus(self.dextot())
 
         if self.weap_type() in ["M","RT"]:
             dmg_bon = dmg_bon + str_bon
@@ -686,7 +720,7 @@ class Foundation:
         # Stat bonus
 
         if self.type == "Undead":
-            hp_stat_bon = self.stat_bonus(self.cha) * self.HD
+            hp_stat_bon = self.stat_bonus(self.chatot()) * self.HD
         elif self.type == "Construct":
             if self.size == "Small":
                 hp_stat_bon = 10
@@ -703,7 +737,7 @@ class Foundation:
             else:
                 hp_stat_bon = 0
         else:
-            hp_stat_bon = self.stat_bonus(self.con) * self.HD
+            hp_stat_bon = self.stat_bonus(self.contot()) * self.HD
 
         hp = hp + hp_stat_bon
 
