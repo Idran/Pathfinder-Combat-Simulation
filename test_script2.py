@@ -2,28 +2,21 @@ import battlemat
 import character
 import combat
 import equip
+import items
 
 jaya = character.Character(charClass="Bard", level=10, str=11, dex=18, con=14, int=13, wis=10, cha=16, feat_list=["Improved Initiative", "Point-Blank Shot", "Precise Shot", "Bullseye Shot", "Rapid Shot", "Arcane Strike"], ambi=True, name="Jaya", loc=[1,2], hp=67, AC=19)
 
-jayawep = equip.Weapon(name="shortbow", group=["Bows"], atk_damage=[1,6], atk_type="R", crit_mult=3, range=60)
+jaya.add_weapon(items.shortbow, active=True)
 
-jaya.add_weapon(jayawep, active=True)
+jaya.add_armor(items.studded_leather, active=True)
 
-jayaarm = equip.Armor(name="studded leather", type="Light", armor_bon=3, max_dex=5, armor_check=-1, asf=15)
-
-jaya.add_armor(jayaarm, active=True)
-
-jayashld = equip.Armor(name="buckler", type="Shield", shield_bon=1, armor_check=-1)
-
-jaya.add_shield(jayashld, active=True)
+jaya.add_shield(items.bucklet, active=True)
 
 monster = character.Character(charClass="Fighter", level=10, str=18, dex=10, con=8, int=14, wis=10, cha=12, feat_list=["Combat Expertise", "Critical Focus", "Dodge", "Improved Critical (guisarme)", "Improved Trip", "Intimidating Prowess", "Leadership", "Persuasive", "Power Attack", "Run", "Toughness"], ambi=True, name="Warlord", loc=[14,14], hp=55, AC=23, side=2)
 
 monster.set_fighter_weap_train(["Polearms","Close"])
 
-monsterwep = equip.Weapon(name="guisarme", group=["Polearms"], atk_damage=[2,4], atk_type="2", crit_range=20, crit_mult=3, weap_bon=1, range=5)
-
-monster.add_weapon(monsterwep, active=True)
+monster.add_weapon(items.guisarme, active=True)
 
 monsterarm = equip.Armor(name="+1 full plate", type="Heavy", armor_bon=10, max_dex=1, armor_check=-6)
 
@@ -33,9 +26,7 @@ quinn = character.Character(charClass="Ranger", level=10, str=12, dex=22, con=12
 
 quinn.set_ranger_favored_enemy([["Undead",6], ["Humanoid",2,"human"], ["Aberration",2]])
 
-quinnwep = equip.Weapon(name="longbow", group=["Bows"], atk_damage=[1,8], atk_type="R", crit_range=20, crit_mult=3, weap_bon=1, range=110)
-
-quinn.add_weapon(quinnwep, active=True)
+quinn.add_weapon(items.longbow, active=True)
 
 quinnarm = equip.Armor(name="+2 undead-defiant darkleaf leather armor", type="Light", armor_bon=4, max_dex=8, armor_check=0)
 
