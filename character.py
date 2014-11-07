@@ -104,70 +104,152 @@ class Foundation:
 #
 # Active equipment data retrieval functions
 
-    def weap_name(self):
-        return self.weap_list[self.weap].name
+    def weap_name(self, val=None):
+        if val == None:
+            val = self.weap
 
-    def weap_group(self):
-        return self.weap_list[self.weap].group
+        return self.weap_list[val].fullname()
 
-    def weap_type(self):
-        return self.weap_list[self.weap].atk_type
+    def weap_group(self, val=None):
+        if val == None:
+            val = self.weap
 
-    def weap_dmg(self):
-        return self.weap_list[self.weap].atk_damage
+        return self.weap_list[val].group
 
-    def weap_range(self):
-        return self.weap_list[self.weap].range
+    def weap_type(self, val=None):
+        if val == None:
+            val = self.weap
 
-    def weap_crit_range(self):
-        return self.weap_list[self.weap].crit_range
+        return self.weap_list[val].atk_type
 
-    def weap_crit_mult(self):
-        return self.weap_list[self.weap].crit_mult
+    def weap_dmg(self, val=None):
+        if val == None:
+            val = self.weap
 
-    def weap_bon(self):
-        return self.weap_list[self.weap].weap_bon
+        return self.weap_list[val].atk_damage
 
-    def weap_reach(self):
-        return self.weap_list[self.weap].reach
+    def weap_range(self, val=None):
+        if val == None:
+            val = self.weap
 
-    def weap_mwk(self):
-        return self.weap_list[self.weap].mwk
+        return self.weap_list[val].range
+
+    def weap_crit_range(self, val=None):
+        if val == None:
+            val = self.weap
+
+        return self.weap_list[val].crit_range
+
+    def weap_crit_mult(self, val=None):
+        if val == None:
+            val = self.weap
+
+        return self.weap_list[val].crit_mult
+
+    def weap_bon(self, val=None):
+        if val == None:
+            val = self.weap
+
+        return self.weap_list[val].weap_bon
+
+    def weap_reach(self, val=None):
+        if val == None:
+            val = self.weap
+
+        return self.weap_list[val].reach
+
+    def weap_mwk(self, val=None):
+        if val == None:
+            val = self.weap
+
+        return self.weap_list[val].mwk
 
 
-    def armor_name(self):
-        return self.armor_list[self.armor].name
+    def armor_name(self, val=None):
+        if val == None:
+            val = self.armor
 
-    def armor_type(self):
-        return self.armor_list[self.armor].type
+        return self.armor_list[val].fullname()
 
-    def armor_armor_bon(self):
-        return self.armor_list[self.armor].armor_bon + self.armor_list[self.armor].ench_bon
+    def armor_type(self, val=None):
+        if val == None:
+            val = self.armor
 
-    def armor_max_dex(self):
-        return self.armor_list[self.armor].max_dex
+        return self.armor_list[val].type
 
-    def armor_armor_check(self):
-        return self.armor_list[self.armor].armor_check
+    def armor_armor_bon(self, val=None):
+        if val == None:
+            val = self.armor
 
-    def armor_asf(self):
-        return self.armor_list[self.armor].asf
+        return self.armor_list[val].armor_bon + self.armor_list[val].ench_bon
 
-    def armor_ench_bon(self):
-        return self.armor_list[self.armor].ench_bon
+    def armor_max_dex(self, val=None):
+        if val == None:
+            val = self.armor
+
+        return self.armor_list[val].max_dex
+
+    def armor_armor_check(self, val=None):
+        if val == None:
+            val = self.armor
+
+        return self.armor_list[val].armor_check
+
+    def armor_asf(self, val=None):
+        if val == None:
+            val = self.armor
+
+        return self.armor_list[val].asf
+
+    def armor_ench_bon(self, val=None):
+        if val == None:
+            val = self.armor
+
+        return self.armor_list[val].ench_bon
 
 
-    def shield_name(self):
-        return self.armor_list[self.shield].name
+    def shield_name(self, val=None):
+        if val == None:
+            val = self.shield
 
-    def shield_type(self):
-        return self.armor_list[self.shield].type
+        return self.armor_list[val].fullname()
 
-    def shield_shield_bon(self):
-        return self.armor_list[self.shield].shield_bon + self.armor_list[self.armor].ench_bon
+    def shield_type(self, val=None):
+        if val == None:
+            val = self.shield
 
-    def shield_ench_bon(self):
-        return self.armor_list[self.shield].ench_bon
+        return self.armor_list[val].type
+
+    def shield_shield_bon(self, val=None):
+        if val == None:
+            val = self.shield
+
+        return self.armor_list[val].shield_bon + self.armor_list[val].ench_bon
+
+    def shield_ench_bon(self, val=None):
+        if val == None:
+            val = self.shield
+
+        return self.armor_list[val].ench_bon
+
+###################################################################
+#
+# Weapon selection functions
+
+    def best_weap(self, target):
+        return len(self.weap_list) - 1
+
+    def best_melee_weap(self, target):
+        if not self.melee_weaps:
+            return -1
+        else:
+            return self.melee_weaps[-1]
+
+    def best_ranged_weap(self, target):
+        if not self.ranged_weaps:
+            return -1
+        else:
+            return self.ranged_weaps[-1]
 
 ###################################################################
 #
@@ -280,6 +362,9 @@ class Foundation:
             return 1
         else:
             return 0
+
+    def quick_draw(self):
+        return self.bab[0] >= 1
 
     def rapid_shot(self, FRA):
         return "Point-Blank Shot" in self.feat_list and self.dextot() >= 13 and FRA and self.weap_type() in ["R","RT"]
@@ -848,6 +933,12 @@ class Foundation:
 
         self.hp = hp
 
+    def weap_swap(self):
+        if "Quick Draw" in self.feat_list and self.quick_draw():
+            return "free"
+        else:
+            return "move"
+
     def attack(self, targ_AC, dist=5, FRA=True, type=None, subtype=None):
 
         dmg = 0
@@ -916,14 +1007,7 @@ class Foundation:
 
     def print_atk_line(self, dist=0, FRA=True, type=None, subtype=None, nofeat=False):
 
-        atk_out = ""
-
-        if self.weap_bon() > 0:
-            atk_out = "{:+d} ".format(self.weap_bon())
-        elif self.weap_mwk():
-            atk_out = "mwk "
-
-        atk_out = atk_out + "{} ".format(self.weap_name())
+        atk_out = "{} ".format(self.weap_name())
 
         atk_bon = self.get_atk_bon(dist, FRA, type, subtype, nofeat)
 
@@ -932,7 +1016,7 @@ class Foundation:
         else:
             temp = "/".join(map(lambda x:"{:+d}".format(x), atk_bon))
 
-        atk_out = atk_out + temp + " (" + self.print_dmg(dist,type,subtype,nofeat)
+        atk_out += temp + " (" + self.print_dmg(dist,type,subtype,nofeat)
 
         crit_rng = self.weap_crit_range()
 
@@ -940,21 +1024,21 @@ class Foundation:
             crit_rng = 21 - ((21 - crit_rng) * 2)
 
         if crit_rng != 20 or self.weap_crit_mult() != 2:
-            atk_out = atk_out + ", "
+            atk_out += ", "
             if crit_rng == 20:
                 temp = "20"
             else:
                 temp = "{}-20".format(crit_rng)
 
-            atk_out = atk_out + temp
+            atk_out += temp
 
             if self.weap_crit_mult() != 2:
-                atk_out = atk_out + "/x" + str(self.weap_crit_mult())
+                atk_out += "/x" + str(self.weap_crit_mult())
 
         if self.weap_type() in ["R","RT"]:
-            atk_out = atk_out + ", Range: " + str(self.weap_range()) + " ft."
+            atk_out += ", Range: " + str(self.weap_range()) + " ft."
 
-        atk_out = atk_out + ")"
+        atk_out += ")"
 
         return atk_out
 

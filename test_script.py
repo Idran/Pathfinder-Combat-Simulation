@@ -6,14 +6,14 @@ import items
 
 jaya = character.Character(charClass="Bard", level=10, str=11, dex=18, con=14, int=13, wis=10, cha=16, feat_list=["Improved Initiative", "Point-Blank Shot", "Precise Shot", "Bullseye Shot", "Rapid Shot", "Arcane Strike"], ambi=True, name="Jaya", loc=[1,2], hp=67, AC=19)
 
-jaya.add_weapon(items.shortbow.copy())
-jaya.add_weapon(items.guisarme.copy(), active=True)
+jaya.add_weapon(items.shortbow.copy(), active=True)
+jaya.add_weapon(items.guisarme.copy())
 
 jaya.add_armor(items.studded_leather.copy(), active=True)
 
 jaya.add_shield(items.buckler.copy(), active=True)
 
-monster = character.Character(charClass="Fighter", level=10, str=18, dex=10, con=8, int=14, wis=10, cha=12, feat_list=["Combat Expertise", "Critical Focus", "Dodge", "Improved Critical (guisarme)", "Improved Trip", "Intimidating Prowess", "Leadership", "Persuasive", "Power Attack", "Run", "Toughness"], ambi=True, name="Warlord", loc=[5,5], hp=55, AC=23, side=2, reach=20)
+monster = character.Character(charClass="Fighter", level=10, str=18, dex=10, con=8, int=14, wis=10, cha=12, feat_list=["Combat Expertise", "Critical Focus", "Dodge", "Improved Critical (guisarme)", "Improved Trip", "Intimidating Prowess", "Leadership", "Persuasive", "Power Attack", "Run", "Toughness"], ambi=True, name="Warlord", loc=[10,10], hp=55, AC=23, side=2)
 
 monster.set_fighter_weap_train(["Polearms","Close"])
 
@@ -45,6 +45,8 @@ fight.set_mat(mat)
 
 fight.add_fighter(jaya)
 fight.add_fighter(monster)
+
+fight.set_tactic(jaya,"Close")
 
 fight.set_init()
 

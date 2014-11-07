@@ -21,6 +21,19 @@ class Weapon:
     def avg_dmg(self):
         return ((self.atk_damage[0]) + (self.atk_damage[0] * self.atk_damage[1])) / 2 + self.weap_bon
 
+    def fullname(self):
+
+        out = ""
+
+        if self.weap_bon > 0:
+            out = "{:+d} ".format(self.weap_bon)
+        elif self.mwk:
+            out = "mwk "
+
+        out += self.name
+
+        return out
+
     def set_mwk(self):
         if self.mwk:
             return None
@@ -48,6 +61,19 @@ class Armor:
         self.mwk = mwk
         self.ench_bon = ench_bon
         self.enchants = enchants
+
+    def fullname(self):
+
+        out = ""
+
+        if self.ench_bon > 0:
+            out = "{:+d} ".format(self.ench_bon)
+        elif self.mwk:
+            out = "mwk "
+
+        out += self.name
+
+        return out
 
     def set_mwk(self):
         if self.mwk:
