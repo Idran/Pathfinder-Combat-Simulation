@@ -39,6 +39,8 @@ class Foundation:
         self.damage_con = "Normal"
         self.weap = -1
         self.weap_list = []
+        self.melee_weaps = []
+        self.ranged_weaps = []
         self.armor = -1
         self.shield = -1
         self.conditions = []
@@ -79,6 +81,12 @@ class Foundation:
 
     def add_weapon(self, weapon, active=False):
         self.weap_list.append(weapon)
+
+        if weapon.atk_type in ["M","2","O"]:
+            self.melee_weaps.append(len(self.weap_list) - 1)
+        else:
+            self.ranged_weaps.append(len(self.weap_list) - 1)
+
         if active:
             self.set_weapon(len(self.weap_list) - 1)
 
@@ -123,6 +131,9 @@ class Foundation:
     def weap_reach(self):
         return self.weap_list[self.weap].reach
 
+    def weap_mwk(self):
+        return self.weap_list[self.weap].mwk
+
 
     def armor_name(self):
         return self.armor_list[self.armor].name
@@ -131,7 +142,7 @@ class Foundation:
         return self.armor_list[self.armor].type
 
     def armor_armor_bon(self):
-        return self.armor_list[self.armor].armor_bon
+        return self.armor_list[self.armor].armor_bon + self.armor_list[self.armor].ench_bon
 
     def armor_max_dex(self):
         return self.armor_list[self.armor].max_dex
@@ -142,6 +153,9 @@ class Foundation:
     def armor_asf(self):
         return self.armor_list[self.armor].asf
 
+    def armor_ench_bon(self):
+        return self.armor_list[self.armor].ench_bon
+
 
     def shield_name(self):
         return self.armor_list[self.shield].name
@@ -150,7 +164,10 @@ class Foundation:
         return self.armor_list[self.shield].type
 
     def shield_shield_bon(self):
-        return self.armor_list[self.shield].shield_bon
+        return self.armor_list[self.shield].shield_bon + self.armor_list[self.armor].ench_bon
+
+    def shield_ench_bon(self):
+        return self.armor_list[self.shield].ench_bon
 
 ###################################################################
 #
@@ -508,10 +525,11 @@ class Foundation:
         #
         # Enchantment/masterwork bonus
 
-        if self.weap_bon() == -13:
-            self.add_bon(atk_bon,"enhancement",1)
-        else:
-            self.add_bon(atk_bon,"enhancement",self.weap_bon())
+        if self.weap_mwk():
+            if self.weap_bon() == 0:
+                self.add_bon(atk_bon,"enhancement",1)
+            else:
+               self.add_bon(atk_bon,"enhancement",self.weap_bon())
 
         #############################
         #
@@ -587,10 +605,7 @@ class Foundation:
         #
         # Enchantment/masterwork bonus
 
-        if self.weap_bon() == -13:
-            dmg_bon = 0
-        else:
-            dmg_bon = self.weap_bon()
+        dmg_bon = self.weap_bon()
 
         #############################
         #
@@ -905,7 +920,7 @@ class Foundation:
 
         if self.weap_bon() > 0:
             atk_out = "{:+d} ".format(self.weap_bon())
-        elif self.weap_bon() == -13:
+        elif self.weap_mwk():
             atk_out = "mwk "
 
         atk_out = atk_out + "{} ".format(self.weap_name())

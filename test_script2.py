@@ -26,7 +26,7 @@ quinn = character.Character(charClass="Ranger", level=10, str=12, dex=22, con=12
 
 quinn.set_ranger_favored_enemy([["Undead",6], ["Humanoid",2,"human"], ["Aberration",2]])
 
-quinn.add_weapon(items.longbow, active=True)
+quinn.add_weapon(items.longbow.copy(), active=True)
 
 quinnarm = equip.Armor(name="+2 undead-defiant darkleaf leather armor", type="Light", armor_bon=4, max_dex=8, armor_check=0)
 

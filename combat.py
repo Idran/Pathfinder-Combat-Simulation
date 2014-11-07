@@ -21,8 +21,8 @@ class Combat:
             raise StandardError("Fighter named {} already fighting".format(fighter.name))
 
         fighter.target = None
-        fighter.targeting = "Closest"
-        fighter.action = "Attack"
+        self.set_targeting(fighter, "Closest")
+        self.set_tactic(fighter, "Attack")
         self.fighters.append(fighter)
         self.fighternames.append(fighter.name)
 
@@ -47,6 +47,12 @@ class Combat:
 
     def set_mat(self, mat):
         self.mat = mat
+
+    def set_tactic(self, fighter, tactic):
+        fighter.tactic = tactic
+
+    def set_targeting(self, fighter, targeting):
+        fighter.targeting = targeting
 
     def set_target(self, fighter1, fighter2):
         self.log("{} targets {}\n".format(fighter1.name, fighter2.name))
@@ -139,7 +145,7 @@ class Combat:
             #
             # Perform set action
 
-            if fighter.action == "Attack":
+            if fighter.tactic == "Attack":
 
                 #############################
                 #
