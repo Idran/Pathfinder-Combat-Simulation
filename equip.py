@@ -17,6 +17,7 @@ class Armor:
 
     def __init__(self, name=None, type="Light", armor_bon=0, shield_bon=0, max_dex=99, asf=0, armor_check=0):
         self.name = name
+        self.type = type
         self.armor_bon = armor_bon
         self.shield_bon = shield_bon
         self.max_dex = max_dex

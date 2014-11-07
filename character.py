@@ -51,7 +51,10 @@ class Foundation:
 # General calculation functions
 
     def stat_bonus(self, stat):
-        return (stat - 10) / 2
+        if stat >= 0:
+            return (stat - 10) / 2
+        else:
+            return 0
 
     def range_pen(self, dist):
         pen = (dist / self.weap_range()) * -2
@@ -372,31 +375,49 @@ class Foundation:
     # Base stat functions
 
     def strtot(self):
+        if self.str == None:
+            return -999
+
         stat = self.str
 
         return stat
 
     def dextot(self):
+        if self.dex == None:
+            return -999
+
         stat = self.dex
 
         return stat
 
     def contot(self):
+        if self.con == None:
+            return -999
+
         stat = self.con
 
         return stat
 
     def inttot(self):
+        if self.int == None:
+            return -999
+
         stat = self.int
 
         return stat
 
     def wistot(self):
+        if self.wis == None:
+            return -999
+
         stat = self.wis
 
         return stat
 
     def chatot(self):
+        if self.cha == None:
+            return -999
+
         stat = self.cha
 
         return stat
@@ -477,7 +498,7 @@ class Foundation:
     #
     # Attack bonus functions
 
-    def get_atk_bon(self, dist, FRA, type, subtype):
+    def get_atk_bon(self, dist, FRA, type, subtype, nofeat=False):
 
         # Note: rewrite to return dictionary of bonus types to account for possible same-type issues
 
@@ -516,17 +537,18 @@ class Foundation:
         #
         # Feat bonuses, all attacks
 
-        if "Deadly Aim" in self.feat_list:
-            self.add_bon(atk_bon,"untyped",self.deadly_aim_pen())
+        if not nofeat:
+            if "Deadly Aim" in self.feat_list:
+                self.add_bon(atk_bon,"untyped",self.deadly_aim_pen())
 
-        if "Point-Blank Shot" in self.feat_list:
-            self.add_bon(atk_bon,"untyped",self.pbs_bon(dist))
+            if "Point-Blank Shot" in self.feat_list:
+                self.add_bon(atk_bon,"untyped",self.pbs_bon(dist))
 
-        if "Power Attack" in self.feat_list:
-            self.add_bon(atk_bon,"untyped",self.power_attack_pen())
+            if "Power Attack" in self.feat_list:
+                self.add_bon(atk_bon,"untyped",self.power_attack_pen())
 
-        if "Rapid Shot" in self.feat_list:
-            self.add_bon(atk_bon,"untyped",self.rapid_shot_pen(FRA))
+            if "Rapid Shot" in self.feat_list:
+                self.add_bon(atk_bon,"untyped",self.rapid_shot_pen(FRA))
 
         atk_bon_tot = sum(atk_bon.itervalues())
 
@@ -536,11 +558,12 @@ class Foundation:
         #
         # Feat bonuses, single attacks
 
-        if "Rapid Shot" in self.feat_list and self.rapid_shot(FRA):
-            atk_bon_list.insert(0,atk_bon_list[0])
+        if not nofeat:
+            if "Rapid Shot" in self.feat_list and self.rapid_shot(FRA):
+                atk_bon_list.insert(0,atk_bon_list[0])
 
-        if "Bullseye Shot" in self.feat_list:
-            atk_bon_list[0] = atk_bon_list[0] + self.bullseye_bon(FRA)
+            if "Bullseye Shot" in self.feat_list:
+                atk_bon_list[0] = atk_bon_list[0] + self.bullseye_bon(FRA)
 
         if FRA:
             return atk_bon_list
@@ -558,7 +581,7 @@ class Foundation:
     #
     # Damage bonus functions
 
-    def get_base_dmg_bon(self, dist, type, subtype):
+    def get_base_dmg_bon(self, dist, type, subtype, nofeat=False):
 
         #############################
         #
@@ -605,17 +628,18 @@ class Foundation:
         #
         # Feat bonuses
 
-        if "Arcane Strike" in self.feat_list:
-            dmg_bon = dmg_bon + self.arcane_strike_bon()
+        if not nofeat:
+            if "Arcane Strike" in self.feat_list:
+                dmg_bon = dmg_bon + self.arcane_strike_bon()
 
-        if "Deadly Aim" in self.feat_list:
-            dmg_bon = dmg_bon + self.deadly_aim_bon()
+            if "Deadly Aim" in self.feat_list:
+                dmg_bon = dmg_bon + self.deadly_aim_bon()
 
-        if "Point-Blank Shot" in self.feat_list:
-            dmg_bon = dmg_bon + self.pbs_bon(dist)
+            if "Point-Blank Shot" in self.feat_list:
+                dmg_bon = dmg_bon + self.pbs_bon(dist)
 
-        if "Power Attack" in self.feat_list:
-            dmg_bon = dmg_bon + self.power_attack_bon()
+            if "Power Attack" in self.feat_list:
+                dmg_bon = dmg_bon + self.power_attack_bon()
 
         return dmg_bon
 
@@ -847,10 +871,10 @@ class Foundation:
 #
 # Output functions
 
-    def print_dmg(self, dist, type, subtype):
+    def print_dmg(self, dist, type, subtype, nofeat):
         out = "{}d{}".format(self.weap_dmg()[0],self.weap_dmg()[1])
 
-        dmg_bon = self.get_base_dmg_bon(dist, type, subtype)
+        dmg_bon = self.get_base_dmg_bon(dist, type, subtype, nofeat)
 
         if dmg_bon != 0:
             out = out + "{:+d}".format(dmg_bon)
@@ -861,7 +885,7 @@ class Foundation:
 
         AC_bons = self.get_AC_bons(type, subtype)
 
-        AC_keys = sorted(AC_bons.keys())
+        AC_keys = sorted(AC_bons.keys(), key=lambda x:x.lower())
 
         AC_out = ""
 
@@ -875,25 +899,25 @@ class Foundation:
 
         return "AC {}, touch {}, flat-footed {} ({})".format(self.get_AC(), self.get_AC(touch=True), self.get_AC(FF=True), self.print_AC_bons())
 
-    def print_atk_line(self, dist=0, FRA=True, type=None, subtype=None):
+    def print_atk_line(self, dist=0, FRA=True, type=None, subtype=None, nofeat=False):
 
         atk_out = ""
 
         if self.weap_bon() > 0:
             atk_out = "{:+d} ".format(self.weap_bon())
-        elif self.weap_bon == -13:
+        elif self.weap_bon() == -13:
             atk_out = "mwk "
 
         atk_out = atk_out + "{} ".format(self.weap_name())
 
-        atk_bon = self.get_atk_bon(dist, FRA, type, subtype)
+        atk_bon = self.get_atk_bon(dist, FRA, type, subtype, nofeat)
 
         if len(atk_bon) == 1:
             temp = "{:+d}".format(atk_bon[0])
         else:
             temp = "/".join(map(lambda x:"{:+d}".format(x), atk_bon))
 
-        atk_out = atk_out + temp + " (" + self.print_dmg(dist,type,subtype)
+        atk_out = atk_out + temp + " (" + self.print_dmg(dist,type,subtype,nofeat)
 
         crit_rng = self.weap_crit_range()
 
@@ -907,7 +931,10 @@ class Foundation:
             else:
                 temp = "{}-20".format(crit_rng)
 
-            atk_out = atk_out + temp + "/x" + str(self.weap_crit_mult())
+            atk_out = atk_out + temp
+
+            if self.weap_crit_mult() != 2:
+                atk_out = atk_out + "/x" + str(self.weap_crit_mult())
 
         if self.weap_type() in ["R","RT"]:
             atk_out = atk_out + ", Range: " + str(self.weap_range()) + " ft."
@@ -927,8 +954,9 @@ class Foundation:
 class Character(Foundation):
     """NPC stats and data"""
 
-    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], level=1, charClass="Fighter", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], ambi=False, type="Humanoid", subtype=[], size="Medium", reach=5, fort=None, ref=None, will=None):
+    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], level=1, charClass="Fighter", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], ambi=False, type="Humanoid", subtype=["human"], size="Medium", reach=5, fort=None, ref=None, will=None, race="Human"):
 
+        self.race = race
         self.level = level
         self.HD = level
         self.charClass = charClass
@@ -973,10 +1001,16 @@ class Character(Foundation):
 
         if self.charClass in ["Barbarian", "Fighter", "Paladin", "Ranger"]:
             self.bab = range(self.level, 1, -5)
+            if not self.bab:
+                self.bab = [self.level]
         elif self.charClass in ["Bard", "Cleric", "Druid", "Monk", "Rogue"]:
             self.bab = range(self.level * 3 / 4, 1, -5)
+            if not self.bab:
+                self.bab = [self.level * 3 / 4]
         else:
             self.bab = range(self.level / 2, 1, -5)
+            if not self.bab:
+                self.bab = [self.level / 2]
 
     def set_spellcast_stats(self):
 
@@ -1037,6 +1071,37 @@ class Character(Foundation):
         self.damage_con = "Normal"
         self.loc = self.startloc
 
+    ############################################
+
+    def print_stat_block(self):
+        if self.weap_type() in ["M","2","O"]:
+            attack_type = "Melee"
+        else:
+            attack_type = "Ranged"
+
+        stats = [self.strtot(), self.dextot(), self.contot(), self.inttot(), self.wistot(), self.chatot()]
+
+        stats = map(lambda x:x if x > 0 else "-", stats)
+
+        out =  "{}\n".format(self.name)
+        out += "{} {} {}\n".format(self.race, self.charClass, self.level)
+        out += "{} {} ({})\n\n".format(self.size, self.type.lower(), ', '.join(self.subtype))
+
+        out += "Init {:+d}\n".format(self.init)
+        out += "=======\nDEFENSE\n=======\n"
+        out += self.print_AC_line() + "\n"
+        out += "hp {}\n".format(self.hp)
+        out += self.print_save_line() + "\n"
+        out += "=======\nOFFENSE\n=======\n"
+        out += "Speed {} ft.\n".format(self.move)
+        out += "{} ".format(attack_type) + self.print_atk_line(nofeat=True) + "\n"
+        out += "==========\nSTATISTICS\n==========\n"
+        out += "Str {}, Dex {}, Con {}, Int {}, Wis {}, Cha {}\n".format(*stats)
+        out += "Base Atk {:+d}\n".format(self.bab[0])
+        out += "Feats {}\n".format(', '.join(self.feat_list))
+
+        return out
+
 ###################################################################
 
 class Monster(Foundation):
@@ -1064,10 +1129,16 @@ class Monster(Foundation):
 
         if self.type in ["Construct", "Dragon", "Magical Beast", "Monstrous Humanoid", "Outsider"]:
             self.bab = range(self.HD, 1, -5)
+            if not self.bab:
+                self.bab = [self.HD]
         elif self.type in ["Aberration", "Animal", "Humanoid", "Ooze", "Plant", "Undead", "Vermin"]:
             self.bab = range(self.HD * 3 / 4, 1, -5)
+            if not self.bab:
+                self.bab = [self.HD * 3 / 4]
         else:
             self.bab = range(self.HD / 2, 1, -5)
+            if not self.bab:
+                self.bab = [self.HD / 2]
 
     def set_hit_die(self):
 
