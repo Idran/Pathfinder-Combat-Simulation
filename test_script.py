@@ -27,6 +27,16 @@ monsterarm.set_bon(1)
 
 monster.add_armor(monsterarm, active=True)
 
+quinn = character.Character(charClass="Ranger", level=10, str=12, dex=22, con=12, int=10, wis=14, cha=15, feat_list=["Precise Shot", "Weapon Finesse", "Deadly Aim", "Power Attack", "Combat Expertise", "Magical Tail", "Point-Blank Shot", "Rapid Shot", "Endurance", "Favored Defense (Undead)", "Manyshot", "Fox Shape", "Snap Shot", "Improved Snap Shot"], ambi=True, name="Quinn", loc=[10,10], hp=75, AC=20, side=2)
+
+quinn.set_ranger_favored_enemy([["Undead",6], ["Humanoid",2,"human"], ["Aberration",2]])
+
+quinn.add_weapon(items.longbow.copy(), active=True)
+
+quinnarm = equip.Armor(name="+2 undead-defiant darkleaf leather armor", type="Light", armor_bon=4, max_dex=8, armor_check=0)
+
+quinn.add_armor(quinnarm, active=True)
+
 print "{}:".format(jaya.name)
 print jaya.print_AC_line()
 print jaya.print_save_line()

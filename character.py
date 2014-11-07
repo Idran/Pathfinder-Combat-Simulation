@@ -3,6 +3,7 @@ class Foundation:
 
     import random
     import equip
+    import textwrap
 
     def __init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will):
         self.name = name
@@ -46,7 +47,11 @@ class Foundation:
         self.conditions = []
         self.armor_list = []
         self.ftr_wt = []
+        self.ftr_mast = None
         self.rgr_fe = []
+        self.sa = []
+        self.sq = []
+        self.da = []
 
 ###################################################################
 #
@@ -104,6 +109,12 @@ class Foundation:
 #
 # Active equipment data retrieval functions
 
+    def weap_basename(self, val=None):
+        if val == None:
+            val = self.weap
+
+        return self.weap_list[val].name
+
     def weap_name(self, val=None):
         if val == None:
             val = self.weap
@@ -138,13 +149,23 @@ class Foundation:
         if val == None:
             val = self.weap
 
-        return self.weap_list[val].crit_range
+        crit_rng = self.weap_list[val].crit_range
+
+        if "Improved Critical ({})".format(self.weap_basename()) in self.feat_list:
+            crit_rng = 21 - ((21 - crit_rng) * 2)
+
+        return crit_rng
 
     def weap_crit_mult(self, val=None):
         if val == None:
             val = self.weap
 
-        return self.weap_list[val].crit_mult
+        crit_mult = self.weap_list[val].crit_mult
+
+        if self.ftr_wm():
+            crit_mult += 1
+
+        return crit_mult
 
     def weap_bon(self, val=None):
         if val == None:
@@ -289,6 +310,30 @@ class Foundation:
         if condition in self.conditions:
             self.conditions.remove(condition)
 
+    def add_sq(self, quality):
+        if quality not in self.sq:
+            self.sq.append(quality)
+
+    def del_sq(self, quality):
+        if quality in self.sq:
+            self.sq.remove(quality)
+
+    def add_sa(self, quality):
+        if quality not in self.sa:
+            self.sa.append(quality)
+
+    def del_sa(self, quality):
+        if quality in self.sa:
+            self.sa.remove(quality)
+
+    def add_da(self, quality):
+        if quality not in self.da:
+            self.da.append(quality)
+
+    def del_da(self, quality):
+        if quality in self.da:
+            self.da.remove(quality)
+
 ###################################################################
 #
 # Feat effect functions
@@ -376,10 +421,10 @@ class Foundation:
             return 0
 
     def snap_shot(self):
-        return self.dextot() >= 13 and "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and "Weapon Focus ({})".format(self.weap_name()) in self.feat_list and self.bab[0]>=6
+        return self.dextot() >= 13 and "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and "Weapon Focus ({})".format(self.weap_basename()) in self.feat_list and self.bab[0]>=6
 
     def snap_shot_imp(self):
-        return self.dextot() >= 15 and "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and "Snap Shot" in self.feat_list and "Weapon Focus ({})".format(self.weap_name()) in self.feat_list and self.bab[0]>=9
+        return self.dextot() >= 15 and "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and "Snap Shot" in self.feat_list and "Weapon Focus ({})".format(self.weap_basename()) in self.feat_list and self.bab[0]>=9
 
     def toughness_bon(self):
         if self.HD <= 3:
@@ -411,12 +456,27 @@ class Foundation:
 #
 # Fighter class ability functions
 
+    def fighter_bravery(self):
+        if self.charClass != "Fighter":
+            return 0
+        return (self.level + 2) / 4
+
+    def fighter_armor_training(self):
+        if self.charClass != "Fighter":
+            return 0
+        return (self.level + 1) / 4
+
     def set_fighter_weap_train(self, groups):
         if self.charClass != "Fighter":
             raise StandardError("Cannot set Fighter options for non-Fighter")
         if len(groups) != (self.level - 1) / 4:
             raise StandardError("Wrong number of groups set for Weapon Training")
         self.ftr_wt = groups
+
+        train_text = []
+        for group in groups:
+            train_text.append("{} {:+d}".format(group.lower(),groups[::-1].index(group) + 1))
+        self.add_sa("weapon training ({})".format(', '.join(train_text)))
 
     def fighter_wt_bon(self, groups):
         if self.charClass != "Fighter":
@@ -427,6 +487,18 @@ class Foundation:
         wt = self.ftr_wt[::-1]
         wt_bon = map(lambda x:wt.index(x) + 1, matching_groups)
         return max(wt_bon)
+
+    def set_fighter_weap_mast(self, weapon):
+        if self.charClass != "Fighter":
+            raise StandardError("Cannot set Fighter options for non-Fighter")
+        self.ftr_mast = weapon
+        self.add_sa("weapon mastery ({})".format(weapon))
+
+    def ftr_am(self):
+        return self.charClass == "Fighter" and self.level >= 19 and (self.armor_name() != "No armor" or self.shield_name() != "No shield")
+
+    def ftr_wm(self):
+        return self.charClass == "Fighter" and self.level >= 20 and self.weap_basename() == self.ftr_mast
 
 ###################################################################
 #
@@ -439,6 +511,20 @@ class Foundation:
         if sum([x[1] for x in types]) != tot_bon_count:
             raise StandardError("Wrong bonus assignment for Favored Enemy")
         self.rgr_fe = types
+
+        fe_text = []
+        for type in types:
+            if len(type) == 3:
+                if type[0] == "Outsider":
+                    text = "{} {} {:+d}".format(type[2].lower(), type[0].lower(), type[1])
+                else:
+                    text = "{} {:+d}".format(type[2].lower(),type[1])
+            else:
+                text = "{} {:+d}".format(type[0].lower(),type[1])
+            fe_text.append(text)
+
+        fe_text = sorted(fe_text)
+        self.add_sa("favored enemy ({})".format(', '.join(fe_text)))
 
     def ranger_fe_types(self):
         return [x[0] for x in self.rgr_fe]
@@ -745,6 +831,17 @@ class Foundation:
 
     #############################
     #
+    # DR functions
+
+    def get_dr(self):
+
+        if self.ftr_am():
+            return [5,["-"],""]
+
+        return []
+
+    #############################
+    #
     # Saving throw functions
 
     def get_fort(self):
@@ -842,9 +939,6 @@ class Foundation:
 
             crit_rng = self.weap_crit_range()
 
-            if "Improved Critical({})".format(self.weap_name()) in self.feat_list:
-                crit_rng = 21 - ((21 - crit_rng) * 2)
-
             if atk_roll >= crit_rng and hit_miss[i] == 1:
                 conf_roll = self.random.randint(1,20)
 
@@ -853,7 +947,7 @@ class Foundation:
                 if "Critical Focus" in self.feat_list:
                     conf_bon = conf_bon + self.critical_focus_bon()
 
-                if conf_roll == 20 or (conf_roll + conf_bon) >= targ_AC:
+                if conf_roll == 20 or (conf_roll + conf_bon) >= targ_AC or self.ftr_wm():
                     hit_miss[i] = 2
 
         return hit_miss
@@ -1020,9 +1114,6 @@ class Foundation:
 
         crit_rng = self.weap_crit_range()
 
-        if "Improved Critical ({})".format(self.weap_name()) in self.feat_list:
-            crit_rng = 21 - ((21 - crit_rng) * 2)
-
         if crit_rng != 20 or self.weap_crit_mult() != 2:
             atk_out += ", "
             if crit_rng == 20:
@@ -1077,6 +1168,8 @@ class Character(Foundation):
         self.equip_unarmed()
         self.equip_no_armor()
         self.equip_no_shield()
+
+        self.set_class_abilities()
 
     def equip_unarmed(self):
 
@@ -1159,6 +1252,16 @@ class Character(Foundation):
 
         return [fort, ref, will]
 
+    def set_class_abilities(self):
+        if self.charClass == "Fighter":
+            if self.level >= 2:
+                self.add_da("bravery {:+d}".format(self.fighter_bravery()))
+            if self.level >= 3:
+                self.add_sq("armor training {}".format(self.fighter_armor_training()))
+            if self.level >= 19:
+                self.add_sq("armor mastery")
+
+
     def update(self):
 
         self.set_bab()
@@ -1172,34 +1275,72 @@ class Character(Foundation):
 
     ############################################
 
-    def print_stat_block(self):
-        if self.weap_type() in ["M","2","O"]:
-            attack_type = "Melee"
-        else:
-            attack_type = "Ranged"
+    def print_stat_block(self, textwidth=60):
 
         stats = [self.strtot(), self.dextot(), self.contot(), self.inttot(), self.wistot(), self.chatot()]
 
         stats = map(lambda x:x if x > 0 else "-", stats)
 
-        out =  "{}\n".format(self.name)
-        out += "{} {} {}\n".format(self.race, self.charClass, self.level)
-        out += "{} {} ({})\n\n".format(self.size, self.type.lower(), ', '.join(self.subtype))
+        da_line = "Defensive Abilities {}".format(", ".join(sorted(self.da)))
+        dr = self.get_dr()
+        if dr:
+            da_line += "; DR {}/{}".format(dr[0],dr[2].join(sorted(dr[1])))
 
-        out += "Init {:+d}\n".format(self.init)
-        out += "=======\nDEFENSE\n=======\n"
-        out += self.print_AC_line() + "\n"
-        out += "hp {}\n".format(self.hp)
-        out += self.print_save_line() + "\n"
-        out += "=======\nOFFENSE\n=======\n"
-        out += "Speed {} ft.\n".format(self.move)
-        out += "{} ".format(attack_type) + self.print_atk_line(nofeat=True) + "\n"
-        out += "==========\nSTATISTICS\n==========\n"
-        out += "Str {}, Dex {}, Con {}, Int {}, Wis {}, Cha {}\n".format(*stats)
-        out += "Base Atk {:+d}\n".format(self.bab[0])
-        out += "Feats {}\n".format(', '.join(self.feat_list))
+        curr_weap = self.weap
 
-        return out
+        melee_set = []
+        for weapon in self.melee_weaps:
+            self.weap = weapon
+            if weapon == 0:
+                if len(self.melee_weaps) > 1 and self.charClass != "Monk":
+                    continue
+            melee_set.append(self.print_atk_line(nofeat=True))
+        melee_line = "Melee {}".format(" or ".join(melee_set))
+
+        ranged_set = []
+        for weapon in self.ranged_weaps:
+            self.weap = weapon
+            ranged_set.append(self.print_atk_line(nofeat=True))
+        ranged_line = "Ranged {}".format(" or ".join(ranged_set))
+
+        self.weap = curr_weap
+
+        wordwrap = self.textwrap.TextWrapper(subsequent_indent="  ", width=textwidth)
+        separator = "=" * textwidth
+
+        out = []
+
+        out.append(separator)
+        out.append(wordwrap.fill("{}".format(self.name)))
+        out.append(wordwrap.fill("{} {} {}".format(self.race, self.charClass, self.level)))
+        out.append(wordwrap.fill("{} {} ({})".format(self.size, self.type.lower(), ', '.join(self.subtype))))
+        out.append("")
+        out.append(wordwrap.fill("Init {:+d}".format(self.init)))
+        out.append(separator)
+        out.append(wordwrap.fill("DEFENSE"))
+        out.append(separator)
+        out.append(wordwrap.fill(self.print_AC_line()))
+        out.append(wordwrap.fill("hp {}".format(self.hp)))
+        out.append(wordwrap.fill(self.print_save_line()))
+        out.append(wordwrap.fill(da_line))
+        out.append(separator)
+        out.append(wordwrap.fill("OFFENSE"))
+        out.append(separator)
+        out.append(wordwrap.fill("Speed {} ft.".format(self.move)))
+        if melee_set:
+            out.append(wordwrap.fill(melee_line))
+        if ranged_set:
+            out.append(wordwrap.fill(ranged_line))
+        out.append(wordwrap.fill("Special Attacks {}".format(", ".join(sorted(self.sa)))))
+        out.append(separator)
+        out.append(wordwrap.fill("STATISTICS"))
+        out.append(separator)
+        out.append(wordwrap.fill("Str {}, Dex {}, Con {}, Int {}, Wis {}, Cha {}".format(*stats)))
+        out.append(wordwrap.fill("Base Atk {:+d}".format(self.bab[0])))
+        out.append(wordwrap.fill(wordwrap.fill("Feats {}".format(', '.join(sorted(self.feat_list))))))
+        out.append(wordwrap.fill("SQ {}".format(", ".join(sorted(self.sq)))))
+
+        return '\n'.join(out)
 
 ###################################################################
 
