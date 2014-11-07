@@ -4,7 +4,7 @@ class Foundation:
     import random
     import equip
 
-    def __init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach):
+    def __init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will):
         self.name = name
         self.side = side
         self.AC = AC
@@ -24,6 +24,10 @@ class Foundation:
         self.subtype = subtype
         self.size = size
         self.reach = reach
+        self.fort = fort
+        self.ref = ref
+        self.will = will
+
         self.bab = 0
         self.arcane = False
         self.divine = False
@@ -545,6 +549,13 @@ class Foundation:
 
     #############################
     #
+    # Condition functions
+
+    def has(self, condition):
+        return condition in self.conditions
+
+    #############################
+    #
     # Damage bonus functions
 
     def get_base_dmg_bon(self, dist, type, subtype):
@@ -610,10 +621,55 @@ class Foundation:
 
     #############################
     #
-    # Condition functions
+    # Saving throw functions
 
-    def has(self, condition):
-        return condition in self.conditions
+    def get_fort(self):
+
+        speed = self.fort
+
+        if speed == "Fast":
+            save = (self.HD / 2) + 2
+        else:
+            save = (self.HD / 3)
+
+        save += self.stat_bonus(self.contot())
+
+        if "Great Fortitude" in self.feat_list:
+            save += 2
+
+        return save
+
+    def get_ref(self):
+
+        speed = self.ref
+
+        if speed == "Fast":
+            save = (self.HD / 2) + 2
+        else:
+            save = (self.HD / 3)
+
+        save += self.stat_bonus(self.dextot())
+
+        if "Lightning Reflexes" in self.feat_list:
+            save += 2
+
+        return save
+
+    def get_will(self):
+
+        speed = self.will
+
+        if speed == "Fast":
+            save = (self.HD / 2) + 2
+        else:
+            save = (self.HD / 3)
+
+        save += self.stat_bonus(self.wistot())
+
+        if "Iron Will" in self.feat_list:
+            save += 2
+
+        return save
 
     #############################
     #
@@ -863,23 +919,25 @@ class Foundation:
     def print_hp(self):
         return "{}/{}".format(self.hp - self.damage,self.hp)
 
+    def print_save_line(self):
+        return "Fort {:+d}, Ref {:+d}, Will {:+d}".format(self.get_fort(),self.get_ref(),self.get_will())
+
 ###################################################################
 
 class Character(Foundation):
     """NPC stats and data"""
 
-    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], level=1, charClass="Fighter", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], ambi=False, type="Humanoid", subtype=[], size="Medium", reach=5):
-
-        Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach)
+    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], level=1, charClass="Fighter", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], ambi=False, type="Humanoid", subtype=[], size="Medium", reach=5, fort=None, ref=None, will=None):
 
         self.level = level
         self.HD = level
         self.charClass = charClass
         self.ambi = ambi
 
-        self.equip_unarmed()
-        self.equip_no_armor()
-        self.equip_no_shield()
+        save_array = [fort,ref,will]
+        save_array = self.set_saves(save_array)
+
+        Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, save_array[0], save_array[1], save_array[2])
 
         self.set_bab()
         self.set_spellcast_stats()
@@ -888,6 +946,10 @@ class Character(Foundation):
 
         if hp == 0:
             self.roll_hp_tot()
+
+        self.equip_unarmed()
+        self.equip_no_armor()
+        self.equip_no_shield()
 
     def equip_unarmed(self):
 
@@ -941,6 +1003,29 @@ class Character(Foundation):
         else:
             self.hit_die = 6
 
+    def set_saves(self, save_array):
+        fort, ref, will = save_array
+
+        if not fort:
+            if self.charClass in ["Barbarian", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger"]:
+                fort = "Fast"
+            else:
+                fort = "Slow"
+
+        if not ref:
+            if self.charClass in ["Bard", "Monk", "Ranger", "Rogue"]:
+                ref = "Fast"
+            else:
+                ref = "Slow"
+
+        if not will:
+            if self.charClass in ["Bard", "Cleric", "Druid", "Monk", "Paladin", "Sorcerer", "Wizard"]:
+                will = "Fast"
+            else:
+                will = "Slow"
+
+        return [fort, ref, will]
+
     def update(self):
 
         self.set_bab()
@@ -957,9 +1042,7 @@ class Character(Foundation):
 class Monster(Foundation):
     """Monster stats and data"""
 
-    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], HD=1, type="Humanoid", subtype=[], size="Medium", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], arcane=False, divine=False, CL=0, reach=5):
-
-        Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, size, reach)
+    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], HD=1, type="Humanoid", subtype=[], size="Medium", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], arcane=False, divine=False, CL=0, reach=5, fort=None, ref=None, will=None):
 
         self.level = 0
         self.charClass = None
@@ -968,6 +1051,8 @@ class Monster(Foundation):
         self.divine = divine
         self.CL = CL
         self.weap_bon = 0
+
+        Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, size, reach, fort, ref, will)
 
         self.set_bab()
         self.set_hit_die()

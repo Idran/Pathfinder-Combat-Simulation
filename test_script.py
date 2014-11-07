@@ -31,11 +31,15 @@ monsterarm = equip.Armor(name="+1 full plate", type="Heavy", armor_bon=10, max_d
 
 monster.add_armor(monsterarm, active=True)
 
-print "{}: {}".format(jaya.name,jaya.print_atk_line())
-print "{}: {}".format(monster.name,monster.print_atk_line())
-print ""
-print "{}: {}".format(jaya.name,jaya.print_AC_line())
-print "{}: {}".format(monster.name,monster.print_AC_line())
+print "{}:".format(jaya.name)
+print jaya.print_AC_line()
+print jaya.print_save_line()
+print jaya.print_atk_line()
+print "\n\n"
+print "{}:".format(monster.name)
+print monster.print_AC_line()
+print monster.print_save_line()
+print monster.print_atk_line()
 print ""
 
 mat = battlemat.Battlemat()

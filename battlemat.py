@@ -29,7 +29,7 @@ class Battlemat:
     def move_token(self,token,tile):
         start_loc = token.loc
         token.loc = tile
-        return dist_ft(start_loc,tile)
+        return self.dist_ft(start_loc,tile)
 
 ###################################################################
 #
