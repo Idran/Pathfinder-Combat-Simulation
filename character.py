@@ -861,21 +861,11 @@ class Foundation:
 
     #############################
     #
-    # Attack bonus functions
+    # Attack roll functions
 
     def get_atk_bon(self, dist, FRA, type, subtype, weap=None, nofeat=False):
 
         atk_bon = dict()
-
-        #############################
-        #
-        # Enchantment/masterwork bonus
-
-        if self.weap_mwk(weap):
-            if self.weap_bon(weap) == 0:
-                self.add_bon(atk_bon,"enhancement",1)
-            else:
-               self.add_bon(atk_bon,"enhancement",self.weap_bon(weap))
 
         #############################
         #
@@ -890,16 +880,6 @@ class Foundation:
 
         #############################
         #
-        # Class bonuses, all attacks
-
-        if self.charClass == "Fighter" and self.level >= 5:
-            self.add_bon(atk_bon,"untyped",self.fighter_wt_bon(self.weap_group(weap)))
-
-        if self.charClass == "Ranger":
-            self.add_bon(atk_bon,"untyped",self.ranger_fe_bon(type, subtype))
-
-        #############################
-        #
         # Feat bonuses, all attacks
 
         if not nofeat:
@@ -908,10 +888,10 @@ class Foundation:
                 self.add_bon(atk_bon,"untyped",self.power_attack_pen())
             elif "R" in self.weap_type():
                 self.add_bon(atk_bon,"untyped",self.deadly_aim_pen())
-                if dist < 30:
-                    self.add_bon(atk_bon,"untyped",self.pbs_bon())
                 if FRA:
                     self.add_bon(atk_bon,"untyped",self.rapid_shot_pen())
+
+        atk_bon = self.get_attack_roll_mods(atk_bon, dist, FRA, type, subtype, weap, nofeat)
 
         atk_bon_tot = sum(atk_bon.itervalues())
 
@@ -933,6 +913,127 @@ class Foundation:
             return atk_bon_list
         else:
             return atk_bon_list[0:1]
+
+    def CMB(self, dist=0, FRA=True, type=None, subtype=None, weap=None, nofeat=False):
+
+        cmb = dict()
+
+        self.add_bon(cmb,"BAB",self.bab[0])
+
+        self.add_bon(cmb,"Str",self.stat_bonus(self.strtot()))
+
+        size_bon = 0
+
+        if self.size == "Fine":
+            size_bon = -8
+        elif self.size == "Diminutive":
+            size_bon = -4
+        elif self.size == "Tiny":
+            size_bon = -2
+        elif self.size == "Small":
+            size_bon = -1
+        elif self.size == "Medium":
+            size_bon = 0
+        elif self.size == "Large":
+            size_bon = 1
+        elif self.size == "Huge":
+            size_bon = 2
+        elif self.size == "Gargantuan":
+            size_bon = 4
+        elif self.size == "Colossal":
+            size_bon = 8
+
+        self.add_bon(cmb,"Size",size_bon)
+
+        cmb = self.get_attack_roll_mods(cmb, dist, FRA, type, subtype, weap, nofeat)
+
+        cmb_tot = sum(cmb.itervalues())
+
+        return cmb_tot
+
+    def get_attack_roll_mods(self, atk_bon, dist, FRA, type, subtype, weap=None, nofeat=False):
+
+        #############################
+        #
+        # Enchantment/masterwork bonus
+
+        if self.weap_mwk(weap):
+            if self.weap_bon(weap) == 0:
+                self.add_bon(atk_bon,"enhancement",1)
+            else:
+               self.add_bon(atk_bon,"enhancement",self.weap_bon(weap))
+
+        #############################
+        #
+        # Class bonuses, all attacks
+
+        if self.charClass == "Fighter" and self.level >= 5:
+            self.add_bon(atk_bon,"untyped",self.fighter_wt_bon(self.weap_group(weap)))
+
+        if self.charClass == "Ranger":
+            self.add_bon(atk_bon,"untyped",self.ranger_fe_bon(type, subtype))
+
+        #############################
+        #
+        # Feat bonuses
+        if not nofeat:
+
+            if "M" in self.weap_type():
+                pass
+            elif "R" in self.weap_type():
+                if dist < 30:
+                    self.add_bon(atk_bon,"untyped",self.pbs_bon())
+
+        return atk_bon
+
+    #############################
+    #
+    # CMD functions
+
+    def CMD(self, type=None, subtype=None, FF=False):
+        cmd = dict()
+
+        self.add_bon(cmd,"BAB",self.bab[0])
+
+        self.add_bon(cmd,"Str",self.stat_bonus(self.strtot()))
+
+        self.add_bon(cmd,"Dex",self.stat_bonus(self.dextot()))
+
+        size_bon = 0
+
+        if self.size == "Fine":
+            size_bon = -8
+        elif self.size == "Diminutive":
+            size_bon = -4
+        elif self.size == "Tiny":
+            size_bon = -2
+        elif self.size == "Small":
+            size_bon = -1
+        elif self.size == "Medium":
+            size_bon = 0
+        elif self.size == "Large":
+            size_bon = 1
+        elif self.size == "Huge":
+            size_bon = 2
+        elif self.size == "Gargantuan":
+            size_bon = 4
+        elif self.size == "Colossal":
+            size_bon = 8
+
+        self.add_bon(cmd,"Size",size_bon)
+
+        AC_bons = self.get_AC_bons(type, subtype)
+
+        if self.has("Flat-Footed") or FF:
+            AC_bons = self.get_FF_AC_bons(AC_bons)
+
+        for key in AC_bons.keys():
+            if key in ["circumstance","deflection", "dodge", "insight", "luck", "morale", "profane", "sacred"]:
+                self.add_bon(cmd,key,AC_bons[key])
+
+        cmd_tot = 10 + sum(cmd.itervalues())
+
+        return cmd_tot
 
     #############################
     #
@@ -1550,7 +1651,7 @@ class Character(Foundation):
         out.append(wordwrap.fill("STATISTICS"))
         out.append(separator)
         out.append(wordwrap.fill("Str {}, Dex {}, Con {}, Int {}, Wis {}, Cha {}".format(*stats)))
-        out.append(wordwrap.fill("Base Atk {:+d}".format(self.bab[0])))
+        out.append(wordwrap.fill("Base Atk {:+d}; CMB {:+d}; CMD {}".format(self.bab[0],self.CMB(),self.CMD())))
         out.append(wordwrap.fill(wordwrap.fill("Feats {}".format(', '.join(sorted(self.feat_list))))))
         if self.sq:
             out.append(wordwrap.fill("SQ {}".format(", ".join(sorted(self.sq)))))
