@@ -443,107 +443,175 @@ class Foundation:
 #
 # Feat effect functions
 
-    def arcane_strike_bon(self):
-        if not self.arcane:
-            return 0
-        else:
-            return (self.CL / 5) + 1
+    def arcane_strike(self):
+        return "Arcane Strike" in self.feat_list
 
-    def bullseye_bon(self, FRA):
-        if "Point-Blank Shot" in self.feat_list and "Precise Shot" in self.feat_list and self.bab[0] >=5 and not FRA and "R" in self.weap_type():
+    def arcane_strike_bon(self):
+        if self.arcane:
+            return (self.CL / 5) + 1
+        else:
+            return 0
+
+    def bullseye_shot(self):
+        return "Bullseye Shot" in self.feat_list and self.point_blank_shot() and self.precise_shot() and self.bab[0]>=5
+
+    def bullseye_shot_bon(self, FRA):
+        if self.bullseye_shot():
             return 4
         else:
             return 0
+
+    def combat_reflexes(self):
+        return "Combat Reflexes" in self.feat_list
+
+    def critical_focus(self):
+        return "Critical Focus" in self.feat_list and self.bab[0] >= 9
 
     def critical_focus_bon(self):
-        if self.bab[0] >= 9:
+        if self.critical_focus():
             return 4
         else:
             return 0
 
+    def deadly_aim():
+        return "Deadly Aim" in self.feat_list and self.dextot() >= 13 and self.bab >= 1
+
     def deadly_aim_bon(self):
-        if self.dextot() < 13 or self.bab[0] < 1 or "M" in self.weap_type():
+        if self.deadly_aim() and "R" in self.weap_type():
+            return ((self.bab[0] / 5) + 1) * 2
+        else:
             return 0
-
-        da_bon = ((self.bab[0] / 5) + 1) * 2
-
-        return da_bon
 
     def deadly_aim_pen(self):
-        if self.dextot() < 13 or self.bab[0] < 1 or "M" in self.weap_type():
+        if self.deadly_aim:
+            return ((self.bab[0] / 5) + 1) * -1
+        else:
             return 0
 
-        return ((self.bab[0] / 5) + 1) * -1
+    def dodge(self):
+        return "Dodge" in self.feat_list and self.dextot >= 13
 
     def dodge_bon(self):
-        if self.dextot() < 13:
-            return 0
-        else:
+        if self.dodge():
             return 1
+        else:
+            return 0
 
-    def favored_defense_bon(self, type):
-        if charClass == "Ranger" and type in self.ranger_fe_types():
+    def favored_defense(self, type="", subtype=""):
+        return "Favored Defense ({})".format(type) in self.feat_list or "Favored Defense ({} ({}))".format(type,subtype) in self.feat_list
+
+    def favored_defense_bon(self, type, subtype):
+        if self.favored_defense(type, subtype) and type in self.ranger_fe_types():
             return self.ranger_fe_bon(type) / 2
+        else:
+            return 0
+
+    def great_fortitude(self):
+        return "Great Fortitude" in self.feat_list
+
+    def great_fortitude_bon(self):
+        if self.great_fortitude():
+            return 2
+        else:
+            return 0
+
+    def iron_will(self):
+        return "Iron Will" in self.feat_list
+
+    def iron_will_bon(self):
+        if self.iron_will():
+            return 2
+        else:
+            return 0
+
+    def lightning_reflexes(self):
+        return "Lightning Reflexes" in self.feat_list
+
+    def lightning_reflexes_bon(self):
+        if self.lightning_reflexes():
+            return 2
+        else:
+            return 0
 
     def manyshot(self):
-        return "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and self.bab[0] >= 6 and "R" in self.weap_type()
+        return "Manyshot" in self.feat_list and self.point_blank_shot() and self.rapid_shot() and self.bab[0] >= 6
 
-    def power_attack_bon(self):
-        if self.strtot() < 13 or self.bab[0] < 1 or "R" in self.weap_type():
+    def power_attack(self):
+        return "Power Attack" in self.feat_list and self.strtot() >= 13 and self.bab[0] >= 1
+
+    def power_attack_bon(self, off=False):
+        if not self.power_attack():
             return 0
 
         pa_bon = ((self.bab[0] / 5) + 1) * 2
 
-        if self.weap_type() == "2":
+        if self.weap_hands() == "2":
             pa_bon = pa_bon * 3 / 2
-        elif self.weap_type() == "O":
+        elif off:
             pa_bon = pa_bon / 2
 
         return pa_bon
 
     def power_attack_pen(self):
-        if self.strtot() < 13 or self.bab[0] < 1 or "R" in self.weap_type():
+        if not self.power_attack():
             return 0
 
         return ((self.bab[0] / 5) + 1) * -1
 
-    def pbs_bon(self, dist):
-        if dist < 30 and "R" in self.weap_type():
+    def point_blank_shot(self):
+        return "Point-Blank Shot" in self.feat_list()
+
+    def pbs_bon(self):
+        if self.point_blank_shot():
             return 1
         else:
             return 0
 
     def quick_draw(self):
-        return self.bab[0] >= 1
+        return "Quick Draw" in self.feat_list and self.bab[0] >= 1
 
-    def rapid_shot(self, FRA):
-        return "Point-Blank Shot" in self.feat_list and self.dextot() >= 13 and FRA and "R" in self.weap_type()
+    def rapid_shot(self):
+        return "Rapid Shot" in self.feat_list and self.point_blank_shot() and self.dextot() >= 13
 
-    def rapid_shot_pen(self, FRA):
-        if "Point-Blank Shot" in self.feat_list and self.dextot() >= 13 and FRA and "R" in self.weap_type():
+    def rapid_shot_pen(self):
+        if self.rapid_shot():
             return -2
         else:
             return 0
 
     def snap_shot(self):
-        return self.dextot() >= 13 and "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and "Weapon Focus ({})".format(self.weap_basename()) in self.feat_list and self.bab[0]>=6
+        return "Snap Shot" in self.feat_list and self.dextot() >= 13 and self.point_blank_shot() and self.rapid_shot() and self.weapon_focus() and self.bab[0]>=6
 
     def snap_shot_imp(self):
-        return self.dextot() >= 15 and "Point-Blank Shot" in self.feat_list and "Rapid Shot" in self.feat_list and "Snap Shot" in self.feat_list and "Weapon Focus ({})".format(self.weap_basename()) in self.feat_list and self.bab[0]>=9
+        return "Improved Snap Shot" in self.feat_list and self.dextot() >= 15 and self.point_blank_shot() and self.rapid_shot() and self.weapon_focus() and self.bab[0]>=9
+
+    def toughness(self):
+        return "Toughness" in self.feat_list
 
     def toughness_bon(self):
-        if self.HD <= 3:
-            bon = 3
+        if self.toughness():
+            if self.HD <= 3:
+                return 3
+            else:
+                return self.HD
         else:
-            bon = self.HD
+            return 0
 
-        return bon
+    def two_weapon_fighting(self):
+        return "Two-Weapon Fighting" in self.feat_list and self.dextot() >= 15
 
     def two_weapon_fighting_bon(self):
-        if self.dextot() >= 15:
+        if self.two_weapon_fighting():
             return [2,6]
         else:
             return [0,0]
+
+    def weapon_focus(self, weap=None):
+        if weap == None:
+            weap = self.weap
+
+        return "Weapon Focus ({})".format(self.weap_basename(weap)) in self.feat_list and self.bab[0] >= 1
+        #and self.weap_prof(weap)
 
 ###################################################################
 #
@@ -745,11 +813,9 @@ class Foundation:
         #
         # Feat bonuses
 
-        if "Dodge" in self.feat_list:
-            self.add_bon(AC_bon,"dodge",self.dodge_bon())
+        self.add_bon(AC_bon,"dodge",self.dodge_bon())
 
-        if "Favored Defense ({})".format(type) in self.feat_list or "Favored Defense ({} ({}))".format(type,subtype) in self.feat_list:
-            self.add_bon(AC_bon,"dodge",self_favored_defense_bon(type, subtype))
+        self.add_bon(AC_bon,"dodge",self.favored_defense_bon(type, subtype))
 
         return AC_bon
 
@@ -788,7 +854,7 @@ class Foundation:
         return not self.has("Flat-Footed") or self.uncanny_dodge()
 
     def get_aoo_count(self):
-        if "Combat Reflexes" in self.feat_list:
+        if self.combat_reflexes():
             return self.stat_bonus(self.dextot())
         else:
             return 1
@@ -837,17 +903,15 @@ class Foundation:
         # Feat bonuses, all attacks
 
         if not nofeat:
-            if "Deadly Aim" in self.feat_list:
-                self.add_bon(atk_bon,"untyped",self.deadly_aim_pen())
 
-            if "Point-Blank Shot" in self.feat_list:
-                self.add_bon(atk_bon,"untyped",self.pbs_bon(dist))
-
-            if "Power Attack" in self.feat_list:
+            if "M" in self.weap_type():
                 self.add_bon(atk_bon,"untyped",self.power_attack_pen())
-
-            if "Rapid Shot" in self.feat_list:
-                self.add_bon(atk_bon,"untyped",self.rapid_shot_pen(FRA))
+            elif "R" in self.weap_type():
+                self.add_bon(atk_bon,"untyped",self.deadly_aim_pen())
+                if dist < 30:
+                    self.add_bon(atk_bon,"untyped",self.pbs_bon())
+                if FRA:
+                    self.add_bon(atk_bon,"untyped",self.rapid_shot_pen())
 
         atk_bon_tot = sum(atk_bon.itervalues())
 
@@ -858,11 +922,12 @@ class Foundation:
         # Feat bonuses, single attacks
 
         if not nofeat:
-            if "Rapid Shot" in self.feat_list and self.rapid_shot(FRA):
-                atk_bon_list.insert(0,atk_bon_list[0])
-
-            if "Bullseye Shot" in self.feat_list:
-                atk_bon_list[0] = atk_bon_list[0] + self.bullseye_bon(FRA)
+            if "R" in self.weap_type():
+                if FRA:
+                    if self.rapid_shot():
+                        atk_bon_list.insert(0,atk_bon_list[0])
+                else:
+                    atk_bon_list[0] = atk_bon_list[0] + self.bullseye_shot_bon(FRA)
 
         if FRA:
             return atk_bon_list
@@ -925,17 +990,13 @@ class Foundation:
         # Feat bonuses
 
         if not nofeat:
-            if "Arcane Strike" in self.feat_list:
-                dmg_bon = dmg_bon + self.arcane_strike_bon()
+            dmg_bon = dmg_bon + self.arcane_strike_bon()
 
-            if "Deadly Aim" in self.feat_list:
-                dmg_bon = dmg_bon + self.deadly_aim_bon()
-
-            if "Point-Blank Shot" in self.feat_list:
-                dmg_bon = dmg_bon + self.pbs_bon(dist)
-
-            if "Power Attack" in self.feat_list:
+            if "M" in self.weap_type():
                 dmg_bon = dmg_bon + self.power_attack_bon()
+            elif "R" in self.weap_type():
+                dmg_bon = dmg_bon + self.deadly_aim_bon()
+                dmg_bon = dmg_bon + self.pbs_bon(dist)
 
         return dmg_bon
 
@@ -988,8 +1049,7 @@ class Foundation:
         #
         # Feat bonus
 
-        if "Toughness" in self.feat_list:
-            hp_bon += self.toughness_bon()
+        hp_bon += self.toughness_bon()
 
         return hp_bon
 
@@ -1008,8 +1068,7 @@ class Foundation:
 
         save += self.stat_bonus(self.contot())
 
-        if "Great Fortitude" in self.feat_list:
-            save += 2
+        save += self.great_fortitude_bon()
 
         return save
 
@@ -1024,8 +1083,7 @@ class Foundation:
 
         save += self.stat_bonus(self.dextot())
 
-        if "Lightning Reflexes" in self.feat_list:
-            save += 2
+        save += self.lightning_reflexes_bon()
 
         return save
 
@@ -1040,8 +1098,7 @@ class Foundation:
 
         save += self.stat_bonus(self.wistot())
 
-        if "Iron Will" in self.feat_list:
-            save += 2
+        save += self.iron_will_bon()
 
         return save
 
@@ -1057,9 +1114,9 @@ class Foundation:
             if self.weap_reach():
                 tr = [self.reach + 5, self.reach * 2]
         else:
-            if "Snap Shot" in self.feat_list and self.snap_shot():
+            if self.snap_shot():
                 tr = [5,5]
-            if "Improved Snap Shot" in self.feat_list and self.snap_shot_imp():
+            if self.snap_shot_imp():
                 tr = [5,15]
 
         return tr
@@ -1097,8 +1154,7 @@ class Foundation:
 
                 conf_bon = atk_bon[i]
 
-                if "Critical Focus" in self.feat_list:
-                    conf_bon = conf_bon + self.critical_focus_bon()
+                conf_bon = conf_bon + self.critical_focus_bon()
 
                 if conf_roll == 20 or (conf_roll + conf_bon) >= targ_AC or self.ftr_wm():
                     hit_miss[i] = 2
@@ -1152,7 +1208,7 @@ class Foundation:
         self.hp = hp
 
     def weap_swap(self):
-        if "Quick Draw" in self.feat_list and self.quick_draw():
+        if self.quick_draw():
             return "free"
         else:
             return "move"
@@ -1172,7 +1228,7 @@ class Foundation:
             elif atk_result == 1:
                 dmg_vals[atk_count] = self.roll_dmg(dist, type=type, subtype=subtype)
 
-                if "Manyshot" in self.feat_list and self.manyshot() and atk_count == 0:
+                if self.manyshot() and "R" in self.weap_type() and atk_count == 0:
 
                     dmg_vals[atk_count] = dmg_vals[atk_count] + self.roll_dmg(dist, type=type, subtype=subtype)
 

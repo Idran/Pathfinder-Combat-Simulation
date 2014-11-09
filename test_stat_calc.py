@@ -8,7 +8,6 @@ test_char.add_weapon(items.longsword.copy(), active=True)
 
 ci_dagger = items.dagger.copy()
 ci_dagger.set_mat("cold iron")
-ci_dagger.set_type("ML")
 test_char.add_weapon(ci_dagger)
 
 hcb = items.crossbow_heavy.copy()

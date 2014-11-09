@@ -1,6 +1,8 @@
 import equip
 
-dagger = equip.Weapon(name="dagger", type="Simple", group=["Blades, Light"], atk_damage=[1,4], atk_type="MLRT", crit_range=19, range=10, spb="SP", ammo=1)
+dagger = equip.Weapon(name="dagger", type="Simple", group=["Blades, Light"], atk_damage=[1,4], atk_type="ML", crit_range=19, spb="SP")
+
+dagger_thrown = equip.Weapon(name="dagger", type="Simple", group=["Blades, Light"], atk_damage=[1,4], atk_type="RT", crit_range=19, range=10, spb="SP", ammo=1)
 
 crossbow_heavy = equip.Weapon(name="heavy crossbow", type="Simple", group=["Crossbows"], atk_damage=[1,10], atk_type="R", crit_range=19, range=120, spb="P", ammo=10)
 
