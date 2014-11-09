@@ -36,7 +36,6 @@ class Foundation:
         self.CL = 0
         self.HD = 1
         self.hit_die = 10
-        self.init = 0
         self.damage = 0
         self.damage_con = "Normal"
         self.weap_list = []
@@ -88,11 +87,11 @@ class Foundation:
 
         if weap == self.weap_off:
             pen = -10
-            if "Two-Weapon Fighting" in self.feat_list:
+            if self.two_weapon_fighting():
                 pen += self.two_weapon_fighting_bon()[1]
         else:
             pen = -10
-            if "Two-Weapon Fighting" in self.feat_list:
+            if self.two_weapon_fighting():
                 pen += self.two_weapon_fighting_bon()[0]
 
         if "L" in self.weap_type(self.weap_off):
@@ -189,7 +188,7 @@ class Foundation:
 
         crit_rng = self.weap_list[val].crit_range
 
-        if "Improved Critical ({})".format(self.weap_basename()) in self.feat_list:
+        if self.improved_critical(val):
             crit_rng = 21 - ((21 - crit_rng) * 2)
 
         return crit_rng
@@ -401,12 +400,6 @@ class Foundation:
         if self.damage > self.hp + self.contot():
             self.damage_con = "Dead"
 
-    def set_init(self):
-        self.init = self.stat_bonus(self.dextot())
-
-        if "Improved Initiative" in self.feat_list:
-            self.init = self.init + 4
-
     def set_condition(self, condition):
         if condition not in self.conditions:
             self.conditions.append(condition)
@@ -512,6 +505,21 @@ class Foundation:
     def great_fortitude_bon(self):
         if self.great_fortitude():
             return 2
+        else:
+            return 0
+
+    def improved_critical(self, weap=None):
+        if weap == None:
+            weap = self.weap
+
+        return "Improved Critical ({})".format(self.weap_basename(weap)) in self.feat_list
+
+    def improved_initiative(self):
+        return "Improved Initiative" in self.feat_list
+
+    def improved_initiative_bon(self):
+        if self.improved_initiative():
+            return 4
         else:
             return 0
 
@@ -1153,6 +1161,17 @@ class Foundation:
         hp_bon += self.toughness_bon()
 
         return hp_bon
+
+    #############################
+    #
+    # Initiative functions
+
+    def get_init(self):
+        init = self.stat_bonus(self.dextot())
+
+        init += self.improved_initiative_bon()
+
+        return init
 
     #############################
     #

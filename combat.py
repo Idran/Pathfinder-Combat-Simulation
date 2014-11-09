@@ -85,7 +85,7 @@ class Combat:
         self.init_order = []
         for fighter in self.fighters:
             init_roll = self.random.randint(1,20)
-            init_roll = init_roll + fighter.init
+            init_roll = init_roll + fighter.get_init()
             self.init_order.append([fighter, init_roll])
 
         self.init_order = sorted(self.init_order, key=lambda x:x[1], reverse=True)
