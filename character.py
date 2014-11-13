@@ -34,7 +34,6 @@ class Foundation:
         self.arcane = False
         self.divine = False
         self.CL = 0
-        self.HD = 1
         self.hit_die = 10
         self.damage = 0
         self.damage_con = "Normal"
@@ -46,7 +45,7 @@ class Foundation:
         self.armor_list = []
         self.armor = -1
         self.shield = -1
-        self.conditions = []
+        self.conditions = dict()
         self.ftr_wt = []
         self.ftr_mast = None
         self.rgr_fe = []
@@ -59,7 +58,7 @@ class Foundation:
 # General calculation functions
 
     def current_hp(self):
-        return self.hp - self.damage
+        return self.get_hp() - self.damage
 
     def range_pen(self, dist):
         pen = (dist / self.weap_range()) * -2
@@ -393,20 +392,33 @@ class Foundation:
 
         self.damage = self.damage + dmg
 
-        if self.damage == self.hp:
-            self.damage_con = "Disabled"
-        if self.damage > self.hp:
-            self.damage_con = "Dying"
-        if self.damage > self.hp + self.contot():
-            self.damage_con = "Dead"
+        self.check_hp()
 
-    def set_condition(self, condition):
-        if condition not in self.conditions:
-            self.conditions.append(condition)
+    def check_hp():
+        if self.damage == self.get_hp():
+            self.damage_con = "Disabled"
+        if self.damage > self.get_hp():
+            self.damage_con = "Dying"
+            if self.has("Raging"):
+                self.drop_rage()
+        if self.damage > self.get_hp() + self.contot():
+            self.damage_con = "Dead"
+            if self.has("Raging"):
+                self.drop_rage()
+
+    def set_condition(self, condition, duration=-1):
+        if condition not in self.conditions.keys():
+            if condition == "Fatigued" and "Exhausted" in self.conditions.keys():
+                self.conditions["Exhausted"] = max(self.conditions["Exhausted"],duration)
+            else:
+                self.conditions[condition] = duration
+        elif condition == "Fatigued":
+            self.conditions["Exhausted"] = max(self.conditions["Fatigued"],duration)
+            self.drop_condition("Fatigued")
 
     def drop_condition(self, condition):
-        if condition in self.conditions:
-            self.conditions.remove(condition)
+        if condition in self.conditions.keys():
+            del self.conditions[condition]
 
     def add_sq(self, quality):
         if quality not in self.sq:
@@ -625,19 +637,68 @@ class Foundation:
 #
 # Generic class ability functions
 
-    def uncanny_dodge(self):
-        if self.charClass == "Rogue" and self.level >= 4:
-            return True
-        if self.charClass == "Barbarian" and self.level >= 2:
-            return True
-        return False
+    def trap_sense_bon(self):
+        if self.charClass != "Barbarian" and self.charClass != "Rogue":
+            return 0
+        else:
+            return self.level / 3
 
-    def improved_uncanny_dodge(self):
-        if self.charClass == "Rogue" and self.level >= 8:
+    def uncanny_dodge(self):
+        return "uncanny dodge" in self.da or "improved uncanny dodge" in self.da
+
+    def uncanny_dodge_imp(self):
+        return "improved uncanny dodge" in self.da
+
+###################################################################
+#
+# Barbarian class ability functions
+
+    def barbarian_rage_rds(self):
+
+        rds = 4
+
+        rds += self.stat_bonus(self.contot())
+
+        rds += (self.level - 1) * 2
+
+        return rds
+
+    def set_rage(self):
+        if not self.has("Fatigued") and not self.has("Exhausted"):
+            self.set_condition("Raging",self.barbarian_rage_rds())
+            self.rage_dur = 0
+            if "R" in self.weap_type():
+                self.set_weapon(self.best_melee_weap(None))
             return True
-        if self.charClass == "Barbarian" and self.level >= 5:
-            return True
-        return False
+        else:
+            return False
+
+    def drop_rage(self):
+        self.drop_condition("Raging")
+        if self.level < 17:
+            self.set_condition("Fatigued",2 * self.rage_dur)
+        self.check_hp()
+
+    def rage_bon(self):
+        if self.charClass != "Barbarian":
+            return 0
+        elif self.level < 11:
+            return 4
+        elif self.level < 20:
+            return 6
+        else:
+            return 8
+
+    def rage_bon_indom_will(self):
+        if self.charClass != "Barbarian" or level < 14:
+            return 0
+        else:
+            return 4
+
+        # Note: conditional save bonuses not yet implemented
+
+    def barbarian_dr(self):
+        return max((self.level - 4) / 3, 0)
 
 ###################################################################
 #
@@ -647,6 +708,8 @@ class Foundation:
         if self.charClass != "Fighter":
             return 0
         return (self.level + 2) / 4
+
+        # Note: conditional save bonuses not yet implemented
 
     def fighter_armor_training(self):
         if self.charClass != "Fighter":
@@ -753,49 +816,76 @@ class Foundation:
         if self.str == None:
             return -999
 
-        stat = self.str
+        stat_bon = dict()
 
-        return stat
+        self.add_bon(stat_bon,"stat",self.str)
+
+        if self.has("Exhausted"):
+            self.add_bon(stat_bon,"untyped",-6)
+        if self.has("Fatigued"):
+            self.add_bon(stat_bon,"untyped",-2)
+        if self.has("Raging"):
+            self.add_bon(stat_bon,"morale",self.rage_bon())
+
+        return sum(stat_bon.itervalues())
 
     def dextot(self):
         if self.dex == None:
             return -999
 
-        stat = self.dex
+        stat_bon = dict()
 
-        return stat
+        self.add_bon(stat_bon,"stat",self.dex)
+
+        if self.has("Exhausted"):
+            self.add_bon(stat_bon,"untyped",-6)
+        if self.has("Fatigued"):
+            self.add_bon(stat_bon,"untyped",-2)
+
+        return sum(stat_bon.itervalues())
 
     def contot(self):
         if self.con == None:
             return -999
 
-        stat = self.con
+        stat_bon = dict()
 
-        return stat
+        self.add_bon(stat_bon,"stat",self.con)
+
+        if self.has("Raging"):
+            self.add_bon(stat_bon,"morale",self.rage_bon())
+
+        return sum(stat_bon.itervalues())
 
     def inttot(self):
         if self.int == None:
             return -999
 
-        stat = self.int
+        stat_bon = dict()
 
-        return stat
+        self.add_bon(stat_bon,"stat",self.int)
+
+        return sum(stat_bon.itervalues())
 
     def wistot(self):
         if self.wis == None:
             return -999
 
-        stat = self.wis
+        stat_bon = dict()
 
-        return stat
+        self.add_bon(stat_bon,"stat",self.wis)
+
+        return sum(stat_bon.itervalues())
 
     def chatot(self):
         if self.cha == None:
             return -999
 
-        stat = self.cha
+        stat_bon = dict()
 
-        return stat
+        self.add_bon(stat_bon,"stat",self.cha)
+
+        return sum(stat_bon.itervalues())
 
     #############################
     #
@@ -824,6 +914,9 @@ class Foundation:
         self.add_bon(AC_bon,"dodge",self.dodge_bon())
 
         self.add_bon(AC_bon,"dodge",self.favored_defense_bon(type, subtype))
+
+        if self.has("Raging"):
+            self.add_bon(AC_bon,"rage",-2)
 
         return AC_bon
 
@@ -1048,7 +1141,20 @@ class Foundation:
     # Condition functions
 
     def has(self, condition):
-        return condition in self.conditions
+        return condition in self.conditions.keys() and self.conditions[condition] != 0
+
+    def round_pass(self):
+        cond = dict(self.conditions)
+        for condition in cond.keys():
+            if condition == "Raging":
+                self.rage_dur += 1
+            if self.conditions[condition] > 0:
+                self.conditions[condition] -= 1
+            if self.conditions[condition] == 0:
+                if condition == "Raging":
+                    self.drop_rage()
+                else:
+                    self.drop_condition(condition)
 
     #############################
     #
@@ -1118,6 +1224,9 @@ class Foundation:
         if self.ftr_am():
             return [5,["-"],""]
 
+        if self.charClass == "Barbarian" and self.level >= 7:
+            return [self.barbarian_dr(),["-"],""]
+
         return []
 
     #############################
@@ -1160,7 +1269,16 @@ class Foundation:
 
         hp_bon += self.toughness_bon()
 
+        #############################
+        #
+        # FC bonus
+
+        hp_bon += self.fc.count("h")
+
         return hp_bon
+
+    def get_hp(self):
+        return max(self.hp + self.get_hp_bon(),self.HD)
 
     #############################
     #
@@ -1186,11 +1304,13 @@ class Foundation:
         else:
             save = (self.HD / 3)
 
-        save += self.stat_bonus(self.contot())
+        save_bon = dict()
 
-        save += self.great_fortitude_bon()
+        self.add_bon(save_bon,"base",save)
+        self.add_bon(save_bon,"stat",self.stat_bonus(self.contot()))
+        self.add_bon(save_bon,"untyped",self.great_fortitude_bon())
 
-        return save
+        return sum(save_bon.itervalues())
 
     def get_ref(self):
 
@@ -1201,11 +1321,13 @@ class Foundation:
         else:
             save = (self.HD / 3)
 
-        save += self.stat_bonus(self.dextot())
+        save_bon = dict()
 
-        save += self.lightning_reflexes_bon()
+        self.add_bon(save_bon,"base",save)
+        self.add_bon(save_bon,"stat",self.stat_bonus(self.dextot()))
+        self.add_bon(save_bon,"untyped",self.lightning_reflexes_bon())
 
-        return save
+        return sum(save_bon.itervalues())
 
     def get_will(self):
 
@@ -1216,11 +1338,31 @@ class Foundation:
         else:
             save = (self.HD / 3)
 
-        save += self.stat_bonus(self.wistot())
+        save_bon = dict()
 
-        save += self.iron_will_bon()
+        self.add_bon(save_bon,"base",save)
+        self.add_bon(save_bon,"stat",self.stat_bonus(self.wistot()))
+        self.add_bon(save_bon,"untyped",self.iron_will_bon())
+        if self.has("Raging"):
+            self.add_bon(save_bon,"morale",self.rage_bon() / 2)
 
-        return save
+        return sum(save_bon.itervalues())
+
+    #############################
+    #
+    # Speed functions
+
+    def get_move(self):
+
+        move = self.move
+
+        if "fast movement" in self.sq and self.armor_type() != "Heavy":
+            move += 10
+
+        if self.has("Exhausted"):
+            move /= 2
+
+        return move
 
     #############################
     #
@@ -1317,13 +1459,6 @@ class Foundation:
 
         for i in range(hit_roll):
             hp = hp + self.random.randint(1,self.hit_die)
-
-        hp_bon = self.get_hp_bon()
-
-        hp += hp_bon
-
-        if hp < self.HD:
-            hp = self.HD
 
         self.hp = hp
 
@@ -1448,7 +1583,7 @@ class Foundation:
         return out
 
     def print_hp(self):
-        return "{}/{}".format(self.hp - self.damage,self.hp)
+        return "{}/{}".format(self.get_hp() - self.damage,self.get_hp())
 
     def print_save_line(self):
         return "Fort {:+d}, Ref {:+d}, Will {:+d}".format(self.get_fort(),self.get_ref(),self.get_will())
@@ -1458,13 +1593,16 @@ class Foundation:
 class Character(Foundation):
     """NPC stats and data"""
 
-    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], level=1, charClass="Fighter", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], ambi=False, type="Humanoid", subtype=["human"], size="Medium", reach=5, fort=None, ref=None, will=None, race="Human", hands=2):
+    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], level=1, charClass="Fighter", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], ambi=False, type="Humanoid", subtype=["human"], size="Medium", reach=5, fort=None, ref=None, will=None, race="Human", hands=2, fc=[]):
+        if fc == []:
+            fc = ["s" for i in range(level)]
 
         self.race = race
         self.level = level
         self.HD = level
         self.charClass = charClass
         self.ambi = ambi
+        self.fc = fc
 
         save_array = [fort,ref,will]
         save_array = self.set_saves(save_array)
@@ -1566,7 +1704,32 @@ class Character(Foundation):
         return [fort, ref, will]
 
     def set_class_abilities(self):
-        if self.charClass == "Fighter":
+        if self.charClass == "Barbarian":
+            self.add_sq("fast movement")
+            if self.level < 11:
+                self.add_sa("rage ({} rounds/day)".format(self.barbarian_rage_rds()))
+            elif self.level < 20:
+                self.add_sa("greater rage ({} rounds/day)".format(self.barbarian_rage_rds()))
+            else:
+                self.add_sa("mighty rage ({} rounds/day)".format(self.barbarian_rage_rds()))
+            if self.level >= 2:
+                if "uncanny dodge" in self.da:
+                    self.del_da("uncanny dodge")
+                    self.add_da("improved uncanny dodge")
+                else:
+                    self.add_da("uncanny dodge")
+            if self.level >= 3:
+                self.add_da("trap sense {:+d}".format(self.trap_sense_bon()))
+            if self.level >= 5:
+                self.del_da("uncanny dodge")
+                self.add_da("improved uncanny dodge")
+
+            if self.level >= 14:
+                self.add_da("indomitable will")
+            if self.level >= 17:
+                self.add_sq("tireless rage")
+
+        elif self.charClass == "Fighter":
             if self.level >= 2:
                 self.add_da("bravery {:+d}".format(self.fighter_bravery()))
             if self.level >= 3:
@@ -1647,19 +1810,19 @@ class Character(Foundation):
         out.append(wordwrap.fill("DEFENSE"))
         out.append(separator)
         out.append(wordwrap.fill(self.print_AC_line()))
-        out.append(wordwrap.fill("hp {} ({})".format(self.hp,self.print_HD())))
+        out.append(wordwrap.fill("hp {} ({})".format(self.get_hp(),self.print_HD())))
         out.append(wordwrap.fill(self.print_save_line()))
         if da_line:
             out.append(wordwrap.fill(da_line))
         out.append(separator)
         out.append(wordwrap.fill("OFFENSE"))
         out.append(separator)
-        out.append(wordwrap.fill("Speed {} ft.".format(self.move)))
+        out.append(wordwrap.fill("Speed {} ft.".format(self.get_move())))
         if melee_set:
             out.append(wordwrap.fill("Melee {}".format(melee_set[0])))
             for melee in melee_set[1:]:
                 out.append(wordwrap_indent.fill(melee))
-        if ranged_set:
+        if ranged_set and not self.has("Raging"):
             out.append(wordwrap.fill("Ranged {}".format(ranged_set[0])))
             for ranged in ranged_set[1:]:
                 out.append(wordwrap_indent.fill(ranged))
@@ -1691,6 +1854,7 @@ class Monster(Foundation):
         self.divine = divine
         self.CL = CL
         self.weap_bon = 0
+        self.fc = []
 
         Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, size, reach, fort, ref, will, hands)
 
