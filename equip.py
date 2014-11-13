@@ -3,7 +3,7 @@ import copy
 class Weapon:
     """Weapon data structure"""
 
-    def __init__(self, name=None, type="Simple", group=[], atk_type="M", atk_damage=[1,8], range=5, crit_range=20, crit_mult=2, weap_bon=0, reach=False, spb="S", material=None, mwk=False, enchants=[], ammo=0, hands=1):
+    def __init__(self, name=None, type="Simple", group=[], atk_type="M", atk_damage=[1,8], range=5, crit_range=20, crit_mult=2, weap_bon=0, reach=False, spb="S", material=None, mwk=False, enchants=[], ammo=0, hands=1, disarm=False, trip=False):
         self.name = name
         self.type = type
         self.group = group
@@ -20,6 +20,8 @@ class Weapon:
         self.enchants = enchants
         self.ammo = ammo
         self.hands = hands
+        self.disarm = disarm
+        self.trip = trip
 
     def avg_dmg(self):
         return ((self.atk_damage[0]) + (self.atk_damage[0] * self.atk_damage[1])) / 2 + self.weap_bon

@@ -1474,7 +1474,6 @@ class Character(Foundation):
         self.set_bab()
         self.set_spellcast_stats()
         self.set_hit_die()
-        self.set_init()
 
         if hp == 0:
             self.roll_hp_tot()
@@ -1643,7 +1642,7 @@ class Character(Foundation):
         out.append(wordwrap.fill("{} {} {}".format(self.race, self.charClass, self.level)))
         out.append(wordwrap.fill("{} {} ({})".format(self.size, self.type.lower(), ', '.join(self.subtype))))
         out.append("")
-        out.append(wordwrap.fill("Init {:+d}".format(self.init)))
+        out.append(wordwrap.fill("Init {:+d}".format(self.get_init())))
         out.append(separator)
         out.append(wordwrap.fill("DEFENSE"))
         out.append(separator)

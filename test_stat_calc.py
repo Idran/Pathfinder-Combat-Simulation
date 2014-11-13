@@ -2,22 +2,32 @@ import equip
 import character
 import items
 
-test_char = character.Character(charClass="Fighter", level=1, str=17, dex=14, con=12, int=8, wis=13, cha=10, feat_list=["Iron Will", "Power Attack", "Toughness"], name="Corwyn Klas", loc=[1,2], hp=14, ambi=False)
+test_ftr1 = character.Character(charClass="Fighter", level=1, str=17, dex=14, con=12, int=8, wis=13, cha=10, feat_list=["Iron Will", "Power Attack", "Toughness"], name="Corwyn Klas", loc=[1,2], hp=14, ambi=False)
 
-test_char.add_weapon(items.longsword.copy(), active=True)
+test_ftr1.add_weapon(items.longsword.copy(), active=True)
 
 ci_dagger = items.dagger.copy()
 ci_dagger.set_mat("cold iron")
-test_char.add_weapon(ci_dagger)
+test_ftr1.add_weapon(ci_dagger)
 
 hcb = items.crossbow_heavy.copy()
 hcb.set_ammo(20)
 
-test_char.add_weapon(hcb)
+test_ftr1.add_weapon(hcb)
 
-test_char.add_armor(items.breastplate.copy(), active=True)
+test_ftr1.add_armor(items.breastplate.copy(), active=True)
 
-test_char.add_shield(items.wooden_shield_heavy.copy(), active=True)
+test_ftr1.add_shield(items.wooden_shield_heavy.copy(), active=True)
+
+##########################################################
+
+test_barb1 = character.Character(charClass="Barbarian", level=1, str=17, dex=13, con=14, int=10, wis=12, cha=8, feat_list=["Cleave", "Power Attack"], name="Arjana", loc=[1,2], hp=15, ambi=False)
+
+test_barb1.add_weapon(items.greatsword.copy(), active=True)
+test_barb1.add_weapon(items.flail_heavy.copy())
+test_barb1.add_weapon(items.sling.copy())
+
+test_barb1.add_armor(items.breastplate.copy(), active=True)
 
 ##########################################################
 
@@ -35,4 +45,4 @@ monsterarm.set_bon(1)
 
 monster.add_armor(monsterarm, active=True)
 
-print test_char.print_stat_block()
+print test_barb1.print_stat_block()
