@@ -5,6 +5,8 @@ class Weapon:
 
     def __init__(self, name=None, type="Simple", group=[], atk_type="M", atk_damage=[1,8], range=5, crit_range=20, crit_mult=2, weap_bon=0, reach=False, spb="S", material=None, mwk=False, enchants=[], ammo=0, hands=1, disarm=False, trip=False):
         self.name = name
+        self.item = "weapon"
+        self.default = False
         self.type = type
         self.group = group
         self.atk_type = atk_type
@@ -68,6 +70,8 @@ class Armor:
 
     def __init__(self, name=None, type="Light", armor_bon=0, shield_bon=0, max_dex=99, asf=0, armor_check=0, material=None, mwk=False, ench_bon=0, enchants=[], hands=0):
         self.name = name
+        self.item = "armor"
+        self.default = False
         self.type = type
         self.armor_bon = armor_bon
         self.shield_bon = shield_bon

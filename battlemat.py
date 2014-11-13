@@ -10,6 +10,7 @@ class Battlemat:
 
     def __init__(self):
         self.tokens = []
+        self.items = []
 
 ###################################################################
 #
@@ -21,6 +22,9 @@ class Battlemat:
 
         self.tokens.append(token)
         return token
+    
+    def add_item(self, item, loc):
+        self.items.append([item,loc])
 
 ###################################################################
 #
@@ -108,9 +112,9 @@ class Battlemat:
         return len(overlap)!=0
 
     def can_attack(self, token1, token2):
-        if token1.weap_type() in ["M","2","O"] and not self.threaten(token1, token2):
+        if "M" in token1.weap_type() and not self.threaten(token1, token2):
             return False
-        if token1.weap_type() in ["R","RT"] and self.dist_ft(token1.loc,token2.loc) > token1.weap_range() * 5:
+        if "R" in token1.weap_type() and self.dist_ft(token1.loc,token2.loc) > token1.weap_range() * 5:
             return False
         return True
 

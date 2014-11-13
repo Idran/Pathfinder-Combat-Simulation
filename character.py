@@ -5,7 +5,7 @@ class Foundation:
     import equip
     import textwrap
 
-    def __init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands):
+    def __init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands, legs):
         self.name = name
         self.side = side
         self.AC = AC
@@ -29,6 +29,7 @@ class Foundation:
         self.ref = ref
         self.will = will
         self.hands = hands
+        self.legs = legs
 
         self.bab = 0
         self.arcane = False
@@ -37,14 +38,10 @@ class Foundation:
         self.hit_die = 10
         self.damage = 0
         self.damage_con = "Normal"
-        self.weap_list = []
+        self.equip_list = []
         self.melee_weaps = []
         self.ranged_weaps = []
-        self.weap = -1
-        self.weap_off = -1
-        self.armor_list = []
-        self.armor = -1
-        self.shield = -1
+        self.slots = {"armor":None, "belts":None, "body":None, "chest":None, "eyes":None, "feet":None, "hands":None, "head":None, "headband":None, "neck":None, "ring":[None,None], "shoulders":None, "wield":[None for i in range(self.hands)], "wrists":None}
         self.conditions = dict()
         self.ftr_wt = []
         self.ftr_mast = None
@@ -52,6 +49,7 @@ class Foundation:
         self.sa = []
         self.sq = []
         self.da = []
+        self.dropped = []
 
 ###################################################################
 #
@@ -81,10 +79,13 @@ class Foundation:
         return (x_dist in range(0,self.tilesize[0]) and y_dist in range(0,self.tilesize[1]))
 
     def TWF_pen(self, weap):
-        if self.weap_off == -1:
+        
+        offhand = self.slots["wield"][1]
+        
+        if not self.has_offhand():
             return 0
-
-        if weap == self.weap_off:
+            
+        elif weap == offhand:
             pen = -10
             if self.two_weapon_fighting():
                 pen += self.two_weapon_fighting_bon()[1]
@@ -93,7 +94,7 @@ class Foundation:
             if self.two_weapon_fighting():
                 pen += self.two_weapon_fighting_bon()[0]
 
-        if "L" in self.weap_type(self.weap_off):
+        if "L" in self.weap_type(offhand):
             pen += 2
 
         return pen
@@ -104,88 +105,96 @@ class Foundation:
 # Import functions
 
     def add_weapon(self, weapon, active=False, off=False):
-        self.weap_list.append(weapon)
+        self.equip_list.append(weapon)
 
         if "M" in weapon.atk_type:
-            self.melee_weaps.append(len(self.weap_list) - 1)
+            self.melee_weaps.append(len(self.equip_list) - 1)
         if "R" in weapon.atk_type:
-            self.ranged_weaps.append(len(self.weap_list) - 1)
+            self.ranged_weaps.append(len(self.equip_list) - 1)
 
         if active:
-            self.set_weapon(len(self.weap_list) - 1)
+            self.set_weapon(len(self.equip_list) - 1)
 
         if off:
-            self.set_off(len(self.weap_list) - 1)
+            self.set_off(len(self.equip_list) - 1)
 
     def add_armor(self, armor, active=False):
-        self.armor_list.append(armor)
+        self.equip_list.append(armor)
         if active:
-            self.set_armor(len(self.armor_list) - 1)
+            self.set_armor(len(self.equip_list) - 1)
 
     def add_shield(self, shield, active=False):
-        self.armor_list.append(shield)
+        self.equip_list.append(shield)
         if active:
-            self.set_shield(len(self.armor_list) - 1)
+            self.set_shield(len(self.equip_list) - 1)
 
 ###################################################################
 #
-# Active equipment data retrieval functions
+# Equipment data retrieval functions
+    
+    def item_type(self, val):
+        return self.equip_list[val].item
+    
+    def default(self, val):
+        if val == None:
+            return True
+        return self.equip_list[val].default
 
     def weap_basename(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return ""
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.name
 
-        return self.weap_list[val].name
+        return self.equip_list[val].name
 
     def weap_name(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return ""
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.fullname()
 
-        return self.weap_list[val].fullname()
+        return self.equip_list[val].fullname()
 
     def weap_group(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return []
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.group
 
-        return self.weap_list[val].group
+        return self.equip_list[val].group
 
     def weap_type(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return ""
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.atk_type
 
-        return self.weap_list[val].atk_type
+        return self.equip_list[val].atk_type
 
     def weap_dmg(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return [1,1]
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.atk_damage
 
-        return self.weap_list[val].atk_damage
+        return self.equip_list[val].atk_damage
 
     def weap_range(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return 0
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.range
 
-        return self.weap_list[val].range
+        return self.equip_list[val].range
 
     def weap_crit_range(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return 0
-
-        crit_rng = self.weap_list[val].crit_range
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            crit_rng = self.unarmed.crit_range
+        else:
+            crit_rng = self.equip_list[val].crit_range
 
         if self.improved_critical(val):
             crit_rng = 21 - ((21 - crit_rng) * 2)
@@ -194,11 +203,11 @@ class Foundation:
 
     def weap_crit_mult(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return 0
-
-        crit_mult = self.weap_list[val].crit_mult
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            crit_mult = self.unarmed.crit_mult
+        else:
+            crit_mult = self.equip_list[val].crit_mult
 
         if self.ftr_wm():
             crit_mult += 1
@@ -207,150 +216,184 @@ class Foundation:
 
     def weap_bon(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return 0
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.weap_bon
 
-        return self.weap_list[val].weap_bon
+        return self.equip_list[val].weap_bon
+
+    def weap_disarm(self, val=None):
+        if val == None:
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.disarm
+
+        return self.equip_list[val].disarm
 
     def weap_reach(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return False
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.reach
 
-        return self.weap_list[val].reach
+        return self.equip_list[val].reach
+
+    def weap_trip(self, val=None):
+        if val == None:
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.trip
+
+        return self.equip_list[val].trip
 
     def weap_mwk(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return False
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.mwk
 
-        return self.weap_list[val].mwk
+        return self.equip_list[val].mwk
 
     def weap_hands(self, val=None):
         if val == None:
-            val = self.weap
-        if val < 0:
-            return 0
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.hands
 
-        return self.weap_list[val].hands
+        return self.equip_list[val].hands
+
+    def has_weapon(self):
+        return self.weap_name() != "unarmed strike"
+    
+    def has_offhand(self):
+        main = self.slots["wield"][0]
+        offhand = self.slots["wield"][1]
+        
+        return offhand != None and offhand != main and self.item_type(offhand) == "weapon"
+    
+    def curr_weap(self):
+        return self.slots["wield"][0]
 
 
     def armor_name(self, val=None):
         if val == None:
-            val = self.armor
-        if val < 0:
+            val = self.slots["armor"]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return ""
 
-        return self.armor_list[val].fullname()
+        return self.equip_list[val].fullname()
 
     def armor_type(self, val=None):
         if val == None:
-            val = self.armor
-        if val < 0:
+            val = self.slots["armor"]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return ""
 
-        return self.armor_list[val].type
+        return self.equip_list[val].type
 
     def armor_armor_bon(self, val=None):
         if val == None:
-            val = self.armor
-        if val < 0:
+            val = self.slots["armor"]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return 0
 
-        return self.armor_list[val].armor_bon + self.armor_list[val].ench_bon
+        return self.equip_list[val].armor_bon + self.equip_list[val].ench_bon
 
     def armor_max_dex(self, val=None):
         if val == None:
-            val = self.armor
-        if val < 0:
+            val = self.slots["armor"]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return 0
 
-        return self.armor_list[val].max_dex
+        return self.equip_list[val].max_dex
 
     def armor_armor_check(self, val=None):
         if val == None:
-            val = self.armor
-        if val < 0:
+            val = self.slots["armor"]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return 0
 
-        return self.armor_list[val].armor_check
+        return self.equip_list[val].armor_check
 
     def armor_asf(self, val=None):
         if val == None:
-            val = self.armor
-        if val < 0:
+            val = self.slots["armor"]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return 0
 
-        return self.armor_list[val].asf
+        return self.equip_list[val].asf
 
     def armor_ench_bon(self, val=None):
         if val == None:
-            val = self.armor
-        if val < 0:
+            val = self.slots["armor"]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return 0
 
-        return self.armor_list[val].ench_bon
+        return self.equip_list[val].ench_bon
+
+    def has_armor(self):
+        return self.armor_name() != ""
 
 
     def shield_name(self, val=None):
         if val == None:
-            val = self.shield
-        if val < 0:
+            val = self.slots["wield"][1]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return ""
 
-        return self.armor_list[val].fullname()
+        return self.equip_list[val].fullname()
 
     def shield_type(self, val=None):
         if val == None:
-            val = self.shield
-        if val < 0:
+            val = self.slots["wield"][1]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return ""
 
-        return self.armor_list[val].type
+        return self.equip_list[val].type
 
     def shield_shield_bon(self, val=None):
         if val == None:
-            val = self.shield
-        if val < 0:
+            val = self.slots["wield"][1]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return 0
 
-        return self.armor_list[val].shield_bon + self.armor_list[val].ench_bon
+        return self.equip_list[val].shield_bon + self.equip_list[val].ench_bon
 
     def shield_ench_bon(self, val=None):
         if val == None:
-            val = self.shield
-        if val < 0:
+            val = self.slots["wield"][1]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return 0
 
-        return self.armor_list[val].ench_bon
+        return self.equip_list[val].ench_bon
 
     def shield_hands(self, val=None):
         if val == None:
-            val = self.shield
-        if val < 0:
+            val = self.slots["wield"][1]
+        if val < 0 or val == None or self.item_type(val) != "armor":
             return 0
 
-        return self.armor_list[val].hands
+        return self.equip_list[val].hands
+
+    def has_shield(self):
+        return self.shield_name() != ""
 
 ###################################################################
 #
 # Weapon selection functions
 
     def best_weap(self, target):
-        return len(self.weap_list) - 1
+        return len(self.equip_list) - 1
 
     def best_melee_weap(self, target):
         if not self.melee_weaps:
-            return -1
+            return None
         else:
             return self.melee_weaps[-1]
 
     def best_ranged_weap(self, target):
         if not self.ranged_weaps:
-            return -1
+            return None
         else:
             return self.ranged_weaps[-1]
 
@@ -359,34 +402,79 @@ class Foundation:
 # Value-setting functions
 
     def set_weapon(self, weap_num):
-        if self.weap_hands(weap_num) + self.weap_hands(self.weap_off) + self.shield_hands() > self.hands:
-            raise StandardError("Cannot set main weapon: too many hands")
-        self.weap = weap_num
+        if self.weap_hands(weap_num) == 1:
+            self.slots["wield"][0] = weap_num
+            offhand = self.slots["wield"][1]
+            if offhand and self.weap_hands(offhand) == 2:
+                self.slots["wield"][0] = None
+        else:
+            offhand = self.slots["wield"][1]
+            if offhand and self.weap_hands(offhand) == 1:
+                raise StandardError("Cannot equip two-handed weapon: offhand occupied")
+            else:
+                self.slots["wield"][0] = weap_num
+                self.slots["wield"][1] = weap_num
 
-    def drop_weapon(self):
-        self.weap = 1
-
-    def set_off(self, weap_num):
-        if self.weap_hands() + self.weap_hands(weap_num) + self.shield_hands() > self.hands:
-            raise StandardError("Cannot set offhand weapon: too many hands")
-        self.weap_off = weap_num
-
-    def drop_off(self):
-        self.weap_off = -1
+    def set_off(self, weap_num, hand=1):
+        if self.weap_hands(weap_num) == 2:
+            raise StandardError("Cannot equip two-handed weapon to offhand")
+        if hand >= self.hands:
+            raise StandardError("Cannot equip offhand weapon to hand {}: does not exist".format(hand))
+        offhand = self.slots["wield"][hand]
+        if offhand and self.weap_hands(offhand) == 2:
+            raise StandardError("Cannot equip offhand weapon: two-handed weapon equipped")
+        self.slots["wield"][hand] = weap_num
 
     def set_armor(self, armor_num):
-        self.armor = armor_num
+        self.slots["armor"] = armor_num
 
-    def drop_armor(self):
-        self.armor = 1
-
-    def set_shield(self, shield_num):
-        if self.weap_hands() + self.weap_hands(self.weap_off) + self.shield_hands(shield_num) > self.hands:
-            raise StandardError("Cannot set shield: too many hands")
-        self.shield = shield_num
-
-    def drop_shield(self):
-        self.shield = 2
+    def set_shield(self, shield_num, hand=1):
+        if hand >= self.hands:
+            raise StandardError("Cannot equip shield to hand {}: does not exist".format(hand))
+        elif self.shield_hands(shield_num) == 2 and hand > self.hands:
+            raise StandardError("Cannot equip two-handed shield to hand {}: hand {} does not exist".format(hand, hand+1))
+        offhand = self.slots["wield"][hand]
+        if offhand and self.item_type(offhand) == "weapon" and self.weap_hands(offhand) == 2:
+            raise StandardError("Cannot equip shield: two-handed weapon equipped")
+        self.slots["wield"][hand] = shield_num
+        if self.shield_hands(shield_num) == 2:
+            self.slots["wield"][hand + 1] = shield_num
+    
+    def drop(self, slot):
+        slot_loc = slot.split(',')
+        if len(slot_loc) == 1:
+            place = slot_loc[0]
+            i = self.slots[place]
+            if not self.default(i):
+                gear = self.equip_list[i]
+                self.slots[place] = None
+                if gear.item == "weapon":
+                    if "M" in gear.atk_type:
+                        self.melee_weaps.remove(i)
+                    elif "R" in gear.atk_type:
+                        self.ranged_weaps.remove(i)
+                self.equip_list[i] = None
+                return gear
+            else:
+                return None
+        elif len(slot_loc) == 2:
+            place = slot_loc[0]
+            num = int(slot_loc[1])
+            i = self.slots[place][num]
+            if not self.default(i):
+                gear = self.equip_list[i]
+                self.slots[place][num] = None
+                if gear.hands == 2:
+                    self.slots[place][num + 1] = None
+                if gear.item == "weapon":
+                    if "M" in gear.atk_type:
+                        self.melee_weaps.remove(i)
+                    elif "R" in gear.atk_type:
+                        self.ranged_weaps.remove(i)
+                self.equip_list[i] = None
+                return gear
+            else:
+                return None
 
     def take_damage(self, dmg):
 
@@ -394,7 +482,7 @@ class Foundation:
 
         self.check_hp()
 
-    def check_hp():
+    def check_hp(self):
         if self.damage == self.get_hp():
             self.damage_con = "Disabled"
         if self.damage > self.get_hp():
@@ -406,7 +494,7 @@ class Foundation:
             if self.has("Raging"):
                 self.drop_rage()
 
-    def set_condition(self, condition, duration=-1):
+    def set_condition(self, condition, duration=14400):
         if condition not in self.conditions.keys():
             if condition == "Fatigued" and "Exhausted" in self.conditions.keys():
                 self.conditions["Exhausted"] = max(self.conditions["Exhausted"],duration)
@@ -414,7 +502,6 @@ class Foundation:
                 self.conditions[condition] = duration
         elif condition == "Fatigued":
             self.conditions["Exhausted"] = max(self.conditions["Fatigued"],duration)
-            self.drop_condition("Fatigued")
 
     def drop_condition(self, condition):
         if condition in self.conditions.keys():
@@ -465,6 +552,9 @@ class Foundation:
             return 4
         else:
             return 0
+        
+    def combat_expertise(self):
+        return "Combat Expertise" in self.feat_list and self.inttot() >= 13
 
     def combat_reflexes(self):
         return "Combat Reflexes" in self.feat_list
@@ -478,7 +568,7 @@ class Foundation:
         else:
             return 0
 
-    def deadly_aim():
+    def deadly_aim(self):
         return "Deadly Aim" in self.feat_list and self.dextot() >= 13 and self.bab >= 1
 
     def deadly_aim_bon(self):
@@ -522,9 +612,27 @@ class Foundation:
 
     def improved_critical(self, weap=None):
         if weap == None:
-            weap = self.weap
+            weap = self.slots["wield"][0]
 
         return "Improved Critical ({})".format(self.weap_basename(weap)) in self.feat_list
+    
+    def improved_disarm(self):
+        return "Improved Disarm" in self.feat_list and self.inttot() >= 13 and self.combat_expertise()
+    
+    def improved_disarm_bon(self):
+        if self.improved_disarm():
+            return 2
+        else:
+            return 0
+    
+    def improved_trip(self):
+        return "Improved Trip" in self.feat_list and self.inttot() >= 13 and self.combat_expertise()
+    
+    def improved_trip_bon(self):
+        if self.improved_trip():
+            return 2
+        else:
+            return 0
 
     def improved_initiative(self):
         return "Improved Initiative" in self.feat_list
@@ -579,7 +687,7 @@ class Foundation:
         return ((self.bab[0] / 5) + 1) * -1
 
     def point_blank_shot(self):
-        return "Point-Blank Shot" in self.feat_list()
+        return "Point-Blank Shot" in self.feat_list
 
     def pbs_bon(self):
         if self.point_blank_shot():
@@ -628,7 +736,7 @@ class Foundation:
 
     def weapon_focus(self, weap=None):
         if weap == None:
-            weap = self.weap
+            weap = self.slots["wield"][0]
 
         return "Weapon Focus ({})".format(self.weap_basename(weap)) in self.feat_list and self.bab[0] >= 1
         #and self.weap_prof(weap)
@@ -745,7 +853,7 @@ class Foundation:
         self.add_sa("weapon mastery ({})".format(weapon))
 
     def ftr_am(self):
-        return self.charClass == "Fighter" and self.level >= 19 and (self.armor_name() != "No armor" or self.shield_name() != "No shield")
+        return self.charClass == "Fighter" and self.level >= 19 and (self.has_armor() or self.has_shield())
 
     def ftr_wm(self):
         return self.charClass == "Fighter" and self.level >= 20 and self.weap_basename() == self.ftr_mast
@@ -803,7 +911,7 @@ class Foundation:
         if not bon_type in bon_list:
             bon_list[bon_type] = bon_val
         else:
-            if bon_type in ["dodge","racial","untyped","circumstance"]:
+            if bon_type in ["dodge", "racial", "untyped","circumstance", "feat", "condition", "class", "weapon"]:
                 bon_list[bon_type] = bon_list[bon_type] + bon_val
             else:
                 bon_list[bon_type] = max(bon_list[bon_type],bon_val)
@@ -891,7 +999,7 @@ class Foundation:
     #
     # AC functions
 
-    def get_AC_bons(self, type=None, subtype=None):
+    def get_AC_bons(self, type=None, subtype=None, atk_type="M"):
 
         AC_bon = dict()
 
@@ -915,16 +1023,26 @@ class Foundation:
 
         self.add_bon(AC_bon,"dodge",self.favored_defense_bon(type, subtype))
 
+        #############################
+        #
+        # Condition bonuses
+
+        if self.has("Prone"):
+            if "M" in atk_type:
+                self.add_bon(AC_bon,"condition",-4)
+            elif "R" in atk_type:
+                self.add_bon(AC_bon,"condition",-4)
+                
         if self.has("Raging"):
             self.add_bon(AC_bon,"rage",-2)
 
         return AC_bon
 
-    def get_AC(self, type=None, subtype=None, FF=False, touch=False):
+    def get_AC(self, type=None, subtype=None, FF=False, touch=False, atk_type="M"):
 
-        temp_AC_bons = self.get_AC_bons(type=type, subtype=subtype)
+        temp_AC_bons = self.get_AC_bons(type=type, subtype=subtype, atk_type=atk_type)
 
-        if self.has("Flat-Footed") or FF:
+        if self.has("Flat-footed") or FF:
             temp_AC_bons = self.get_FF_AC_bons(temp_AC_bons)
         if touch:
             temp_AC_bons = self.get_touch_AC_bons(temp_AC_bons)
@@ -952,7 +1070,14 @@ class Foundation:
     # AoO functions
 
     def can_aoo(self):
-        return not self.has("Flat-Footed") or self.uncanny_dodge()
+        
+        if self.has("Flat-footed") and not self.uncanny_dodge():
+            return False
+            
+        if "R" in self.weap_type() and not self.snap_shot():
+            return False
+        
+        return True
 
     def get_aoo_count(self):
         if self.combat_reflexes():
@@ -986,11 +1111,11 @@ class Foundation:
         if not nofeat:
 
             if "M" in self.weap_type():
-                self.add_bon(atk_bon,"untyped",self.power_attack_pen())
+                self.add_bon(atk_bon,"feat",self.power_attack_pen())
             elif "R" in self.weap_type():
-                self.add_bon(atk_bon,"untyped",self.deadly_aim_pen())
+                self.add_bon(atk_bon,"feat",self.deadly_aim_pen())
                 if FRA:
-                    self.add_bon(atk_bon,"untyped",self.rapid_shot_pen())
+                    self.add_bon(atk_bon,"feat",self.rapid_shot_pen())
 
         atk_bon = self.get_attack_roll_mods(atk_bon, dist, FRA, type, subtype, weap, nofeat)
 
@@ -1015,7 +1140,7 @@ class Foundation:
         else:
             return atk_bon_list[0:1]
 
-    def CMB(self, dist=0, FRA=True, type=None, subtype=None, weap=None, nofeat=False):
+    def CMB(self, dist=5, type=None, subtype=None, weap=None, nofeat=False, man=""):
 
         cmb = dict()
 
@@ -1044,9 +1169,18 @@ class Foundation:
         elif self.size == "Colossal":
             size_bon = 8
 
-        self.add_bon(cmb,"Size",size_bon)
+        self.add_bon(cmb,"size",size_bon)
 
-        cmb = self.get_attack_roll_mods(cmb, dist, FRA, type, subtype, weap, nofeat)
+        cmb = self.get_attack_roll_mods(cmb, dist, False, type, subtype, weap, nofeat)
+        
+        if man == "Disarm":
+            self.add_bon(cmb,"feat",self.improved_disarm_bon())
+            if self.weap_name(weap) == "unarmed strike":
+                self.add_bon(cmb,"untyped",-4)
+            if self.weap_disarm():
+                self.add_bon(cmb,"weapon",2)
+        elif man == "Trip":
+            self.add_bon(cmb,"feat",self.improved_trip_bon())
 
         cmb_tot = sum(cmb.itervalues())
 
@@ -1077,13 +1211,23 @@ class Foundation:
         #############################
         #
         # Feat bonuses
+        
         if not nofeat:
 
             if "M" in self.weap_type():
                 pass
             elif "R" in self.weap_type():
                 if dist < 30:
-                    self.add_bon(atk_bon,"untyped",self.pbs_bon())
+                    self.add_bon(atk_bon,"feat",self.pbs_bon())
+
+        #############################
+        #
+        # Condition bonuses
+        
+        if self.has("Prone"):
+            
+            if "M" in self.weap_type():
+                self.add_bon(atk_bon,"condition",-4)
 
         return atk_bon
 
@@ -1091,7 +1235,7 @@ class Foundation:
     #
     # CMD functions
 
-    def CMD(self, type=None, subtype=None, FF=False):
+    def CMD(self, type=None, subtype=None, FF=False, man=None):
         cmd = dict()
 
         self.add_bon(cmd,"BAB",self.bab[0])
@@ -1121,15 +1265,22 @@ class Foundation:
         elif self.size == "Colossal":
             size_bon = 8
 
-        self.add_bon(cmd,"Size",size_bon)
+        self.add_bon(cmd,"size",size_bon)
+        
+        if man == "Disarm":
+            self.add_bon(cmd,"feat",self.improved_disarm_bon())
+        elif man == "Trip":
+            self.add_bon(cmd,"feat",self.improved_trip_bon())
+            if self.legs > 2:
+                self.add_bon(cmd,"untyped",(self.legs - 2) * 2)
 
         AC_bons = self.get_AC_bons(type, subtype)
 
-        if self.has("Flat-Footed") or FF:
+        if self.has("Flat-footed") or FF:
             AC_bons = self.get_FF_AC_bons(AC_bons)
 
         for key in AC_bons.keys():
-            if key in ["circumstance","deflection", "dodge", "insight", "luck", "morale", "profane", "sacred"]:
+            if key in ["circumstance", "deflection", "dodge", "insight", "luck", "morale", "profane", "sacred"]:
                 self.add_bon(cmd,key,AC_bons[key])
 
         cmd_tot = 10 + sum(cmd.itervalues())
@@ -1161,12 +1312,14 @@ class Foundation:
     # Damage bonus functions
 
     def get_base_dmg_bon(self, dist, type, subtype, weap=None, nofeat=False):
+        
+        dmg_bon = dict()
 
         #############################
         #
         # Enchantment/masterwork bonus
 
-        dmg_bon = self.weap_bon(weap)
+        self.add_bon(dmg_bon,"enhancement",self.weap_bon(weap))
 
         #############################
         #
@@ -1175,45 +1328,47 @@ class Foundation:
         str_bon = self.stat_bonus(self.strtot())
         dex_bon = self.stat_bonus(self.dextot())
 
-        if weap == self.weap_off:
+        if self.has_offhand() and weap == self.slots["wield"][1]:
             if str_bon > 0:
-                dmg_bon = dmg_bon + str_bon / 2
+                self.add_bon(dmg_bon,"Str",(str_bon / 2))
             else:
-                dmg_bon = dmg_bon + str_bon
+                self.add_bon(dmg_bon,"Str",str_bon)
         elif self.weap_hands(weap) == 2 and "R" not in self.weap_type(weap):
             if str_bon > 0:
-                dmg_bon = dmg_bon + str_bon * 3 / 2
+                self.add_bon(dmg_bon,"Str",(str_bon * 3 / 2))
             else:
-                dmg_bon = dmg_bon + str_bon
+                self.add_bon(dmg_bon,"Str",str_bon)
         elif self.ambi and "R" in self.weap_type(weap):
-            dmg_bon = dmg_bon + dex_bon
+            self.add_bon(dmg_bon,"Dex",dex_bon)
         elif "M" in self.weap_type(weap) or "T" in self.weap_type(weap):
-            dmg_bon = dmg_bon + str_bon
+            self.add_bon(dmg_bon,"Str",str_bon)
 
         #############################
         #
         # Class bonuses
 
         if self.charClass == "Fighter" and self.level >= 5:
-            dmg_bon = dmg_bon + self.fighter_wt_bon(self.weap_group())
+            self.add_bon(dmg_bon,"class",self.fighter_wt_bon(self.weap_group()))
 
         if self.charClass == "Ranger":
             dmg_bon = dmg_bon + self.ranger_fe_bon(type, subtype)
+            self.add_bon(dmg_bon,"class",self.ranger_fe_bon(type, subtype))
 
         #############################
         #
         # Feat bonuses
 
         if not nofeat:
-            dmg_bon = dmg_bon + self.arcane_strike_bon()
+            self.add_bon(dmg_bon,"feat",self.arcane_strike_bon())
 
             if "M" in self.weap_type():
-                dmg_bon = dmg_bon + self.power_attack_bon()
+                self.add_bon(dmg_bon,"feat",self.power_attack_bon())
             elif "R" in self.weap_type():
-                dmg_bon = dmg_bon + self.deadly_aim_bon()
-                dmg_bon = dmg_bon + self.pbs_bon(dist)
+                self.add_bon(dmg_bon,"feat",self.deadly_aim_bon())
+                if dist <= 30:
+                    self.add_bon(dmg_bon,"feat",self.pbs_bon())
 
-        return dmg_bon
+        return sum(dmg_bon.itervalues())
 
     #############################
     #
@@ -1353,6 +1508,9 @@ class Foundation:
     # Speed functions
 
     def get_move(self):
+        
+        if self.has("Prone"):
+            return 5
 
         move = self.move
 
@@ -1371,7 +1529,7 @@ class Foundation:
     def threat_range(self):
         tr = [0,0]
 
-        if self.weap_type() in ["M","2","O"]:
+        if "M" in self.weap_type():
             tr = [5, self.reach]
             if self.weap_reach():
                 tr = [self.reach + 5, self.reach * 2]
@@ -1422,6 +1580,21 @@ class Foundation:
                     hit_miss[i] = 2
 
         return hit_miss
+    
+    def check_CMB(self, targ_CMD, dist=5, type=None, subtype=None, man=""):
+    
+        CMB = self.CMB(dist=dist, type=type, subtype=subtype, man=man)
+        
+        CMB_roll = self.random.randint(1,20)
+        
+        result = (CMB_roll + CMB) - targ_CMD
+        
+        if CMB_roll == 20:
+            return [True, result]
+        elif CMB_roll == 1:
+            return [False, result]
+        else:    
+            return [result >= 0, result]
 
     def roll_dmg(self, dist, crit=False, type=None, subtype=None):
 
@@ -1499,7 +1672,6 @@ class Foundation:
 
             atk_count = atk_count + 1
 
-
         return (sum(dmg_vals),dmg_list_out)
 
 ###################################################################
@@ -1509,7 +1681,7 @@ class Foundation:
     def print_dmg(self, dist, type, subtype, weap=None, nofeat=False):
 
         if weap==None:
-            weap = self.weap
+            weap = self.slots["wield"][0]
 
         out = "{}d{}".format(self.weap_dmg(weap)[0],self.weap_dmg(weap)[1])
 
@@ -1540,8 +1712,8 @@ class Foundation:
 
     def print_atk_line(self, dist=0, FRA=True, type=None, subtype=None, weap=None, nofeat=False):
 
-        if weap==None:
-            weap = self.weap
+        if weap == None:
+            weap = self.slots["wield"][0]
 
         atk_out = "{} ".format(self.weap_name(weap))
 
@@ -1593,7 +1765,7 @@ class Foundation:
 class Character(Foundation):
     """NPC stats and data"""
 
-    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], level=1, charClass="Fighter", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], ambi=False, type="Humanoid", subtype=["human"], size="Medium", reach=5, fort=None, ref=None, will=None, race="Human", hands=2, fc=[]):
+    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], level=1, charClass="Fighter", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], ambi=False, type="Humanoid", subtype=["human"], size="Medium", reach=5, fort=None, ref=None, will=None, race="Human", hands=2, legs=2, fc=[]):
         if fc == []:
             fc = ["s" for i in range(level)]
 
@@ -1607,7 +1779,7 @@ class Character(Foundation):
         save_array = [fort,ref,will]
         save_array = self.set_saves(save_array)
 
-        Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, save_array[0], save_array[1], save_array[2], hands)
+        Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, save_array[0], save_array[1], save_array[2], hands, legs)
 
         self.set_bab()
         self.set_spellcast_stats()
@@ -1617,28 +1789,15 @@ class Character(Foundation):
             self.roll_hp_tot()
 
         self.equip_unarmed()
-        self.equip_no_armor()
-        self.equip_no_shield()
 
         self.set_class_abilities()
 
     def equip_unarmed(self):
 
         self.unarmed = self.equip.Weapon(name="unarmed strike", group=["Monk","Natural"], atk_damage=[1,3])
+        self.unarmed.default = True
 
         self.add_weapon(self.unarmed, active=True)
-
-    def equip_no_armor(self):
-
-        self.no_armor = self.equip.Armor(name="No armor")
-
-        self.add_armor(self.no_armor, active=True)
-
-    def equip_no_shield(self):
-
-        self.no_shield = self.equip.Armor(name="No shield")
-
-        self.add_shield(self.no_shield, active=True)
 
     def set_bab(self):
 
@@ -1767,13 +1926,13 @@ class Character(Foundation):
             da_line += "DR {}/{}".format(dr[0],dr[2].join(sorted(dr[1])))
 
         melee_set = []
-        if "M" in self.weap_type(self.weap):
+        if "M" in self.weap_type():
             base_atk_line = self.print_atk_line(nofeat=True)
-            if self.weap_off != -1:
-                base_atk_line += ", " + self.print_atk_line(nofeat=True,weap=self.weap_off)
+            if self.has_offhand():
+                base_atk_line += ", " + self.print_atk_line(nofeat=True,weap=self.slots["wield"][1])
             melee_set.append(base_atk_line)
         for weapon in self.melee_weaps:
-            if weapon == self.weap or weapon == self.weap_off:
+            if weapon == self.slots["wield"][0] or weapon == self.slots["wield"][1]:
                 continue
             if weapon == 0:
                 if len(self.melee_weaps) > 1 and self.charClass != "Monk":
@@ -1783,11 +1942,11 @@ class Character(Foundation):
             melee_set[i] += " or"
 
         ranged_set = []
-        if "R" in self.weap_type(self.weap):
+        if "R" in self.weap_type():
             base_atk_line = self.print_atk_line(nofeat=True)
             ranged_set.append(base_atk_line)
         for weapon in self.ranged_weaps:
-            if weapon == self.weap:
+            if weapon == self.slots["wield"][0]:
                 continue
             ranged_set.append(self.print_atk_line(weap=weapon,nofeat=True))
         for i in range(len(ranged_set[0:-1])):
@@ -1845,7 +2004,7 @@ class Character(Foundation):
 class Monster(Foundation):
     """Monster stats and data"""
 
-    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], HD=1, type="Humanoid", subtype=[], size="Medium", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], arcane=False, divine=False, CL=0, reach=5, fort=None, ref=None, will=None, hands=2):
+    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], HD=1, type="Humanoid", subtype=[], size="Medium", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], arcane=False, divine=False, CL=0, reach=5, fort=None, ref=None, will=None, hands=2, legs=2):
 
         self.level = 0
         self.charClass = None
@@ -1856,7 +2015,7 @@ class Monster(Foundation):
         self.weap_bon = 0
         self.fc = []
 
-        Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, size, reach, fort, ref, will, hands)
+        Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, size, reach, fort, ref, will, hands, legs)
 
         self.set_bab()
         self.set_hit_die()

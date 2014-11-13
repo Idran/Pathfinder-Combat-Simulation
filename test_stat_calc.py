@@ -23,8 +23,8 @@ test_ftr1.add_shield(items.wooden_shield_heavy.copy(), active=True)
 
 test_barb1 = character.Character(charClass="Barbarian", level=1, str=17, dex=13, con=14, int=10, wis=12, cha=8, feat_list=["Cleave", "Power Attack"], name="Arjana", loc=[1,2], hp=12, ambi=False, fc=["h"])
 
-test_barb1.add_weapon(items.greatsword.copy(), active=True)
-test_barb1.add_weapon(items.flail_heavy.copy())
+test_barb1.add_weapon(items.greatsword.copy())
+test_barb1.add_weapon(items.flail_heavy.copy(), active=True)
 test_barb1.add_weapon(items.sling.copy())
 
 test_barb1.add_armor(items.breastplate.copy(), active=True)
@@ -47,4 +47,4 @@ monsterarm.set_bon(1)
 
 monster.add_armor(monsterarm, active=True)
 
-print test_barb1.print_stat_block()
+print test_ftr1.print_stat_block()
