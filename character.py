@@ -78,21 +78,18 @@ class Foundation:
 
         return (x_dist in range(0,self.tilesize[0]) and y_dist in range(0,self.tilesize[1]))
 
-    def TWF_pen(self, weap):
+    def TWF_pen(self, weap, fob=False):
         
         offhand = self.slots["wield"][1]
         
         if not self.has_offhand():
             return 0
-            
         elif weap == offhand:
             pen = -10
-            if self.two_weapon_fighting():
-                pen += self.two_weapon_fighting_bon()[1]
+            pen += self.two_weapon_fighting_bon(override=fob)[1]
         else:
-            pen = -10
-            if self.two_weapon_fighting():
-                pen += self.two_weapon_fighting_bon()[0]
+            pen = -6
+            pen += self.two_weapon_fighting_bon(override=fob)[0]
 
         if "L" in self.weap_type(offhand):
             pen += 2
@@ -274,6 +271,20 @@ class Foundation:
     def curr_weap(self):
         return self.slots["wield"][0]
 
+    # weap_list: returns list of weapons wielded (as array for future functionality expansion)
+    
+    def weap_list(self):
+        list = []
+        i = 0
+        
+        while i < len(self.slots["wield"]):        # Using while loop in order to vary index step by weapon hands
+            item = self.slots["wield"][i]
+            if item != None and self.item_type(item) == "weapon":
+                list.append([item])
+            i += self.weap_hands(item)
+        
+        return list
+
 
     def armor_name(self, val=None):
         if val == None:
@@ -383,7 +394,7 @@ class Foundation:
 # Weapon selection functions
 
     def best_weap(self, target):
-        return len(self.equip_list) - 1
+        return self.weap_list[0][0]
 
     def best_melee_weap(self, target):
         if not self.melee_weaps:
@@ -728,11 +739,17 @@ class Foundation:
     def two_weapon_fighting(self):
         return "Two-Weapon Fighting" in self.feat_list and self.dextot() >= 15
 
-    def two_weapon_fighting_bon(self):
-        if self.two_weapon_fighting():
+    def two_weapon_fighting_bon(self, override=False):
+        if self.two_weapon_fighting() or override:
             return [2,6]
         else:
             return [0,0]
+        
+    def two_weapon_fighting_greater(self):
+        return "Greater Two-Weapon Fighting" in self.feat_list and self.two_weapon_fighting() and self.two_weapon_fighting_imp and self.bab[0]>=11
+        
+    def two_weapon_fighting_imp(self):
+        return "Improved Two-Weapon Fighting" in self.feat_list and self.two_weapon_fighting() and self.bab[0]>=6
 
     def weapon_focus(self, weap=None):
         if weap == None:
@@ -857,6 +874,10 @@ class Foundation:
 
     def ftr_wm(self):
         return self.charClass == "Fighter" and self.level >= 20 and self.weap_basename() == self.ftr_mast
+
+###################################################################
+#
+# Monk class ability functions
 
 ###################################################################
 #
@@ -1089,9 +1110,16 @@ class Foundation:
     #
     # Attack roll functions
 
-    def get_atk_bon(self, dist, FRA, type, subtype, weap=None, nofeat=False):
+    def get_atk_bon(self, dist, FRA, type, subtype, weap=None, nofeat=False, fob=False):
 
         atk_bon = dict()
+        
+        if fob:
+            bab = range(self.level, 1, -5)
+            if not bab:
+                bab = [self.level]
+        else:
+            bab = self.bab
 
         #############################
         #
@@ -1099,10 +1127,15 @@ class Foundation:
 
         if "M" in self.weap_type(weap):
             self.add_bon(atk_bon,"stat",self.stat_bonus(self.strtot()))
-            self.add_bon(atk_bon,"untyped",self.TWF_pen(weap))
+            self.add_bon(atk_bon,"untyped",self.TWF_pen(weap,fob=fob))
         elif "R" in self.weap_type(weap):
             self.add_bon(atk_bon,"stat",self.stat_bonus(self.dextot()))
             self.add_bon(atk_bon,"untyped",self.range_pen(dist))
+
+        #############################
+        #
+        # Class bonus
+            
 
         #############################
         #
@@ -1121,7 +1154,7 @@ class Foundation:
 
         atk_bon_tot = sum(atk_bon.itervalues())
 
-        atk_bon_list = map(lambda x: x + atk_bon_tot, self.bab)
+        atk_bon_list = map(lambda x: x + atk_bon_tot, bab)
 
         #############################
         #
@@ -1545,39 +1578,64 @@ class Foundation:
 #
 # Mechanics functions
 
-    def check_attack(self, targ_AC, dist, FRA, type, subtype):
-
-        atk_bon = self.get_atk_bon(dist, FRA, type, subtype)
-        hit_miss = [0 for i in range(len(atk_bon))]
-
+    def check_attack(self, targ_AC, dist, FRA, type, subtype, offhand=False, fob=False):
+        
+        weapList = self.weap_list()
+        atk_bon = [[] for i in range(len(weapList))]
+        
         for i in range(len(atk_bon)):
+            atk_bon[i] = self.get_atk_bon(dist, FRA, type, subtype, fob=fob, weap=weapList[i][0])
 
-            #############################
-            #
-            # Roll attack(s)
+        #############################
+        #
+        # Set up hit_miss array
+        #
+        # Each occupied weapon slot (by self.weap_list) assigned to tens place, ones place
+        # indicating specific iterative attack bonus
+        #
+        # e.g., character with two weapons and 4 iterative attacks with main weapon would
+        # have bonus totals in array values 00, 01, 02, 03, and 10
+        #
+        # If a character for some reason has >10 attacks with a single weapon, assign
+        # it as two or more weapons (but why would this ever happen)
+        
+        hit_miss = [None for i in range((len(atk_bon))*10)]
+        
+        for i in range(len(atk_bon)):
+            weapon = weapList[i][0]
+            
+            for j in range(len(atk_bon[i])):
 
-            atk_roll = self.random.randint(1,20)
+                hmIx = i*10+j
+                
+                hit_miss[hmIx] = 0
 
-            if atk_roll == 20:
-                hit_miss[i] = 1
-            elif (atk_roll + atk_bon[i]) >= targ_AC:
-                hit_miss[i] = 1
+                #############################
+                #
+                # Roll attack(s)
 
-            #############################
-            #
-            # Check for critical
+                atk_roll = self.random.randint(1,20)
 
-            crit_rng = self.weap_crit_range()
+                if atk_roll == 20:
+                    hit_miss[hmIx] = 1
+                elif (atk_roll + atk_bon[i][j]) >= targ_AC:
+                    hit_miss[hmIx] = 1
 
-            if atk_roll >= crit_rng and hit_miss[i] == 1:
-                conf_roll = self.random.randint(1,20)
+                #############################
+                #
+                # Check for critical
 
-                conf_bon = atk_bon[i]
+                crit_rng = self.weap_crit_range(weapon)
 
-                conf_bon = conf_bon + self.critical_focus_bon()
+                if atk_roll >= crit_rng and hit_miss[hmIx] == 1:
+                    conf_roll = self.random.randint(1,20)
 
-                if conf_roll == 20 or (conf_roll + conf_bon) >= targ_AC or self.ftr_wm():
-                    hit_miss[i] = 2
+                    conf_bon = atk_bon[i][j]
+
+                    conf_bon = conf_bon + self.critical_focus_bon()
+
+                    if conf_roll == 20 or (conf_roll + conf_bon) >= targ_AC or self.ftr_wm():
+                        hit_miss[hmIx] = 2
 
         return hit_miss
     
@@ -1596,18 +1654,21 @@ class Foundation:
         else:    
             return [result >= 0, result]
 
-    def roll_dmg(self, dist, crit=False, type=None, subtype=None):
+    def roll_dmg(self, dist, crit=False, type=None, subtype=None, weap=None):
+        
+        if weap == None:
+            weap = self.curr_weap()
 
         #############################
         #
         # Crit multiplier
 
         if crit == True:
-            roll_mult = self.weap_crit_mult()
+            roll_mult = self.weap_crit_mult(weap)
         else:
             roll_mult = 1
 
-        dmg_bon = self.get_base_dmg_bon(dist, type, subtype)
+        dmg_bon = self.get_base_dmg_bon(dist, type, subtype, weap=weap)
 
         #############################
         #
@@ -1615,8 +1676,8 @@ class Foundation:
 
         dmg = 0
         for j in range(roll_mult):
-            for i in range(self.weap_dmg()[0]):
-                dmg = dmg + self.random.randint(1,self.weap_dmg()[1])
+            for i in range(self.weap_dmg(weap)[0]):
+                dmg = dmg + self.random.randint(1,self.weap_dmg(weap)[1])
             dmg = dmg + dmg_bon
 
         return dmg
@@ -1641,42 +1702,45 @@ class Foundation:
         else:
             return "move"
 
-    def attack(self, targ_AC, dist=5, FRA=True, type=None, subtype=None):
+    def attack(self, targ_AC, dist=5, FRA=True, type=None, subtype=None, fob=False):
 
         dmg = 0
-        hit_miss = self.check_attack(targ_AC, dist, FRA, type, subtype)
+        hit_miss = self.check_attack(targ_AC, dist, FRA, type, subtype, fob)
         dmg_vals = [0 for i in hit_miss]
-        dmg_list_out = ["" for i in hit_miss]
+        dmg_list_out = [None for i in hit_miss]
 
-        atk_count = 0
-        for atk_result in hit_miss:
+        weap_list=self.weap_list()
+        for atk_count,atk_result in enumerate(hit_miss):
+            if atk_result == None:
+                continue
+            weap = weap_list[atk_count/10][0]
             if atk_result == 0:
                 dmg_vals[atk_count] = 0
                 dmg_list_out[atk_count] = "miss"
             elif atk_result == 1:
                 dmg_vals[atk_count] = self.roll_dmg(dist, type=type, subtype=subtype)
 
-                if self.manyshot() and "R" in self.weap_type() and atk_count == 0:
+                if self.manyshot() and "R" in self.weap_type(weap) and atk_count == 0:
 
-                    dmg_vals[atk_count] = dmg_vals[atk_count] + self.roll_dmg(dist, type=type, subtype=subtype)
+                    dmg_vals[atk_count] = dmg_vals[atk_count] + self.roll_dmg(dist, type=type, subtype=subtype, weap=weap)
 
                 dmg_list_out[atk_count] = str(dmg_vals[atk_count])
             elif atk_result == 2:
                 dmg_vals[atk_count] = self.roll_dmg(dist, crit=True, type=type, subtype=subtype)
 
-                if "Manyshot" in self.feat_list and self.manyshot() and atk_count == 0:
+                if self.manyshot() and "R" in self.weap_type(weap) and atk_count == 0:
 
-                    dmg_vals[atk_count] = dmg_vals[atk_count] + self.roll_dmg(dist, type=type, subtype=subtype)
+                    dmg_vals[atk_count] = dmg_vals[atk_count] + self.roll_dmg(dist, type=type, subtype=subtype, weap=weap)
 
                 dmg_list_out[atk_count] = "*" + str(dmg_vals[atk_count])
-
-            atk_count = atk_count + 1
-
         return (sum(dmg_vals),dmg_list_out)
 
 ###################################################################
 #
 # Output functions
+
+    # print_dmg: prints weapon damage for given weapon in standard format, with all current feats and buffs
+    #            pass nofeat=True to not include feat bonuses
 
     def print_dmg(self, dist, type, subtype, weap=None, nofeat=False):
 
@@ -1691,6 +1755,8 @@ class Foundation:
             out = out + "{:+d}".format(dmg_bon)
 
         return out
+    
+    # print_AC_bons: prints all current AC bonuses in alphabetical order
 
     def print_AC_bons(self, type=None, subtype=None):
 
@@ -1705,10 +1771,49 @@ class Foundation:
                 AC_out = AC_out + "{:+d} {}, ".format(AC_bons[AC_type],AC_type)
 
         return AC_out[:-2]
+    
+    # print_AC_line: prints AC line in standard format, including base, touch, FF, and all current bonuses
 
     def print_AC_line(self, type=None, subtype=None):
 
         return "AC {}, touch {}, flat-footed {} ({})".format(self.get_AC(), self.get_AC(touch=True), self.get_AC(FF=True), self.print_AC_bons())
+    
+    # print_all_atks: prints atk line for all current weapons
+    
+    def print_all_atks(self, dist=0, FRA=True, type=None, subtype=None, nofeat=False):
+        weap_list = self.weap_list()
+        output = ["" for i in range(len(weap_list))]
+        
+        for i,weap in enumerate(weap_list):
+            output[i] = self.print_atk_line(dist, FRA, type, subtype, weap[0], nofeat)
+        
+        return '; '.join(output)
+    
+    # print_atk_dmg: takes damage array as returned in 1 index of attack, formats into human-readable format
+    
+    def print_atk_dmg(self, dmg):
+        weap_list = self.weap_list()
+        output = ["" for i in range(len(weap_list))]
+        
+        for i,weap in enumerate(weap_list):
+            if dmg[i*10] == None:
+                continue
+            output[i] += self.weap_name(weap[0]) + ": "
+            output[i] += dmg[i*10]
+            
+            j=1
+            while dmg[i*10+j] != None and j < 10:
+                output[i] += ", " + dmg[i*10+j]
+                j += 1
+        
+        while output.count("") > 0:
+            output.remove("")
+        
+        return ('; '.join(output))
+        
+    
+    # print_atk_line: prints attack line for a given weapon in standard format, with all current feats and buffs
+    #                 pass nofeat=True to not include feat bonuses
 
     def print_atk_line(self, dist=0, FRA=True, type=None, subtype=None, weap=None, nofeat=False):
 
@@ -1744,6 +1849,8 @@ class Foundation:
 
         return atk_out
 
+    # print_HD: prints hit dice of character in standard format
+    
     def print_HD(self):
         out = "{}d{}".format(self.HD,self.hit_die)
 
@@ -1753,10 +1860,14 @@ class Foundation:
             out += "{:+d}".format(hp_bon)
 
         return out
+    
+    # print_hp: prints (cur)/(max) hp
 
     def print_hp(self):
         return "{}/{}".format(self.get_hp() - self.damage,self.get_hp())
 
+    # print_save_line: prints current saving throw bonuses
+    
     def print_save_line(self):
         return "Fort {:+d}, Ref {:+d}, Will {:+d}".format(self.get_fort(),self.get_ref(),self.get_will())
 
