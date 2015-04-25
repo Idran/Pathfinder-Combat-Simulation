@@ -59,6 +59,23 @@ test_ftr1.add_shield(items.wooden_shield_heavy.copy(), active=True)
 
 ##########################################################
 
+test_ftr1_2h = character.Character(charClass="Fighter", level=1, str=17, dex=15, con=12, int=8, wis=13, cha=10, feat_list=["Iron Will", "Power Attack", "Toughness", "Two-Weapon Fighting"], name="Corwyn Klas (2h)", loc=[1,2], hp=10, ambi=False, side=1)
+
+test_ftr1_2h.add_weapon(items.longsword.copy(), active=True)
+
+ci_dagger = items.dagger.copy()
+ci_dagger.set_mat("cold iron")
+test_ftr1_2h.add_weapon(ci_dagger, off=True)
+
+hcb = items.crossbow_heavy.copy()
+hcb.set_ammo(20)
+
+test_ftr1_2h.add_weapon(hcb)
+
+test_ftr1_2h.add_armor(items.breastplate.copy(), active=True)
+
+##########################################################
+
 test_barb1 = character.Character(charClass="Barbarian", level=1, str=17, dex=13, con=14, int=10, wis=12, cha=8, feat_list=["Cleave", "Power Attack"], name="Arjana", loc=[5,5], hp=12, ambi=False, fc=["h"], side=2)
 
 test_barb1.add_weapon(items.greatsword.copy())
@@ -71,15 +88,15 @@ test_barb1.set_rage()
 
 ##########################################################
 
-print "{}:".format(test_ftr1.name)
-print test_ftr1.print_AC_line()
-print test_ftr1.print_save_line()
-print test_ftr1.print_atk_line()
+print "{}:".format(test_ftr1_2h.name)
+print test_ftr1_2h.print_AC_line()
+print test_ftr1_2h.print_save_line()
+print test_ftr1_2h.print_all_atks()
 print "\n\n"
 print "{}:".format(test_barb1.name)
 print test_barb1.print_AC_line()
 print test_barb1.print_save_line()
-print test_barb1.print_atk_line()
+print test_barb1.print_all_atks()
 print ""
 
 mat = battlemat.Battlemat()
@@ -87,11 +104,11 @@ fight = combat.Combat()
 
 fight.set_mat(mat)
 
-fight.add_fighter(test_ftr1)
+fight.add_fighter(test_ftr1_2h)
 fight.add_fighter(test_barb1)
 
-fight.set_tactic(test_ftr1,"Close")
-fight.set_tactic(test_barb1,"Maneuver,dt")
+fight.set_tactic(test_ftr1_2h,"Attack")
+fight.set_tactic(test_barb1,"Close")
 
 fight.set_init()
 

@@ -284,11 +284,11 @@ class Combat:
         if fighter.has("Prone") and "R" in fighter.weap_type() and "Crossbows" not in fighter.weap_group():
             self.log("{0} cannot attack; {0} is Prone".format(fighter.name))
         dist_to_target = self.mat.dist_ft(fighter.loc, target.loc)
-        self.log("{} attacks {}: {}".format(fighter.name, target.name,fighter.print_atk_line(dist_to_target, FRA)))
+        self.log("{} attacks {}: {}".format(fighter.name, target.name,fighter.print_all_atks(dist_to_target, FRA)))
         dmg = fighter.attack(target.get_AC(type=fighter.type, subtype=fighter.subtype), dist_to_target, FRA, fighter.type, fighter.subtype)
 
         self.log("{} takes {} damage".format(target.name, dmg[0]))
-        self.log("  ({})".format(', '.join(dmg[1])))
+        self.log("  ({})".format(fighter.print_atk_dmg(dmg[1])))
         target.take_damage(dmg[0])
         self.log("{} at {}".format(target.name, target.print_hp()))
     
