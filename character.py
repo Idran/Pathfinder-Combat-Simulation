@@ -1114,11 +1114,21 @@ class Foundation:
 
         atk_bon = dict()
         
-        if fob:
-            bab = range(self.level, 1, -5)
-            if not bab:
-                bab = [self.level]
-        else:
+        if fob:                                 # flurry of blows BAB
+            bab = [i-2 for i in range(self.level, 0, -5)]
+            bab.insert(1,self.level-2)
+            if self.level >= 8:
+                bab.insert(3,self.level-7)
+                if self.level >= 15:
+                    bab.insert(5,self.level-12)
+                    
+        elif weap == self.slots["wield"][1]:    # offhand BAB
+            bab = [self.bab[0]]
+            if self.two_weapon_fighting_imp():
+                bab.append(self.bab[0]-5)
+                if self.two_weapon_fighting_greater():
+                    bab.append(self.bab[0]-10)
+        else:                                   # normal mainhand BAB
             bab = self.bab
 
         #############################
@@ -1913,15 +1923,13 @@ class Character(Foundation):
     def set_bab(self):
 
         if self.charClass in ["Barbarian", "Fighter", "Paladin", "Ranger"]:
-            self.bab = range(self.level, 1, -5)
-            if not self.bab:
-                self.bab = [self.level]
+            self.bab = range(self.level, 0, -5)
         elif self.charClass in ["Bard", "Cleric", "Druid", "Monk", "Rogue"]:
-            self.bab = range(self.level * 3 / 4, 1, -5)
+            self.bab = range(self.level * 3 / 4, 0, -5)
             if not self.bab:
                 self.bab = [self.level * 3 / 4]
         else:
-            self.bab = range(self.level / 2, 1, -5)
+            self.bab = range(self.level / 2, 0, -5)
             if not self.bab:
                 self.bab = [self.level / 2]
 
@@ -2137,15 +2145,13 @@ class Monster(Foundation):
     def set_bab(self):
 
         if self.type in ["Construct", "Dragon", "Magical Beast", "Monstrous Humanoid", "Outsider"]:
-            self.bab = range(self.HD, 1, -5)
-            if not self.bab:
-                self.bab = [self.HD]
+            self.bab = range(self.HD, 0, -5)
         elif self.type in ["Aberration", "Animal", "Humanoid", "Ooze", "Plant", "Undead", "Vermin"]:
-            self.bab = range(self.HD * 3 / 4, 1, -5)
+            self.bab = range(self.HD * 3 / 4, 0, -5)
             if not self.bab:
                 self.bab = [self.HD * 3 / 4]
         else:
-            self.bab = range(self.HD / 2, 1, -5)
+            self.bab = range(self.HD / 2, 0, -5)
             if not self.bab:
                 self.bab = [self.HD / 2]
 
