@@ -385,6 +385,14 @@ class Foundation:
 
         return self.equip_list[val].shield_bon + self.equip_list[val].ench_bon
 
+    def shield_armor_check(self, val=None):
+        if val == None:
+            val = self.slots["wield"][1]
+        if val < 0 or val == None or self.item_type(val) != "armor":
+            return 0
+
+        return self.equip_list[val].armor_check
+
     def shield_ench_bon(self, val=None):
         if val == None:
             val = self.slots["wield"][1]
@@ -967,6 +975,8 @@ class Foundation:
         if "M" in self.weap_type(weap):
             if self.feat.weapon_finesse(self) and self.feat.weapon_finesse_weap(self, weap):
                 self.add_bon(atk_bon,"stat",self.stat_bonus(self.dextot()))
+                if self.has_shield():
+                    self.add_bon(adk_bon,"shield",self.shield_armor_check())
             else:
                 self.add_bon(atk_bon,"stat",self.stat_bonus(self.strtot()))
             self.add_bon(atk_bon,"untyped",self.TWF_pen(weap))
