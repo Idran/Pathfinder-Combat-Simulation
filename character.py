@@ -1033,8 +1033,13 @@ class Foundation:
             self.add_bon(cmb,"BAB",self.level)
         else:
             self.add_bon(cmb,"BAB",self.bab[0])
-
-        self.add_bon(cmb,"Str",self.stat_bonus(self.strtot()))
+        
+        if self.feat.weapon_finesse(self) and self.feat.weapon_finesse_weap(self, weap) and man in ["Disarm","Sunder","Trip"]:
+            self.add_bon(atk_bon,"stat",self.stat_bonus(self.dextot()))
+            if self.has_shield():
+                self.add_bon(adk_bon,"shield",self.shield_armor_check())
+        else:
+            self.add_bon(atk_bon,"stat",self.stat_bonus(self.strtot()))
 
         size_bon = 0
 
