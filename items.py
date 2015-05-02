@@ -6,7 +6,10 @@ dagger_thrown = equip.Weapon(name="dagger", type="Simple", group=["Blades, Light
 
 crossbow_heavy = equip.Weapon(name="heavy crossbow", type="Simple", group=["Crossbows"], atk_damage=[1,10], atk_type="R", crit_range=19, range=120, spb="P", ammo=10)
 
+crossbow_light = equip.Weapon(name="light crossbow", type="Simple", group=["Crossbows"], atk_damage=[1,8], atk_type="R", crit_range=19, range=80, spb="P", ammo=10)
+
 sling = equip.Weapon(name="sling", type="Simple", group=["Thrown"], atk_damage=[1,4], atk_type="RT", crit_range=20, range=50, spb="B", ammo=10)
+
 
 flail_heavy = equip.Weapon(name="heavy flail", type="Martial", group=["Flails"], atk_damage=[1,10], atk_type="M", crit_range=19, spb="B", hands=2, disarm=True, trip=True)
 
@@ -14,11 +17,16 @@ greatsword = equip.Weapon(name="greatsword", type="Martial", group=["Blades, Hea
 
 guisarme = equip.Weapon(name="guisarme", type="Martial", group=["Polearms"], atk_damage=[2,4], atk_type="M", crit_range=20, crit_mult=3, spb="S", hands=2)
 
-longbow = equip.Weapon(name="longbow", type="Martial", group=["Bows"], atk_damage=[1,8], atk_type="R", crit_range=20, crit_mult=3, weap_bon=1, range=110, spb="P", hands=2)
+longbow = equip.Weapon(name="longbow", type="Martial", group=["Bows"], atk_damage=[1,8], atk_type="R", crit_range=20, crit_mult=3, weap_bon=1, range=110, spb="P", ammo=20, hands=2)
 
-longsword = equip.Weapon(name="longsword", type="Martial", group=["Blades, Heavy"], atk_damage=[1,8], atk_type="M", crit_mult=2, crit_range=19, spb="S", ammo=20)
+longsword = equip.Weapon(name="longsword", type="Martial", group=["Blades, Heavy"], atk_damage=[1,8], atk_type="M", crit_mult=2, crit_range=19, spb="S")
 
 shortbow = equip.Weapon(name="shortbow", type="Martial", group=["Bows"], atk_damage=[1,6], atk_type="R", crit_mult=3, range=60, spb="P", ammo=20, hands=2)
+
+
+kama = equip.Weapon(name="kama", type="Exotic", group=["Monk"], atk_damage=[1,6], atk_type="ML", crit_range=20, spb="SP")
+
+shuriken = equip.Weapon(name="shuriken", type="Exotic", group=["Monk", "Thrown"], atk_damage=[1,2], atk_type="RT", crit_range=20, spb="P", ammo=1)
 
 ##############################################################
 

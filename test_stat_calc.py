@@ -33,6 +33,18 @@ test_barb1.set_rage()
 
 ##########################################################
 
+test_monk1 = character.Character(charClass="Monk", level=1, str=12, dex=16, con=10, int=13, wis=15, cha=8, feat_list=["Combat Reflexes", "Dodge", "Improved Unarmed Strike", "Stunning Fist", "Weapon Finesse"], name="Careful Initiate", loc=[4,5], hp=9, ambi=False)
+
+test_monk1.add_weapon(items.kama.copy())
+test_monk1.add_weapon(items.crossbow_light.copy())
+
+shuriken = items.shuriken.copy()
+shuriken.set_ammo(5)
+
+test_monk1.add_weapon(items.shuriken)
+
+##########################################################
+
 monster = character.Character(charClass="Fighter", level=10, str=18, dex=10, con=8, int=14, wis=10, cha=12, feat_list=["Combat Expertise", "Critical Focus", "Dodge", "Improved Critical (guisarme)", "Improved Trip", "Intimidating Prowess", "Leadership", "Persuasive", "Power Attack", "Run", "Toughness"], ambi=True, name="Warlord", loc=[10,10], hp=55, AC=23, side=2)
 
 monster.set_fighter_weap_train(["Polearms","Close"])
@@ -47,4 +59,4 @@ monsterarm.set_bon(1)
 
 monster.add_armor(monsterarm, active=True)
 
-print test_ftr1.print_stat_block()
+print test_monk1.print_stat_block()

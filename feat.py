@@ -47,7 +47,7 @@ def deadly_aim_pen(self):
         return 0
 
 def dodge(self):
-    return "Dodge" in self.feat_list and self.dextot >= 13
+    return "Dodge" in self.feat_list and self.dextot() >= 13
 
 def dodge_bon(self):
     if dodge(self):
@@ -72,6 +72,9 @@ def great_fortitude_bon(self):
         return 2
     else:
         return 0
+
+def imp_unarmed_strike(self):
+    return "Improved Unarmed Strike" in self.feat_list
 
 def improved_critical(self, weap=None):
     if weap == None:
@@ -171,10 +174,13 @@ def rapid_shot_pen(self):
         return 0
 
 def snap_shot(self):
-    return "Snap Shot" in self.feat_list and self.dextot() >= 13 and point_blank_shot(self) and rapid_shot(self) and weapon_focus(self) and self.bab[0]>=6
+    return "Snap Shot" in self.feat_list and self.dextot() >= 13 and point_blank_shot(self) and rapid_shot(self) and weapon_focus(self) and self.bab[0] >= 6
 
 def snap_shot_imp(self):
-    return "Improved Snap Shot" in self.feat_list and self.dextot() >= 15 and point_blank_shot(self) and rapid_shot(self) and weapon_focus(self) and self.bab[0]>=9
+    return "Improved Snap Shot" in self.feat_list and self.dextot() >= 15 and point_blank_shot(self) and rapid_shot(self) and weapon_focus(self) and self.bab[0] >= 9
+
+def stunning_fist(self):
+    return "Stunning Fist" in self.feat_list and (self.dextot() >= 13 and self.wistot() >= 13 and imp_unarmed_strike(self) and self.bab[0] >= 8) or (self.charClass == "Monk")
 
 def toughness(self):
     return "Toughness" in self.feat_list
@@ -202,6 +208,17 @@ def two_weapon_fighting_greater(self):
 
 def two_weapon_fighting_imp(self):
     return "Improved Two-Weapon Fighting" in self.feat_list and two_weapon_fighting(self) and self.bab[0]>=6
+
+def weapon_finesse(self):
+    return "Weapon Finesse" in self.feat_list
+
+def weapon_finesse_weap(self, weap):
+    if "L" in self.weap_type(weap) or "Natural" in self.weap_group(weap):
+        return True
+    if self.weap_name(weap) in ["elven curve blade","rapier","whip","spiked chain"]:
+        return True
+    
+    return False
 
 def weapon_focus(self, weap=None):
     if weap == None:

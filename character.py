@@ -44,12 +44,24 @@ class Foundation:
         self.ranged_weaps = []
         self.slots = {"armor":None, "belts":None, "body":None, "chest":None, "eyes":None, "feet":None, "hands":None, "head":None, "headband":None, "neck":None, "ring":[None,None], "shoulders":None, "wield":[None for i in range(self.hands)], "wrists":None}
         self.conditions = dict()
+        
         self.ftr_wt = []
         self.ftr_mast = None
+        
+        self.ki_pool = 0
+        self.ki_spent = 0
+        self.ki_types = []
+        
         self.rgr_fe = []
+        
         self.sa = []
         self.sq = []
         self.da = []
+        self.immune = []
+        
+        self.lang = []
+        self.lang_spec = []
+        
         self.dropped = []
 
 ###################################################################
@@ -314,7 +326,9 @@ class Foundation:
     def armor_max_dex(self, val=None):
         if val == None:
             val = self.slots["armor"]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None:
+            return 99       # no max dex when unarmored
+        if val < 0 or self.item_type(val) != "armor":
             return 0
 
         return self.equip_list[val].max_dex
@@ -542,10 +556,21 @@ class Foundation:
     def del_da(self, quality):
         if quality in self.da:
             self.da.remove(quality)
+    
+    def add_imm(self, elem):
+        if elem not in self.immune:
+            self.immune.append(elem)
+    
+    def del_imm(self, elem):
+        if elem in self.immune:
+            self.immune.remove(elem)
 
 ###################################################################
 #
 # Generic class ability functions
+
+    def evasion(self):
+        return "evasion" in self.da or "improved evasion" in self.da
 
     def trap_sense_bon(self):
         if self.charClass != "Barbarian" and self.charClass != "Rogue":
@@ -663,6 +688,14 @@ class Foundation:
 ###################################################################
 #
 # Monk class ability functions
+
+    def monk_ki_tot(self):
+        if self.charClass != "Monk":
+            raise StandardError("Cannot set Monk options for non-Monk")
+        if self.level >= 4:    
+            self.ki_pool = (self.level / 2) + self.stat_bonus(self.wistot())
+        else:
+            self.ki_pool = 0
 
 ###################################################################
 #
@@ -823,6 +856,14 @@ class Foundation:
 
         #############################
         #
+        # Class bonuses
+        
+        if self.charClass == "Monk":
+            self.add_bon(AC_bon,"Wis",self.stat_bonus(self.wistot()))
+            self.add_bon(AC_bon,"monk",self.level / 4)
+
+        #############################
+        #
         # Feat bonuses
 
         self.add_bon(AC_bon,"dodge",self.feat.dodge_bon(self))
@@ -899,6 +940,9 @@ class Foundation:
 
         atk_bon = dict()
         
+        if "Monk" not in self.weap_group(weap):
+            fob = False
+        
         if fob:                                 # flurry of blows BAB
             bab = [i-2 for i in range(self.level, 0, -5)]
             bab.insert(1,self.level-2)
@@ -921,7 +965,10 @@ class Foundation:
         # Stat bonus
 
         if "M" in self.weap_type(weap):
-            self.add_bon(atk_bon,"stat",self.stat_bonus(self.strtot()))
+            if self.feat.weapon_finesse(self) and self.feat.weapon_finesse_weap(self, weap):
+                self.add_bon(atk_bon,"stat",self.stat_bonus(self.dextot()))
+            else:
+                self.add_bon(atk_bon,"stat",self.stat_bonus(self.strtot()))
             self.add_bon(atk_bon,"untyped",self.TWF_pen(weap))
         elif "R" in self.weap_type(weap):
             self.add_bon(atk_bon,"stat",self.stat_bonus(self.dextot()))
@@ -972,7 +1019,10 @@ class Foundation:
 
         cmb = dict()
 
-        self.add_bon(cmb,"BAB",self.bab[0])
+        if "maneuver training" in self.sq:
+            self.add_bon(cmb,"BAB",self.level)
+        else:
+            self.add_bon(cmb,"BAB",self.bab[0])
 
         self.add_bon(cmb,"Str",self.stat_bonus(self.strtot()))
 
@@ -1064,13 +1114,25 @@ class Foundation:
     # CMD functions
 
     def CMD(self, type=None, subtype=None, FF=False, man=None):
+    
         cmd = dict()
 
-        self.add_bon(cmd,"BAB",self.bab[0])
+        if "maneuver training" in self.sq:
+            self.add_bon(cmd,"BAB",self.level)
+        else:
+            self.add_bon(cmd,"BAB",self.bab[0])
 
         self.add_bon(cmd,"Str",self.stat_bonus(self.strtot()))
 
         self.add_bon(cmd,"Dex",self.stat_bonus(self.dextot()))
+
+        #############################
+        #
+        # Class bonuses
+        
+        if self.charClass == "Monk":
+            self.add_bon(cmd,"Wis",self.stat_bonus(self.wistot()))
+            self.add_bon(cmd,"monk",self.level / 4)
 
         size_bon = 0
 
@@ -1209,6 +1271,9 @@ class Foundation:
 
         if self.charClass == "Barbarian" and self.level >= 7:
             return [self.barbarian_dr(),["-"],""]
+        
+        if self.charClass == "Monk" and self.level >= 20:
+            return [10,["chaotic"],""]
 
         return []
 
@@ -1273,6 +1338,18 @@ class Foundation:
         init += self.feat.improved_initiative_bon(self)
 
         return init
+
+    #############################
+    #
+    # Language functions
+    
+    def add_lang_spec(self, lang):
+        if lang not in self.lang_spec:
+            self.lang_spec.append(lang)
+    
+    def del_lang_spec(self, lang):
+        if lang in self.lang_spec:
+            self.lang_spec.remove(lang)
 
     #############################
     #
@@ -1342,13 +1419,29 @@ class Foundation:
 
         move = self.move
 
-        if "fast movement" in self.sq and self.armor_type() != "Heavy":
-            move += 10
+        if "fast movement" in self.sq:
+            if self.charClass == "Barbarian" and self.armor_type() != "Heavy":
+                move += 10
+            elif self.charClass == "Monk" and self.armor_name() == "":
+                move += (self.level / 3) * 10
 
         if self.has("Exhausted"):
             move /= 2
 
         return move
+
+    #############################
+    #
+    # Spell resistance functions
+    
+    def get_sr(self):
+    
+        sr = 0
+        
+        if self.charClass == "Monk" and self.level >= 13:
+            sr = max(sr, (self.level + 10))
+        
+        return sr
 
     #############################
     #
@@ -1610,14 +1703,17 @@ class Foundation:
     # print_atk_line: prints attack line for a given weapon in standard format, with all current feats and buffs
     #                 pass nofeat=True to not include feat bonuses
 
-    def print_atk_line(self, dist=0, FRA=True, type=None, subtype=None, weap=None, nofeat=False):
+    def print_atk_line(self, dist=0, FRA=True, type=None, subtype=None, weap=None, nofeat=False, fob=False):
 
         if weap == None:
             weap = self.slots["wield"][0]
 
         atk_out = "{} ".format(self.weap_name(weap))
+        
+        if fob:
+            atk_out += "flurry of blows "
 
-        atk_bon = self.get_atk_bon(dist, FRA, type, subtype, weap, nofeat)
+        atk_bon = self.get_atk_bon(dist, FRA, type, subtype, weap, nofeat, fob)
 
         if len(atk_bon) == 1:
             temp = "{:+d}".format(atk_bon[0])
@@ -1629,7 +1725,7 @@ class Foundation:
         crit_rng = self.weap_crit_range(weap)
 
         if crit_rng != 20 or self.weap_crit_mult(weap) != 2:
-            atk_out += ", "
+            atk_out += "/"
             if crit_rng == 20:
                 temp = "20"
             else:
@@ -1671,7 +1767,7 @@ class Foundation:
 class Character(Foundation):
     """NPC stats and data"""
 
-    def __init__(self, name=None, side=1, AC=10, move=30, loc=[0,0], tilesize=[1,1], level=1, charClass="Fighter", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], ambi=False, type="Humanoid", subtype=["human"], size="Medium", reach=5, fort=None, ref=None, will=None, race="Human", hands=2, legs=2, fc=[]):
+    def __init__(self, name=None, side=1, AC=10, move=None, loc=[0,0], tilesize=[1,1], level=1, charClass="Fighter", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], ambi=False, type="Humanoid", subtype=["human"], size="Medium", reach=5, fort=None, ref=None, will=None, race="Human", hands=2, legs=2, fc=[]):
         if fc == []:
             fc = ["s" for i in range(level)]
 
@@ -1681,6 +1777,9 @@ class Character(Foundation):
         self.charClass = charClass
         self.ambi = ambi
         self.fc = fc
+        
+        if move == None:
+            move = 30
 
         save_array = [fort,ref,will]
         save_array = self.set_saves(save_array)
@@ -1697,10 +1796,24 @@ class Character(Foundation):
         self.equip_unarmed()
 
         self.set_class_abilities()
+        self.set_feat_abilities()
 
     def equip_unarmed(self):
 
         self.unarmed = self.equip.Weapon(name="unarmed strike", group=["Monk","Natural"], atk_damage=[1,3])
+        if self.charClass == "Monk":
+            if self.level < 4:
+                self.unarmed.atk_damage = [1,6]
+            elif self.level < 8:
+                self.unarmed.atk_damage = [1,8]
+            elif self.level < 12:
+                self.unarmed.atk_damage = [1,10]
+            elif self.level < 16:
+                self.unarmed.atk_damage = [2,6]
+            elif self.level < 20:
+                self.unarmed.atk_damage = [2,8]
+            else:
+                self.unarmed.atk_damage = [2,10]
         self.unarmed.default = True
 
         self.add_weapon(self.unarmed, active=True)
@@ -1799,18 +1912,77 @@ class Character(Foundation):
                 self.add_sq("armor training {}".format(self.fighter_armor_training()))
             if self.level >= 19:
                 self.add_sq("armor mastery")
-
+        
+        elif self.charClass == "Monk":
+            if "Improved Unarmed Strike" not in self.feat_list:
+                self.feat_list.append("Improved Unarmed Strike")
+            if "Stunning Fist" not in self.feat_list:
+                self.feat_list.append("Stunning Fist")
+            self.add_sa("flurry of blows")
+            if self.level >= 2:
+                if "evasion" in self.da:
+                    self.del_da("evasion")
+                    self.add_da("improved evasion")
+                else:
+                    self.add_da("evasion")
+            if self.level >= 3:
+                self.add_sq("fast movement")
+            if self.level >= 4:
+                self.add_sq("maneuver training")
+                self.monk_ki_tot()
+                self.ki_types.append("magic")
+            if self.level >= 5:
+                self.add_sq("high jump")
+                self.add_sq("purity of body")
+                self.add_imm("disease")
+            if self.level >= 7:
+                self.ki_types.append("cold iron")
+                self.ki_types.append("silver")
+                self.add_sq("wholeness of body")
+            if self.level >= 9:
+                self.del_da("evasion")
+                self.add_da("improved evasion")
+            if self.level >= 10:
+                self.ki_types.append("lawful")
+            if self.level >= 11:
+                self.add_sq("diamond body")
+                self.add_imm("poison")
+            if self.level >= 12:
+                self.add_sq("abundant step")
+            if self.level >= 13:
+                self.add_sq("diamond soul")
+            if self.level >= 15:
+                self.add_sa("quivering palm (1/day, DC {})".format(10 + (self.level / 2) + self.stat_bonus(self.wistot())))
+            if self.level >= 16:
+                self.ki_types.append("adamantine")
+            if self.level >= 17:
+                self.add_sq("timeless body")
+                self.add_lang_spec("tongue of the sun and moon")
+            if self.level >= 19:
+                self.add_sq("empty body")
+            if self.level >= 20:
+                self.add_sq("perfect self")
+                self.type = "Outsider"
+    
+    def set_feat_abilities(self):
+        if self.feat.stunning_fist(self):
+            self.add_sa("stunning fist ({}/day, DC {})".format(self.level if self.charClass == "Monk" else (self.level / 4), 10 + (self.level / 2) + self.stat_bonus(self.wistot())))
 
     def update(self):
 
         self.set_bab()
         self.set_spellcast_stats()
+        if self.charClass == "Monk":
+            self.monk_ki_tot()
+            self.monk_ki_check()
 
     def reset(self):
 
         self.damage = 0
         self.damage_con = "Normal"
+        self.conditions = dict()
         self.loc = self.startloc
+        self.ki_spent = 0
 
     ############################################
 
@@ -1828,13 +2000,25 @@ class Character(Foundation):
             if da_line != "":
                 da_line += "; "
             da_line += "DR {}/{}".format(dr[0],dr[2].join(sorted(dr[1])))
+        if self.immune:
+            if da_line != "":
+                da_line += "; "
+            da_line += "Immune {}".format(", ".join(sorted(self.immune)))   
+        sr = self.get_sr()
+        if sr > 0:
+            if da_line != "":
+                da_line += "; "
+            da_line += "SR {}".format(sr)    
 
         melee_set = []
+        fob_set = []
         if "M" in self.weap_type():
             base_atk_line = self.print_atk_line(nofeat=True)
             if self.has_offhand():
                 base_atk_line += ", " + self.print_atk_line(nofeat=True,weap=self.slots["wield"][1])
             melee_set.append(base_atk_line)
+            if "Monk" in self.weap_group() and self.charClass == "Monk":
+                fob_set.append(self.print_atk_line(nofeat=True,fob=True))
         for weapon in self.melee_weaps:
             if weapon == self.slots["wield"][0] or weapon == self.slots["wield"][1]:
                 continue
@@ -1842,17 +2026,26 @@ class Character(Foundation):
                 if len(self.melee_weaps) > 1 and self.charClass != "Monk":
                     continue
             melee_set.append(self.print_atk_line(weap=weapon,nofeat=True))
+            if "Monk" in self.weap_group(weapon) and self.charClass == "Monk":
+                fob_set.append(self.print_atk_line(weap=weapon,nofeat=True,fob=True))
+        melee_set += fob_set
         for i in range(len(melee_set[0:-1])):
             melee_set[i] += " or"
 
         ranged_set = []
+        fob_set = []
         if "R" in self.weap_type():
             base_atk_line = self.print_atk_line(nofeat=True)
             ranged_set.append(base_atk_line)
+            if "Monk" in self.weap_group() and self.charClass == "Monk":
+                fob_set.append(self.print_atk_line(nofeat=True,fob=True))
         for weapon in self.ranged_weaps:
             if weapon == self.slots["wield"][0]:
                 continue
             ranged_set.append(self.print_atk_line(weap=weapon,nofeat=True))
+            if "Monk" in self.weap_group(weapon) and self.charClass == "Monk":
+                fob_set.append(self.print_atk_line(weap=weapon,nofeat=True,fob=True))
+        ranged_set += fob_set    
         for i in range(len(ranged_set[0:-1])):
             ranged_set[i] += " or"
         ranged_line = "Ranged {}".format(" or ".join(ranged_set))
@@ -1896,7 +2089,13 @@ class Character(Foundation):
         out.append(separator)
         out.append(wordwrap.fill("Str {}, Dex {}, Con {}, Int {}, Wis {}, Cha {}".format(*stats)))
         out.append(wordwrap.fill("Base Atk {:+d}; CMB {:+d}; CMD {}".format(self.bab[0],self.CMB(),self.CMD())))
-        out.append(wordwrap.fill(wordwrap.fill("Feats {}".format(', '.join(sorted(self.feat_list))))))
+        out.append(wordwrap.fill("Feats {}".format(', '.join(sorted(self.feat_list)))))
+        lang_list = ", ".join(sorted(self.lang))
+        if lang_list:
+            lang_list += "; "
+        lang_list += ", ".join(sorted(self.lang_spec))
+        if lang_list:
+            out.append(wordwrap.fill("Languages {}".format(lang_list)))
         if self.sq:
             out.append(wordwrap.fill("SQ {}".format(", ".join(sorted(self.sq)))))
         out.append(separator)
