@@ -976,7 +976,7 @@ class Foundation:
             if self.feat.weapon_finesse(self) and self.feat.weapon_finesse_weap(self, weap):
                 self.add_bon(atk_bon,"stat",self.stat_bonus(self.dextot()))
                 if self.has_shield():
-                    self.add_bon(adk_bon,"shield",self.shield_armor_check())
+                    self.add_bon(atk_bon,"shield",self.shield_armor_check())
             else:
                 self.add_bon(atk_bon,"stat",self.stat_bonus(self.strtot()))
             self.add_bon(atk_bon,"untyped",self.TWF_pen(weap))
@@ -1035,11 +1035,11 @@ class Foundation:
             self.add_bon(cmb,"BAB",self.bab[0])
         
         if self.feat.weapon_finesse(self) and self.feat.weapon_finesse_weap(self, weap) and man in ["Disarm","Sunder","Trip"]:
-            self.add_bon(atk_bon,"stat",self.stat_bonus(self.dextot()))
+            self.add_bon(cmb,"stat",self.stat_bonus(self.dextot()))
             if self.has_shield():
-                self.add_bon(adk_bon,"shield",self.shield_armor_check())
+                self.add_bon(cmb,"shield",self.shield_armor_check())
         else:
-            self.add_bon(atk_bon,"stat",self.stat_bonus(self.strtot()))
+            self.add_bon(cmb,"stat",self.stat_bonus(self.strtot()))
 
         size_bon = 0
 
