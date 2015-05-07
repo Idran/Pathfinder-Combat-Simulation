@@ -2,6 +2,7 @@ class Combat:
     """Combat round processing"""
 
     import random
+    import sys
 
     def __init__(self):
         self.fighters = []
@@ -12,6 +13,17 @@ class Combat:
         self.combatlog = []
         self.round = 1
         self.has_acted = dict()
+        
+    def __sizeof__(self):
+        return object.__sizeof__(self) + \
+            sum(sys.getsizeof(v) for v in self.__dict__.values())
+    
+    def clear_out(self):
+        for fighter in self.fighters:
+            self.mat.remove_token(fighter)
+            del fighter
+         
+        del self.mat
 
     def log(self,entry=""):
         self.combatlog.append(entry)
@@ -23,6 +35,7 @@ class Combat:
         if fighter.name in self.fighternames:
             raise StandardError("Fighter named {} already fighting".format(fighter.name))
 
+        fighter.set_ai(self.mat)
         fighter.target = None
         self.set_targeting(fighter, "Closest")
         self.set_tactic(fighter, "Attack")
@@ -52,31 +65,14 @@ class Combat:
         self.mat = mat
 
     def set_tactic(self, fighter, tactic):
-        fighter.tactic = tactic
+        fighter.set_tactic(tactic)
 
     def set_targeting(self, fighter, targeting):
-        fighter.targeting = targeting
-
-    def set_target(self, fighter1, fighter2):
-        self.log("{} targets {}".format(fighter1.name, fighter2.name))
-        fighter1.target = fighter2
+        fighter.set_targeting(targeting)
 
     def clear_target(self, fighter):
         self.log("{} targets no one".format(fighter.name))
         fighter.target = None
-    
-    def check_threat(self, fighter, tile):
-        threat = False
-        for foe in self.fighters:
-            if foe.side == fighter.side:
-                continue
-            
-            if tile in self.threat_tiles[foe.name] and self.can_attempt_aoo(foe):
-                threat = True
-        
-        return threat
-
-        # Note: current test only works for 1x1 combatants, fix in future
 
     def check_for_aoo(self, fighter, tile):
         for foe in self.fighters:
@@ -137,61 +133,36 @@ class Combat:
 
             #############################
             #
-            # Determine target if necessary
-
-            if fighter.target in self.defeated:
-                self.clear_target(fighter)
-
-            if fighter.target == None:
-                if fighter.targeting == "Closest":
-                    self.log("{} targets closest enemy".format(fighter.name))
-                    target_dist = 20000
-                    pot_target = None
-
-                    for other in self.fighters:
-                        if other.side != fighter.side:
-                            other_dist = self.mat.dist_tile(fighter.loc, other.loc)
-                            if other_dist < target_dist:
-                                target_dist = other_dist
-                                pot_target = other
-
-                    if pot_target != None:
-                        self.set_target(fighter,pot_target)
-                    else:
-                        self.log("{0} has no target; {0} does nothing".format(fighter.name))
-                        continue
-
-            dist_to_target = self.mat.dist_ft(fighter.loc, fighter.target.loc)
-            self.log("Distance from {} to {}: {} ft.".format(fighter.name, fighter.target.name, dist_to_target))
-
+            # Run AI routine
+            
+            result = fighter.ai.act()
+            
+            self.combatlog += result[1]
+            
             survive = True
-            tactic = fighter.tactic.split(',')
-
-            #############################
-            #
-            # Perform set action
-
-            ###########################################
-
-            if tactic[0] == "Attack":
-
-                survive = self.move_attack(fighter, fighter.target)
-
-            ###########################################
-
-            elif tactic[0] == "Close":
-
-                survive = self.close_attack(fighter, fighter.target)
-
-            ###########################################
-
-            elif tactic[0] == "Maneuver":
-
-                survive = self.maneuver_attack(fighter, fighter.target, tactic[1])
-
-            else:
-
-                pass
+            
+            for action in result[0]:
+                if action[0] == "end":
+                    pass
+                elif action[0] == "move":
+                    survive = self.move_path(fighter, action[1])
+                    if not survive:
+                        break
+                elif action[0] == "attack":
+                    self.attack(fighter, fighter.target, action[1])
+                elif action[0] == "stand":
+                    self.log("{} stands up".format(fighter.name))
+                    fighter.drop_condition("Prone")
+                    self.check_for_aoo(fighter, fighter.loc)
+                    if self.check_death(fighter):
+                        break
+                elif action[0] == "swap":
+                    fighter.set_weap(action[1])
+                    self.log("{} switches weapons to {}".format(fighter.name,fighter.weap_name()))
+                elif action[0] == "disarm":
+                    self.disarm(fighter, target)
+                elif action[0] == "trip":
+                    self.trip(fighter, target)
 
             if not survive:
                 continue
@@ -258,28 +229,6 @@ class Combat:
     #
     # Attack functions
 
-    def move(self, fighter, target, move=1, nolog=False):
-    
-        tot_moved = 0
-
-        for moves in range(move):
-            if fighter.has("Prone") and (not self.check_threat(fighter, fighter.loc) or ("R" in fighter.weap_type() and "Crossbows" not in fighter.weap_group())):
-                self.log("{} stands up".format(fighter.name))
-                fighter.drop_condition("Prone")
-                self.check_for_aoo(fighter, fighter.loc)
-                if self.check_death(fighter):
-                    return -1
-                tot_moved += 1
-            else:
-                new_move = self.move_to_target(fighter, target, nolog)
-                if new_move == -1:
-                    self.log("Cannot reach target")
-                    self.log()
-                    return 0
-                else:
-                    tot_moved += new_move
-        return tot_moved
-
     def attack(self, fighter, target, FRA=False):
         if fighter.has("Prone") and "R" in fighter.weap_type() and "Crossbows" not in fighter.weap_group():
             self.log("{0} cannot attack; {0} is Prone".format(fighter.name))
@@ -322,9 +271,6 @@ class Combat:
             return True    
         else:
             return False
-    
-    def can_trip(self, target):
-        return target.type not in ["Ooze"] and target.legs > 0 and not target.has("Prone")
         
     def trip(self, fighter, target):
         dist_to_target = self.mat.dist_ft(fighter.loc, target.loc)
@@ -345,99 +291,6 @@ class Combat:
             return True    
         else:
             return False  
-
-    #############################
-    #
-    # move_attack (Attack): Move towards target if necessary. If fighter can attack, do so, otherwise move again.
-
-    def move_attack(self, fighter, target, move=1, FRA=True):
-
-        tot_moved = self.move(fighter, target, move)
-        if tot_moved == -1:
-            return False
-        elif tot_moved == 0:
-            self.log_del()
-        else:
-            FRA = False
-
-        if self.mat.can_attack(fighter, target):
-            self.attack(fighter, target, FRA)
-            return True
-        else:
-            return self.move(fighter, target, 1, nolog=True)
-
-    #############################
-    #
-    # close_attack (Close): Switch to best ranged weapon (if any) and run move_attack. Once within melee range, switch to best melee weapon and run move_attack.
-
-    def close_attack(self, fighter, target, move=1):
-
-        ranged = fighter.best_ranged_weap(target)
-        melee = fighter.best_melee_weap(target)
-        curr_weap = fighter.curr_weap()
-        FRA = True
-
-        fighter.set_weapon(melee)
-
-        if not ranged or self.mat.threaten(fighter, target):
-            if curr_weap != melee:
-                self.log("{} switches weapons to {}".format(fighter.name,fighter.weap_name()))
-                if fighter.weap_swap() == "move":
-                    if fighter.bab[0] == 0:
-                        move -= 1
-                    else:
-                        FRA = False
-            return self.move_attack(fighter, target, move, FRA)
-        else:
-            fighter.set_weapon(ranged)
-            if curr_weap != ranged:
-                self.log("{} switches weapons to {}".format(fighter.name,fighter.weap_name()))
-                if fighter.weap_swap() == "move":
-                    if fighter.bab[0] == 0:
-                        move -= 1
-                    else:
-                        FRA = False
-            return self.move_attack(fighter, target, move, FRA)
-
-    #############################
-    #
-    # maneuver_attack (Maneuver,mans): Melee-only. Close to target.  Once in melee range: use passed maneuvers in passed priority order if possible; otherwise, attack target.
-
-    def maneuver_attack(self, fighter, target, mans, move=1):
-    
-        FRA = True
-        
-        melee = fighter.best_melee_weap(target)
-        curr_weap = fighter.curr_weap()
-        
-        if fighter.weap_name() == "unarmed strike" and curr_weap != melee:
-            self.log("{} switches weapons to {}".format(fighter.name,fighter.weap_name()))
-            if fighter.weap_swap() == "move":
-                if fighter.bab[0] == 0:
-                    move -= 1
-                else:
-                    FRA = False
-
-
-        tot_moved = self.move(fighter, target, move)
-        if tot_moved == 0:
-            self.log_del()
-        elif tot_moved < 0:
-            return False
-        else:
-            FRA = False
-
-        if self.mat.can_attack(fighter, target):
-            man_list = list(mans)
-            for man in man_list:
-                if man == "d" and target.has_weapon() and fighter.weap_disarm():
-                    return self.disarm(fighter, target)
-                elif man == "t" and self.can_trip(target) and fighter.weap_trip():
-                    return self.trip(fighter, target)
-            self.attack(fighter, target, FRA)
-            return True
-        else:
-            return self.move(fighter, target, 1, nolog=True)
 
 ###################################################################
 #

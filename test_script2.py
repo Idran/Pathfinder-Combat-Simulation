@@ -3,6 +3,8 @@ import character
 import combat
 import equip
 import items
+import sys
+import time
 
 jaya = character.Character(charClass="Bard", level=10, str=11, dex=18, con=14, int=13, wis=10, cha=16, feat_list=["Improved Initiative", "Point-Blank Shot", "Precise Shot", "Bullseye Shot", "Rapid Shot", "Arcane Strike"], ambi=True, name="Jaya", loc=[1,2], hp=67, AC=19)
 
@@ -82,10 +84,6 @@ test_barb1.set_rage()
 
 ##########################################################
 
-mat = battlemat.Battlemat()
-mat.add_token(test_ftr1_2h)
-#mat.add_token(monster)
-mat.add_token(test_barb1)
 
 test_ftr1_count = 0
 test_ftr1_hp = 0
@@ -108,10 +106,17 @@ print "{}: AC {} ({})".format(test_ftr1_2h.name,test_ftr1_2h.get_AC(),test_ftr1.
 print "{}: AC {} ({})".format(test_barb1.name,test_barb1.get_AC(),test_barb1.print_AC_bons())
 print ""
 
+temp = time.clock()
+
 for i in range(num_combat):
     test_ftr1_2h.reset()
 #    monster.reset()
     test_barb1.reset()
+    
+    mat = battlemat.Battlemat()
+    mat.add_token(test_ftr1_2h)
+    #mat.add_token(monster)
+    mat.add_token(test_barb1)
 
     fight = combat.Combat()
     fight.set_mat(mat)
@@ -136,6 +141,19 @@ for i in range(num_combat):
         test_barb1_count = test_barb1_count + 1
         test_barb1_hp = test_barb1_hp + test_barb1.get_hp() - test_barb1.damage
         test_barb1_round = test_barb1_round + fight.round - 1
+        
+#    if i % 100 == 0:
+#        print "i: {}".format(i)
+#        print "ftr1_2h refs: {}".format(sys.getrefcount(test_ftr1_2h))
+#        print "barb1 refs: {}".format(sys.getrefcount(test_barb1))
+#        print "mat refs: {}".format(sys.getrefcount(mat))
+#        print "fight refs: {}".format(sys.getrefcount(fight))
+#        print "fight size: {}".format(sys.getsizeof(fight))
+    
+#    fight.clear_out()
+    
+#    del fight
+#    del mat
 
 test_ftr1_hp = (test_ftr1_hp / test_ftr1_count) if test_ftr1_count > 0 else "N/A"
 test_ftr1_round = (test_ftr1_round / test_ftr1_count) if test_ftr1_count > 0 else "N/A"
@@ -158,3 +176,5 @@ print "Average HP when victorious: {}".format(test_barb1_hp)
 print "Average rounds before end: {}\n".format(test_barb1_round)
 #print "Sample combat log:\n"
 #print fight.output_log()
+print
+print  "Time elapsed: {} seconds".format(time.clock())

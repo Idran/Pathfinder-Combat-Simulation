@@ -6,11 +6,18 @@ class Tile:
         self.tilesize = tilesize
 
 class Battlemat:
+
+    import sys
+    
     """Combat map class"""
 
     def __init__(self):
         self.tokens = []
         self.items = []
+        
+    def __sizeof__(self):
+        return object.__sizeof__(self) + \
+            sum(sys.getsizeof(v) for v in self.__dict__.values())
 
 ###################################################################
 #
@@ -22,6 +29,12 @@ class Battlemat:
 
         self.tokens.append(token)
         return token
+    
+    def remove_token(self,token):
+        if "loc" not in dir(token):
+            return None
+        
+        self.tokens.remove(token)
     
     def add_item(self, item, loc):
         self.items.append([item,loc])
@@ -110,6 +123,20 @@ class Battlemat:
         overlap = set(threat_tile_list) & set(token_tile_list)
 
         return len(overlap)!=0
+    
+    def check_threat(self, fighter, tile):
+        threat = False
+        for foe in self.tokens:
+            if foe.side == fighter.side:
+                continue
+            
+            if tile in self.threatened_tiles[foe]:
+                threat = True
+                break
+        
+        return threat
+
+        # Note: current test only works for 1x1 combatants, fix in future
 
     def can_attack(self, token1, token2):
         if "M" in token1.weap_type() and not self.threaten(token1, token2):
@@ -161,8 +188,13 @@ class Battlemat:
         return out_tile
 
 
-    def partial_path(self, token1, token2, move=2000):
+    def partial_path(self, token1, token2, move=2000, tile=True, size1=None, size2=None):
         path = []
+        if not tile:
+            orig = token1
+            dest = token2
+            token1 = Tile(orig, size1)
+            token2 = Tile(dest, size2)
         tile = Tile(token1.loc,token1.tilesize)
         tile_dest = Tile(self.closest_token_tile(token1, token2))
         step = self.closest_adj_tile(tile_dest, tile)
@@ -172,6 +204,11 @@ class Battlemat:
             tile.loc = step
             step = self.closest_adj_tile(tile_dest, tile)
             total_move = self.dist_ft(token1.loc, step)
+        if not tile:
+            del token1
+            del token2
+        del tile
+        del tile_dest
 
         return path[:-1]
 

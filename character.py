@@ -5,6 +5,8 @@ class Foundation:
     import equip
     import textwrap
     import feat
+    import ai as ai_class
+    import sys
 
     def __init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands, legs):
         self.name = name
@@ -31,6 +33,8 @@ class Foundation:
         self.will = will
         self.hands = hands
         self.legs = legs
+        
+        self.ai = None
 
         self.bab = 0
         self.arcane = False
@@ -63,6 +67,33 @@ class Foundation:
         self.lang_spec = []
         
         self.dropped = []
+        
+    def __sizeof__(self):
+        return object.__sizeof__(self) + \
+            sum(sys.getsizeof(v) for v in self.__dict__.values())
+
+###################################################################
+#
+# Initialization functions
+
+    def set_ai(self,mat):
+        if self.ai == None:
+            self.ai = self.ai_class.AI(self, mat)
+        else:
+            self.ai.mat = mat
+        
+    def set_tactic(self,tactic):
+        if self.ai == None:
+            pass
+        else:
+            self.ai.set_tactic = tactic
+    
+    def set_targeting(self,target):
+        if self.ai == None:
+            pass
+        else:
+            self.ai.target = target
+        
 
 ###################################################################
 #
@@ -949,7 +980,7 @@ class Foundation:
         atk_bon = dict()
         
         if "Monk" not in self.weap_group(weap):
-            fob = False
+            fob = False                         # just to be safe
         
         if fob:                                 # flurry of blows BAB
             bab = [i-2 for i in range(self.level, 0, -5)]
