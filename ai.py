@@ -44,14 +44,16 @@ class AI:
     
         if self.node == "Ready":
             return self.ready()
-        if self.node == "Attacking":
+        elif self.node == "Attacking":
             return self.attacking()
-        if self.node == "Moving":
+        elif self.node == "Moving":
             return self.moving()
-        if self.node == "Swapping":
+        elif self.node == "Swapping":
             return self.swapping()
-        if self.node == "Targeting":
+        elif self.node == "Targeting":
             return self.targeting()
+        else:
+            pass
 
 ###################################################################
 #
@@ -75,6 +77,9 @@ class AI:
         if self.tactic[0] in ["Attack","Close","Maneuver"]:
             self.node = "Targeting"
             return [[],[]]
+        if self.tactic[0] in ["Nothing"]:
+            self.node = "Decided"
+            return[["end"],[]]
     
     def attacking(self):
         
@@ -147,19 +152,19 @@ class AI:
         act = []
         log = []
         
-        ranged = self.char.best_ranged_weap(target)
-        melee = self.char.best_melee_weap(target)
+        ranged = self.char.best_ranged_weap(self.char.target)
+        melee = self.char.best_melee_weap(self.char.target)
         curr_weap = self.char.curr_weap()
         swap = False
         
         if self.tactic[0] in ["Close"]:
             if not ranged or self.mat.threaten(self.char, self.char.target):
                 if curr_weap != melee:
-                    act.append["swap",melee]
+                    act.append(["swap",melee])
                     swap = True
             else:
                 if curr_weap != ranged:
-                    act.append["swap",ranged]
+                    act.append(["swap",ranged])
                     swap = True
         
         elif self.tactic[0] in ["Maneuver"]:        

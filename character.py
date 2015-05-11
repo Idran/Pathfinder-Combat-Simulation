@@ -86,7 +86,7 @@ class Foundation:
         if self.ai == None:
             pass
         else:
-            self.ai.set_tactic = tactic
+            self.ai.set_tactic(tactic)
     
     def set_targeting(self,target):
         if self.ai == None:
@@ -221,6 +221,14 @@ class Foundation:
 
         return self.equip_list[val].atk_damage
 
+    def weap_avg_dmg(self, val=None):
+        if val == None:
+            val = self.slots["wield"][0]
+        if val < 0 or val == None or self.item_type(val) != "weapon":
+            return self.unarmed.atk_damage
+
+        return self.equip_list[val].avg_dmg()
+
     def weap_range(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
@@ -328,7 +336,17 @@ class Foundation:
             i += self.weap_hands(item)
         
         return list
-
+    
+    def weap_list_all(self):
+        list = []
+        
+        for item in range(len(self.equip_list)):
+            if item != None and self.item_type(item) == "weapon":
+                list.append(item)
+        
+        return list
+        
+    ##################################################################################
 
     def armor_name(self, val=None):
         if val == None:
@@ -390,7 +408,8 @@ class Foundation:
 
     def has_armor(self):
         return self.armor_name() != ""
-
+        
+    ##################################################################################
 
     def shield_name(self, val=None):
         if val == None:
@@ -445,22 +464,70 @@ class Foundation:
 
 ###################################################################
 #
-# Weapon selection functions
+# Attack selection functions
 
-    def best_weap(self, target):
-        return self.weap_list[0][0]
+    def avg_weap_dmgs(self, target, dist=0, weap_list=None, FRA=True, prn=False):
+        if weap_list == None:
+            weap_list = self.weap_list_all()
+        
+        avg_dmgs = []
+        
+        for weap_i in weap_list:
+            
+            avg_dmg = 0
+            weap_bon = self.get_atk_bon(dist, FRA, target.type, target.subtype, weap=weap_i)
+            dmg_bon = self.get_base_dmg_bon(dist, target.type, target.subtype, weap=weap_i)
+            AC = target.get_AC(self.type, self.subtype, atk_type=self.weap_type(weap_i))
+            avg_base_dmg = self.weap_avg_dmg(weap_i)
+            
+            for attack in weap_bon:
+                chance_to_hit = (21 - (AC - attack)) / 20.0
+                if chance_to_hit <= 0:
+                    chance_to_hit = 0.05
+                if chance_to_hit >= 1:
+                    chance_to_hit = 0.95
+                chance_to_threat = (21 - self.weap_crit_range(weap_i)) / 20.0
+                if chance_to_threat <= 0:
+                    chance_to_threat = 0.05
+                if chance_to_threat >= chance_to_hit:
+                    chance_to_threat = chance_to_hit
+                
+                avg_hit_dmg = avg_base_dmg + dmg_bon
+                
+                avg_crit_bonus_dmg = avg_base_dmg * (self.weap_crit_mult(weap_i) - 1)
+                
+                avg_dmg += (chance_to_hit * avg_hit_dmg) + (chance_to_threat * chance_to_hit * avg_crit_bonus_dmg)
+            
+            avg_dmgs.append([weap_i,avg_dmg])
+            
+        avg_dmgs.sort(key=lambda i: i[1], reverse=True)
+        
+        if not prn:
+            return avg_dmgs
+        else:
+            output_list = dict()
+            for [weap,avg] in avg_dmgs:
+                output_list[self.weap_name(weap)] = avg
+            
+            return output_list
+                
+    def best_weap(self, target, dist=0, weap_list=None, FRA=True):
+        if weap_list == None:
+            weap_list = self.weap_list()
+        
+        return self.avg_weap_dmgs(target, dist, weap_list, FRA)[0][0]
 
-    def best_melee_weap(self, target):
+    def best_melee_weap(self, target, dist=0, FRA=True):
         if not self.melee_weaps:
             return None
         else:
-            return self.melee_weaps[-1]
+            return self.best_weap(target, dist, self.melee_weaps, FRA)
 
-    def best_ranged_weap(self, target):
+    def best_ranged_weap(self, target, dist=0, FRA=True):
         if not self.ranged_weaps:
             return None
         else:
-            return self.ranged_weaps[-1]
+            return self.best_weap(target, dist, self.ranged_weaps, FRA)
 
 ###################################################################
 #
@@ -1613,6 +1680,9 @@ class Foundation:
             for i in range(self.weap_dmg(weap)[0]):
                 dmg = dmg + self.random.randint(1,self.weap_dmg(weap)[1])
             dmg = dmg + dmg_bon
+
+        if dmg < 0:
+            dmg = 0
 
         return dmg
 

@@ -108,11 +108,13 @@ class Combat:
         self.log(self.output_init())
 
     def check_death(self, fighter):
-         if fighter.damage_con != "Normal":
+        if fighter == None:
+            return False
+        if fighter.damage_con != "Normal":
             self.log("{} is {}".format(fighter.name, fighter.damage_con))
             self.disable_fighter(fighter)
             return True
-         return False
+        return False
 
     def combat_round(self):
         self.log("\nRound {}\n".format(self.round))
@@ -157,7 +159,7 @@ class Combat:
                     if self.check_death(fighter):
                         break
                 elif action[0] == "swap":
-                    fighter.set_weap(action[1])
+                    fighter.set_weapon(action[1])
                     self.log("{} switches weapons to {}".format(fighter.name,fighter.weap_name()))
                 elif action[0] == "disarm":
                     self.disarm(fighter, target)

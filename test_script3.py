@@ -84,67 +84,60 @@ test_barb1.set_rage()
 
 ##########################################################
 
-test_ftr1_count = 0
-test_ftr1_hp = 0
-test_ftr1_round = 0
-monster_count = 0
-monster_hp = 0
-monster_round = 0
-test_barb1_count = 0
-test_barb1_hp = 0
-test_barb1_round = 0
+training_dummy = character.Character(charClass="Fighter", level=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], name="Training Dummy", loc=[1,3], hp=100000, side=2)
 
-num_combat = 10000
+##########################################################
+
+
 
 print "{}: {}".format(test_ftr1_2h.name,test_ftr1_2h.print_all_atks())
 #print "{}: {}".format(monster.name,monster.print_atk_line())
-print "{}: {}".format(test_barb1.name,test_barb1.print_all_atks())
+print "{}: {}".format(training_dummy.name,training_dummy.print_all_atks())
 print ""
 print "{}: AC {} ({})".format(test_ftr1_2h.name,test_ftr1_2h.get_AC(),test_ftr1.print_AC_bons())
 #print "{}: AC {} ({})".format(monster.name,monster.get_AC(),monster.print_AC_bons())
-print "{}: AC {} ({})".format(test_barb1.name,test_barb1.get_AC(),test_barb1.print_AC_bons())
+print "{}: AC {} ({})".format(training_dummy.name,training_dummy.get_AC(),training_dummy.print_AC_bons())
 print ""
 
 temp = time.clock()
-
-for i in range(num_combat):
-    test_ftr1_2h.reset()
-#    monster.reset()
-    test_barb1.reset()
+stat = "Str"
+stat_track = []
+for i in range(20):
+    test_round = 0
     
+    test_ftr1_2h.reset()
+    #    monster.reset()
+    #test_barb1.reset()
+    training_dummy.reset()
+
     mat = battlemat.Battlemat()
     mat.add_token(test_ftr1_2h)
     #mat.add_token(monster)
-    mat.add_token(test_barb1)
+    #mat.add_token(test_barb1)
+    mat.add_token(training_dummy)
 
     fight = combat.Combat()
     fight.set_mat(mat)
     fight.add_fighter(test_ftr1_2h)
-    fight.add_fighter(test_barb1)
+    #fight.add_fighter(test_barb1)
+    fight.add_fighter(training_dummy)
+
 
     fight.set_tactic(test_ftr1_2h,"Attack")
     fight.set_tactic(test_barb1,"Close")
-    
+    fight.set_tactic(training_dummy,"Nothing")
+
     fight.set_init()
 
-    while not fight.check_combat_end() and fight.round < 50:
+    while not fight.check_combat_end():
        fight.combat_round()
 
-    if test_ftr1_2h in fight.fighters:
-        test_ftr1_count = test_ftr1_count + 1
-        test_ftr1_hp = test_ftr1_hp + test_ftr1_2h.get_hp() - test_ftr1_2h.damage
-        test_ftr1_round = test_ftr1_round + fight.round - 1
+    test_round = fight.round - 1
+    
+    stat_track.append([test_ftr1_2h.str, 100000.0 / test_round])    
+    
+    test_ftr1_2h.str += 1
 
-#    if monster in fight.fighters:
-#        monster_count = monster_count + 1
-#        monster_hp = monster_hp + monster.get_hp() - monster.damage
-#        monster_round = monster_round + fight.round - 1
-
-    if test_barb1 in fight.fighters:
-        test_barb1_count = test_barb1_count + 1
-        test_barb1_hp = test_barb1_hp + test_barb1.get_hp() - test_barb1.damage
-        test_barb1_round = test_barb1_round + fight.round - 1
-        
 #    if i % 100 == 0:
 #        print "i: {}".format(i)
 #        print "ftr1_2h refs: {}".format(sys.getrefcount(test_ftr1_2h))
@@ -152,35 +145,20 @@ for i in range(num_combat):
 #        print "mat refs: {}".format(sys.getrefcount(mat))
 #        print "fight refs: {}".format(sys.getrefcount(fight))
 #        print "fight size: {}".format(sys.getsizeof(fight))
-    
+
 #    fight.clear_out()
-    
+
 #    del fight
 #    del mat
 
 time_elapsed = time.clock()
 
-test_ftr1_hp = (test_ftr1_hp / test_ftr1_count) if test_ftr1_count > 0 else "N/A"
-test_ftr1_round = (test_ftr1_round / test_ftr1_count) if test_ftr1_count > 0 else "N/A"
-
-monster_hp = (monster_hp / monster_count) if monster_count > 0 else "N/A"
-monster_round = (monster_round / monster_count) if monster_count > 0 else "N/A"
-
-test_barb1_hp = (test_barb1_hp / test_barb1_count) if test_barb1_count > 0 else "N/A"
-test_barb1_round = (test_barb1_round / test_barb1_count) if test_barb1_count > 0 else "N/A"
-
-print "{} vs. {}, {} iterations:\n".format(test_ftr1_2h.name, test_barb1.name, num_combat)
-print "{}: {:.2%}".format(test_ftr1.name,float(test_ftr1_count) / num_combat)
-print "Average HP when victorious: {}".format(test_ftr1_hp)
-print "Average rounds before end: {}\n".format(test_ftr1_round)
-#print "{}: {:.2%}".format(monster.name,float(monster_count) / num_combat)
-#print "Average HP when victorious: {}".format(monster_hp)
-#print "Average rounds before end: {}\n".format(monster_round)
-print "{}: {:.2%}".format(test_barb1.name,float(test_barb1_count) / num_combat)
-print "Average HP when victorious: {}".format(test_barb1_hp)
-print "Average rounds before end: {}\n".format(test_barb1_round)
+print "{} vs. {}:\n".format(test_ftr1_2h.name, training_dummy.name)
+print "Average damage per round as {} changes:".format(stat)
+print
+for stats in stat_track:
+    print "{}: {:.2f}".format(stats[0],stats[1])
 #print "Sample combat log:\n"
 #print fight.output_log()
 print
 print "Time elapsed: {:.3f} seconds".format(time_elapsed)
-print "Est. time per iteration: {:.3f} seconds".format(time_elapsed / num_combat)

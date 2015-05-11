@@ -122,3 +122,10 @@ while not fight.check_combat_end() and roundcount < 50:
 #        print "Unexpected error: {}".format(sys.exc_info())
 
 print fight.output_log()
+print test_ftr1_2h.get_atk_bon(0, True, test_barb1.type, test_barb1.subtype)
+print test_ftr1_2h.avg_weap_dmgs(test_barb1)
+print test_ftr1_2h.avg_weap_dmgs(test_barb1,prn=True)
+print test_barb1.get_atk_bon(0, True, test_ftr1_2h.type, test_ftr1_2h.subtype)
+print test_barb1.avg_weap_dmgs(test_ftr1_2h)
+print test_barb1.avg_weap_dmgs(test_ftr1_2h,prn=True)
+print test_barb1.equip_list
