@@ -152,8 +152,12 @@ class AI:
         act = []
         log = []
         
-        ranged = self.char.best_ranged_weap(self.char.target)
-        melee = self.char.best_melee_weap(self.char.target)
+        target = self.char.target
+        
+        FRA = (self.moves > 0)
+        
+        ranged = self.char.best_ranged_weap(target, self.mat.dist_ft(self.char.loc, target.loc), FRA)
+        melee = self.char.best_melee_weap(target, self.mat.dist_ft(self.char.loc, target.loc), FRA)
         curr_weap = self.char.curr_weap()
         swap = False
         

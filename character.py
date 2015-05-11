@@ -494,6 +494,9 @@ class Foundation:
                 
                 avg_hit_dmg = avg_base_dmg + dmg_bon
                 
+                if avg_hit_dmg < 0:
+                    avg_hit_dmg = 0
+                
                 avg_crit_bonus_dmg = avg_base_dmg * (self.weap_crit_mult(weap_i) - 1)
                 
                 avg_dmg += (chance_to_hit * avg_hit_dmg) + (chance_to_threat * chance_to_hit * avg_crit_bonus_dmg)
@@ -1042,7 +1045,7 @@ class Foundation:
     #
     # Attack roll functions
 
-    def get_atk_bon(self, dist, FRA, type, subtype, weap=None, nofeat=False, fob=False):
+    def get_atk_bon(self, dist, FRA, type, subtype, weap=None, nofeat=False, offhand=False, fob=False):
 
         atk_bon = dict()
         
@@ -1057,7 +1060,7 @@ class Foundation:
                 if self.level >= 15:
                     bab.insert(5,self.level-12)
                     
-        elif weap == self.slots["wield"][1]:    # offhand BAB
+        elif offhand:                           # offhand BAB
             bab = [self.bab[0]]
             if self.feat.two_weapon_fighting_imp(self):
                 bab.append(self.bab[0]-5)
@@ -1585,7 +1588,9 @@ class Foundation:
         atk_bon = [[] for i in range(len(weapList))]
         
         for i in range(len(atk_bon)):
-            atk_bon[i] = self.get_atk_bon(dist, FRA, type, subtype, fob=fob, weap=weapList[i][0])
+            offhand = (weapList[i][0] != self.slots["wield"][0])
+                
+            atk_bon[i] = self.get_atk_bon(dist, FRA, type, subtype, fob=fob, weap=weapList[i][0], offhand=offhand)
 
         #############################
         #
