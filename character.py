@@ -122,20 +122,24 @@ class Foundation:
 
         return (x_dist in range(0,self.tilesize[0]) and y_dist in range(0,self.tilesize[1]))
 
-    def TWF_pen(self, weap):
+    def TWF_pen(self, weap, bon_calc=False, off=False, light=False):
         
         offhand = self.slots["wield"][1]
         
-        if not self.has_offhand():
+        off = ((weap == offhand and not bon_calc) or off)
+        
+        light = (("L" in self.weap_type(offhand) and not bon_calc) or light)
+        
+        if (not self.has_offhand() and not bon_calc):
             return 0
-        elif weap == offhand:
+        elif off:
             pen = -10
             pen += self.feat.two_weapon_fighting_bon(self)[1]
         else:
             pen = -6
             pen += self.feat.two_weapon_fighting_bon(self)[0]
 
-        if "L" in self.weap_type(offhand):
+        if light:
             pen += 2
 
         return pen
@@ -466,40 +470,47 @@ class Foundation:
 #
 # Attack selection functions
 
-    def avg_weap_dmgs(self, target, dist=0, weap_list=None, FRA=True, prn=False):
+    def avg_weap_dmg(self, weap, target, dist=0, FRA=True, offhand=False, oh_calc=False, light=False):
+            
+        avg_dmg = 0
+        weap_bon = self.get_atk_bon(dist, FRA, target.type, target.subtype, weap=weap, offhand=offhand, bon_calc=oh_calc, light=light)
+        dmg_bon = self.get_base_dmg_bon(dist, target.type, target.subtype, weap=weap, offhand=offhand)
+        AC = target.get_AC(self.type, self.subtype, atk_type=self.weap_type(weap))
+        avg_base_dmg = self.weap_avg_dmg(weap)
+
+        for attack in weap_bon:
+            chance_to_hit = (21 - (AC - attack)) / 20.0
+            if chance_to_hit <= 0:
+                chance_to_hit = 0.05
+            if chance_to_hit >= 1:
+                chance_to_hit = 0.95
+            chance_to_threat = (21 - self.weap_crit_range(weap)) / 20.0
+            if chance_to_threat <= 0:
+                chance_to_threat = 0.05
+            if chance_to_threat >= chance_to_hit:
+                chance_to_threat = chance_to_hit
+
+            avg_hit_dmg = avg_base_dmg + dmg_bon
+
+            if avg_hit_dmg < 0:
+                avg_hit_dmg = 0
+
+            avg_crit_bonus_dmg = avg_base_dmg * (self.weap_crit_mult(weap) - 1)
+            
+            avg_dmg += (chance_to_hit * avg_hit_dmg) + (chance_to_threat * chance_to_hit * avg_crit_bonus_dmg)
+        
+        return avg_dmg
+    
+
+    def avg_weap_dmgs(self, target, dist=0, weap_list=None, FRA=True, offhand=False, prn=False, oh_calc=False, light=False):
         if weap_list == None:
             weap_list = self.weap_list_all()
         
         avg_dmgs = []
         
         for weap_i in weap_list:
-            
-            avg_dmg = 0
-            weap_bon = self.get_atk_bon(dist, FRA, target.type, target.subtype, weap=weap_i)
-            dmg_bon = self.get_base_dmg_bon(dist, target.type, target.subtype, weap=weap_i)
-            AC = target.get_AC(self.type, self.subtype, atk_type=self.weap_type(weap_i))
-            avg_base_dmg = self.weap_avg_dmg(weap_i)
-            
-            for attack in weap_bon:
-                chance_to_hit = (21 - (AC - attack)) / 20.0
-                if chance_to_hit <= 0:
-                    chance_to_hit = 0.05
-                if chance_to_hit >= 1:
-                    chance_to_hit = 0.95
-                chance_to_threat = (21 - self.weap_crit_range(weap_i)) / 20.0
-                if chance_to_threat <= 0:
-                    chance_to_threat = 0.05
-                if chance_to_threat >= chance_to_hit:
-                    chance_to_threat = chance_to_hit
-                
-                avg_hit_dmg = avg_base_dmg + dmg_bon
-                
-                if avg_hit_dmg < 0:
-                    avg_hit_dmg = 0
-                
-                avg_crit_bonus_dmg = avg_base_dmg * (self.weap_crit_mult(weap_i) - 1)
-                
-                avg_dmg += (chance_to_hit * avg_hit_dmg) + (chance_to_threat * chance_to_hit * avg_crit_bonus_dmg)
+                               
+            avg_dmg = self.avg_weap_dmg(weap_i, target, dist, FRA, offhand, oh_calc, light)
             
             avg_dmgs.append([weap_i,avg_dmg])
             
@@ -514,17 +525,143 @@ class Foundation:
             
             return output_list
                 
-    def best_weap(self, target, dist=0, weap_list=None, FRA=True):
+    def best_weap(self, target, dist=0, weap_list=None, FRA=True, offhand=False, dmg_val=False):
         if weap_list == None:
             weap_list = self.weap_list()
         
-        return self.avg_weap_dmgs(target, dist, weap_list, FRA)[0][0]
+        if dmg_val:
+            return self.avg_weap_dmgs(target, dist, weap_list, FRA, offhand=offhand)[0]
+        else:
+            return self.avg_weap_dmgs(target, dist, weap_list, FRA, offhand=offhand)[0][0]
 
-    def best_melee_weap(self, target, dist=0, FRA=True):
+    #############################
+    #
+    # Melee attack selection functions
+
+    def best_melee_weap(self, target, dist=0, FRA=True, dmg_val=False):
         if not self.melee_weaps:
             return None
         else:
-            return self.best_weap(target, dist, self.melee_weaps, FRA)
+            return self.best_weap(target, dist, self.melee_weaps, FRA, dmg_val=dmg_val)
+    
+    def best_mainhand_weap(self, target, dist=0, FRA=True, dmg_val=False):
+        if not self.melee_weaps:
+            return None
+        
+        mainhand_weaps = []
+        
+        for weap in self.weap_list_all():
+            if self.weap_hands(weap) == 1 and "M" in self.weap_type(weap):
+                mainhand_weaps.append(weap)
+        
+        if not mainhand_weaps:
+            return None
+        
+        return self.best_weap(target, dist, mainhand_weaps, FRA, False, dmg_val=dmg_val)
+    
+    def best_twohand_weap(self, target, dist=0, FRA=True, dmg_val=False):
+        if not self.melee_weaps:
+            return None
+        
+        twohand_weaps = []
+        
+        for weap in self.weap_list_all():
+            if self.weap_hands(weap) == 2 and "M" in self.weap_type(weap):
+                twohand_weaps.append(weap)
+        
+        if not twohand_weaps:
+            return None
+        
+        return self.best_weap(target, dist, twohand_weaps, FRA, False, dmg_val=dmg_val)
+    
+    def best_dual_wield(self, target, dist=0, FRA=True, dmg_val=False, prn=False):
+        if len(self.melee_weaps) < 2:
+            return None
+        
+        dw_weaps = []
+        
+        for weap1 in self.weap_list_all():
+            for weap2 in self.weap_list_all():
+                if weap1 == weap2:
+                    continue
+                if self.weap_hands(weap1) == 1 and "M" in self.weap_type(weap1) and self.weap_hands(weap2) == 1 and "M" in self.weap_type(weap2):
+                    dw_weaps.append([weap1,weap2])       
+        
+        if not dw_weaps:
+            return None
+        
+        dw_weaps_dmg = []
+        
+        for [weap1,weap2] in dw_weaps:
+            light = ("L" in self.weap_type(weap2))
+            weap1_dmg = self.avg_weap_dmg(weap1, target, dist, FRA, False, True, light)
+            weap2_dmg = self.avg_weap_dmg(weap1, target, dist, FRA, True, True, light)
+            dw_weaps_dmg.append([[weap1,weap2],weap1_dmg+weap2_dmg])
+            
+        dw_weaps_dmg.sort(key=lambda i: i[1], reverse=True)
+        
+        if not prn:
+            if dmg_val:
+                return dw_weaps_dmg[0]
+            else:
+                return dw_weaps_dmg[0][0]
+        else:
+            output_list = dict()
+            for [weap,avg] in dw_weaps_dmg:
+                if type(weap) is list:
+                    weap_name = self.weap_name(weap[0]) + ' and ' + self.weap_name(weap[1])
+                else:
+                    weap_name = self.weap_name(weap)
+                output_list[weap_name] = avg
+                        
+            return output_list
+    
+    def best_melee_equip(self, target, dist=0, FRA=True, prn=False):
+        if not self.melee_weaps:
+            return None
+        
+        best_opts = []
+        
+        #############################
+        #
+        # One-handed single-weapon attack
+        
+        best_opts.append(self.best_mainhand_weap(target, dist, FRA, True))
+        
+        #############################
+        #
+        # Two-handed single-weapon attack
+        
+        best_opts.append(self.best_twohand_weap(target, dist, FRA, True))
+        
+        #############################
+        #
+        # Dual-wield attack
+        
+        best_opts.append(self.best_dual_wield(target, dist, FRA, True))
+        
+        while None in best_opts:
+            best_opts.remove(None)
+            
+        best_opts.sort(key=lambda i: i[1], reverse=True)
+        
+        if not prn:
+            return best_opts[0][0]
+        else:
+            output_list = dict()
+            for [weap,avg] in best_opts:
+                if type(weap) is list:
+                    weap_name = self.weap_name(weap[0]) + ' and ' + self.weap_name(weap[1])
+                else:
+                    weap_name = self.weap_name(weap)
+                output_list[weap_name] = avg
+                        
+            return output_list
+        
+
+    #############################
+    #
+    # Ranged attack selection functions
 
     def best_ranged_weap(self, target, dist=0, FRA=True):
         if not self.ranged_weaps:
@@ -537,6 +674,10 @@ class Foundation:
 # Value-setting functions
 
     def set_weapon(self, weap_num):
+        if type(weap_num) is list:
+            self.set_weapon(weap_num[0])
+            self.set_off(weap_num[1])
+            
         if self.weap_hands(weap_num) == 1:
             self.slots["wield"][0] = weap_num
             offhand = self.slots["wield"][1]
@@ -1045,7 +1186,7 @@ class Foundation:
     #
     # Attack roll functions
 
-    def get_atk_bon(self, dist, FRA, type, subtype, weap=None, nofeat=False, offhand=False, fob=False):
+    def get_atk_bon(self, dist, FRA, type, subtype, weap=None, nofeat=False, offhand=False, fob=False, bon_calc=False, off=False, light=False):
 
         atk_bon = dict()
         
@@ -1080,7 +1221,7 @@ class Foundation:
                     self.add_bon(atk_bon,"shield",self.shield_armor_check())
             else:
                 self.add_bon(atk_bon,"stat",self.stat_bonus(self.strtot()))
-            self.add_bon(atk_bon,"untyped",self.TWF_pen(weap))
+            self.add_bon(atk_bon,"untyped",self.TWF_pen(weap, bon_calc=bon_calc, off=offhand, light=light))
         elif "R" in self.weap_type(weap):
             self.add_bon(atk_bon,"stat",self.stat_bonus(self.dextot()))
             self.add_bon(atk_bon,"untyped",self.range_pen(dist))
@@ -1317,7 +1458,7 @@ class Foundation:
     #
     # Damage bonus functions
 
-    def get_base_dmg_bon(self, dist, type, subtype, weap=None, nofeat=False):
+    def get_base_dmg_bon(self, dist, type, subtype, weap=None, offhand=False, nofeat=False):
         
         dmg_bon = dict()
 
@@ -1334,7 +1475,7 @@ class Foundation:
         str_bon = self.stat_bonus(self.strtot())
         dex_bon = self.stat_bonus(self.dextot())
 
-        if self.has_offhand() and weap == self.slots["wield"][1]:
+        if self.has_offhand() and not offhand:
             if str_bon > 0:
                 self.add_bon(dmg_bon,"Str",(str_bon / 2))
             else:
@@ -1664,6 +1805,8 @@ class Foundation:
         
         if weap == None:
             weap = self.curr_weap()
+        
+        offhand = (weap != self.slots["wield"][0])
 
         #############################
         #
@@ -1674,7 +1817,7 @@ class Foundation:
         else:
             roll_mult = 1
 
-        dmg_bon = self.get_base_dmg_bon(dist, type, subtype, weap=weap)
+        dmg_bon = self.get_base_dmg_bon(dist, type, subtype, weap=weap, offhand=offhand)
 
         #############################
         #

@@ -157,7 +157,7 @@ class AI:
         FRA = (self.moves > 0)
         
         ranged = self.char.best_ranged_weap(target, self.mat.dist_ft(self.char.loc, target.loc), FRA)
-        melee = self.char.best_melee_weap(target, self.mat.dist_ft(self.char.loc, target.loc), FRA)
+        melee = self.char.best_melee_equip(target, self.mat.dist_ft(self.char.loc, target.loc), FRA)
         curr_weap = self.char.curr_weap()
         swap = False
         
