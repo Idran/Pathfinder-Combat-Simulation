@@ -57,7 +57,7 @@ class Battlemat:
         y_dist = abs(loc1[1] - loc2[1])
 
         straight_dist = abs(x_dist - y_dist)
-        diag_dist = min(x_dist,y_dist) * 3 / 2
+        diag_dist = int(min(x_dist,y_dist) * 3 / 2)
 
         return straight_dist + diag_dist
 
@@ -92,8 +92,8 @@ class Battlemat:
     def threatened_tiles(self, token):
         threat_range = token.threat_range()
         min_threat, max_threat = threat_range
-        min_threat /= 5
-        max_threat /= 5
+        min_threat //= 5
+        max_threat //= 5
 
         corner1 = [token.loc[0] - max_threat, token.loc[1] - max_threat]
         corner2 = [token.loc[0] + token.tilesize[0] + max_threat - 1, token.loc[1] + token.tilesize[1] + max_threat - 1]

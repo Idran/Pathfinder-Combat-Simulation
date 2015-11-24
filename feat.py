@@ -3,7 +3,7 @@ def arcane_strike(self):
 
 def arcane_strike_bon(self):
     if self.arcane:
-        return (self.CL / 5) + 1
+        return int(self.CL / 5) + 1
     else:
         return 0
 
@@ -36,13 +36,13 @@ def deadly_aim(self):
 
 def deadly_aim_bon(self):
     if deadly_aim(self) and "R" in self.weap_type():
-        return ((self.bab[0] / 5) + 1) * 2
+        return int((self.bab[0] / 5) + 1) * 2
     else:
         return 0
 
 def deadly_aim_pen(self):
     if self.deadly_aim:
-        return ((self.bab[0] / 5) + 1) * -1
+        return int((self.bab[0] / 5) + 1) * -1
     else:
         return 0
 
@@ -60,7 +60,7 @@ def favored_defense(self, type="", subtype=""):
 
 def favored_defense_bon(self, type, subtype):
     if favored_defense(self, type, subtype) and type in self.ranger_fe_types():
-        return self.ranger_fe_bon(type) / 2
+        return int(self.ranger_fe_bon(type) / 2)
     else:
         return 0
 
@@ -137,12 +137,12 @@ def power_attack_bon(self, off=False):
     if not power_attack(self):
         return 0
 
-    pa_bon = ((self.bab[0] / 5) + 1) * 2
+    pa_bon = int((self.bab[0] / 5) + 1) * 2
 
     if self.weap_hands() == "2":
-        pa_bon = pa_bon * 3 / 2
+        pa_bon = int(pa_bon * 3 / 2)
     elif off:
-        pa_bon = pa_bon / 2
+        pa_bon = int(pa_bon / 2)
 
     return pa_bon
 
@@ -150,7 +150,7 @@ def power_attack_pen(self):
     if not power_attack(self):
         return 0
 
-    return ((self.bab[0] / 5) + 1) * -1
+    return int((self.bab[0] / 5) + 1) * -1
 
 def point_blank_shot(self):
     return "Point-Blank Shot" in self.feat_list

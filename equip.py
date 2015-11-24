@@ -26,7 +26,7 @@ class Weapon:
         self.trip = trip
 
     def avg_dmg(self):
-        return ((self.atk_damage[0]) + (self.atk_damage[0] * self.atk_damage[1])) / 2 + self.weap_bon
+        return int(((self.atk_damage[0]) + (self.atk_damage[0] * self.atk_damage[1])) / 2 + self.weap_bon)
 
     def fullname(self):
 

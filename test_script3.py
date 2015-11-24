@@ -134,7 +134,7 @@ for i in range(20):
 
     test_round = fight.round - 1
     
-    stat_track.append([test_ftr1_2h.str, 100000.0 / test_round])    
+    stat_track.append([test_ftr1_2h.str, 100000 / test_round])    
     
     test_ftr1_2h.str += 1
 
@@ -161,4 +161,4 @@ for stats in stat_track:
 #print("Sample combat log:\n")
 #print(fight.output_log())
 print
-print "Time elapsed: {:.3f} seconds".format(time_elapsed)
+print("Time elapsed: {:.3f} seconds".format(time_elapsed))

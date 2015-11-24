@@ -1865,7 +1865,7 @@ class Foundation:
         for atk_count,atk_result in enumerate(hit_miss):
             if atk_result == None:
                 continue
-            weap = weap_list[atk_count/10][0]
+            weap = weap_list[atk_count//10][0]
             if atk_result == 0:
                 dmg_vals[atk_count] = 0
                 dmg_list_out[atk_count] = "miss"
