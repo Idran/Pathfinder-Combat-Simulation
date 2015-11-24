@@ -59,4 +59,4 @@ monsterarm.set_bon(1)
 
 monster.add_armor(monsterarm, active=True)
 
-print test_monk1.print_stat_block()
+print(test_monk1.print_stat_block())

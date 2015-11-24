@@ -103,7 +103,7 @@ class Foundation:
         return self.get_hp() - self.damage
 
     def range_pen(self, dist):
-        pen = (dist / self.weap_range()) * -2
+        pen = int(dist / self.weap_range()) * -2
 
         if pen < -10:
             pen = -10
@@ -112,7 +112,7 @@ class Foundation:
 
     def stat_bonus(self, stat):
         if stat >= 0:
-            return (stat - 10) / 2
+            return int((stat - 10) / 2)
         else:
             return 0
 
@@ -188,7 +188,7 @@ class Foundation:
     def weap_basename(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.name
 
         return self.equip_list[val].name
@@ -196,7 +196,7 @@ class Foundation:
     def weap_name(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.fullname()
 
         return self.equip_list[val].fullname()
@@ -204,7 +204,7 @@ class Foundation:
     def weap_group(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.group
 
         return self.equip_list[val].group
@@ -212,7 +212,7 @@ class Foundation:
     def weap_type(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.atk_type
 
         return self.equip_list[val].atk_type
@@ -220,7 +220,7 @@ class Foundation:
     def weap_dmg(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.atk_damage
 
         return self.equip_list[val].atk_damage
@@ -228,7 +228,7 @@ class Foundation:
     def weap_avg_dmg(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.atk_damage
 
         return self.equip_list[val].avg_dmg()
@@ -236,7 +236,7 @@ class Foundation:
     def weap_range(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.range
 
         return self.equip_list[val].range
@@ -244,7 +244,7 @@ class Foundation:
     def weap_crit_range(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             crit_rng = self.unarmed.crit_range
         else:
             crit_rng = self.equip_list[val].crit_range
@@ -257,7 +257,7 @@ class Foundation:
     def weap_crit_mult(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             crit_mult = self.unarmed.crit_mult
         else:
             crit_mult = self.equip_list[val].crit_mult
@@ -270,7 +270,7 @@ class Foundation:
     def weap_bon(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.weap_bon
 
         return self.equip_list[val].weap_bon
@@ -278,7 +278,7 @@ class Foundation:
     def weap_disarm(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.disarm
 
         return self.equip_list[val].disarm
@@ -286,7 +286,7 @@ class Foundation:
     def weap_reach(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.reach
 
         return self.equip_list[val].reach
@@ -294,7 +294,7 @@ class Foundation:
     def weap_trip(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.trip
 
         return self.equip_list[val].trip
@@ -302,7 +302,7 @@ class Foundation:
     def weap_mwk(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.mwk
 
         return self.equip_list[val].mwk
@@ -310,7 +310,7 @@ class Foundation:
     def weap_hands(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
-        if val < 0 or val == None or self.item_type(val) != "weapon":
+        if val == None or val < 0 or self.item_type(val) != "weapon":
             return self.unarmed.hands
 
         return self.equip_list[val].hands
@@ -355,7 +355,7 @@ class Foundation:
     def armor_name(self, val=None):
         if val == None:
             val = self.slots["armor"]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return ""
 
         return self.equip_list[val].fullname()
@@ -363,7 +363,7 @@ class Foundation:
     def armor_type(self, val=None):
         if val == None:
             val = self.slots["armor"]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return ""
 
         return self.equip_list[val].type
@@ -371,7 +371,7 @@ class Foundation:
     def armor_armor_bon(self, val=None):
         if val == None:
             val = self.slots["armor"]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return 0
 
         return self.equip_list[val].armor_bon + self.equip_list[val].ench_bon
@@ -389,7 +389,7 @@ class Foundation:
     def armor_armor_check(self, val=None):
         if val == None:
             val = self.slots["armor"]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return 0
 
         return self.equip_list[val].armor_check
@@ -397,7 +397,7 @@ class Foundation:
     def armor_asf(self, val=None):
         if val == None:
             val = self.slots["armor"]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return 0
 
         return self.equip_list[val].asf
@@ -405,7 +405,7 @@ class Foundation:
     def armor_ench_bon(self, val=None):
         if val == None:
             val = self.slots["armor"]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return 0
 
         return self.equip_list[val].ench_bon
@@ -418,7 +418,7 @@ class Foundation:
     def shield_name(self, val=None):
         if val == None:
             val = self.slots["wield"][1]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return ""
 
         return self.equip_list[val].fullname()
@@ -426,7 +426,7 @@ class Foundation:
     def shield_type(self, val=None):
         if val == None:
             val = self.slots["wield"][1]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return ""
 
         return self.equip_list[val].type
@@ -434,7 +434,7 @@ class Foundation:
     def shield_shield_bon(self, val=None):
         if val == None:
             val = self.slots["wield"][1]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return 0
 
         return self.equip_list[val].shield_bon + self.equip_list[val].ench_bon
@@ -442,7 +442,7 @@ class Foundation:
     def shield_armor_check(self, val=None):
         if val == None:
             val = self.slots["wield"][1]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return 0
 
         return self.equip_list[val].armor_check
@@ -450,7 +450,7 @@ class Foundation:
     def shield_ench_bon(self, val=None):
         if val == None:
             val = self.slots["wield"][1]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return 0
 
         return self.equip_list[val].ench_bon
@@ -458,7 +458,7 @@ class Foundation:
     def shield_hands(self, val=None):
         if val == None:
             val = self.slots["wield"][1]
-        if val < 0 or val == None or self.item_type(val) != "armor":
+        if val == None or val < 0 or self.item_type(val) != "armor":
             return 0
 
         return self.equip_list[val].hands
@@ -686,19 +686,19 @@ class Foundation:
         else:
             offhand = self.slots["wield"][1]
             if offhand and self.weap_hands(offhand) == 1:
-                raise StandardError("Cannot equip two-handed weapon: offhand occupied")
+                raise Exception("Cannot equip two-handed weapon: offhand occupied")
             else:
                 self.slots["wield"][0] = weap_num
                 self.slots["wield"][1] = weap_num
 
     def set_off(self, weap_num, hand=1):
         if self.weap_hands(weap_num) == 2:
-            raise StandardError("Cannot equip two-handed weapon to offhand")
+            raise Exception("Cannot equip two-handed weapon to offhand")
         if hand >= self.hands:
-            raise StandardError("Cannot equip offhand weapon to hand {}: does not exist".format(hand))
+            raise Exception("Cannot equip offhand weapon to hand {}: does not exist".format(hand))
         offhand = self.slots["wield"][hand]
         if offhand and self.weap_hands(offhand) == 2:
-            raise StandardError("Cannot equip offhand weapon: two-handed weapon equipped")
+            raise Exception("Cannot equip offhand weapon: two-handed weapon equipped")
         self.slots["wield"][hand] = weap_num
 
     def set_armor(self, armor_num):
@@ -706,12 +706,12 @@ class Foundation:
 
     def set_shield(self, shield_num, hand=1):
         if hand >= self.hands:
-            raise StandardError("Cannot equip shield to hand {}: does not exist".format(hand))
+            raise Exception("Cannot equip shield to hand {}: does not exist".format(hand))
         elif self.shield_hands(shield_num) == 2 and hand > self.hands:
-            raise StandardError("Cannot equip two-handed shield to hand {}: hand {} does not exist".format(hand, hand+1))
+            raise Exception("Cannot equip two-handed shield to hand {}: hand {} does not exist".format(hand, hand+1))
         offhand = self.slots["wield"][hand]
         if offhand and self.item_type(offhand) == "weapon" and self.weap_hands(offhand) == 2:
-            raise StandardError("Cannot equip shield: two-handed weapon equipped")
+            raise Exception("Cannot equip shield: two-handed weapon equipped")
         self.slots["wield"][hand] = shield_num
         if self.shield_hands(shield_num) == 2:
             self.slots["wield"][hand + 1] = shield_num
@@ -826,7 +826,7 @@ class Foundation:
         if self.charClass != "Barbarian" and self.charClass != "Rogue":
             return 0
         else:
-            return self.level / 3
+            return int(self.level / 3)
 
     def uncanny_dodge(self):
         return "uncanny dodge" in self.da or "improved uncanny dodge" in self.da
@@ -883,7 +883,7 @@ class Foundation:
         # Note: conditional save bonuses not yet implemented
 
     def barbarian_dr(self):
-        return max((self.level - 4) / 3, 0)
+        return max(int((self.level - 4) / 3), 0)
 
 ###################################################################
 #
@@ -892,20 +892,20 @@ class Foundation:
     def fighter_bravery(self):
         if self.charClass != "Fighter":
             return 0
-        return (self.level + 2) / 4
+        return int((self.level + 2) / 4)
 
         # Note: conditional save bonuses not yet implemented
 
     def fighter_armor_training(self):
         if self.charClass != "Fighter":
             return 0
-        return (self.level + 1) / 4
+        return int((self.level + 1) / 4)
 
     def set_fighter_weap_train(self, groups):
         if self.charClass != "Fighter":
-            raise StandardError("Cannot set Fighter options for non-Fighter")
-        if len(groups) != (self.level - 1) / 4:
-            raise StandardError("Wrong number of groups set for Weapon Training")
+            raise Exception("Cannot set Fighter options for non-Fighter")
+        if len(groups) != int((self.level - 1) / 4):
+            raise Exception("Wrong number of groups set for Weapon Training")
         self.ftr_wt = groups
 
         train_text = []
@@ -925,7 +925,7 @@ class Foundation:
 
     def set_fighter_weap_mast(self, weapon):
         if self.charClass != "Fighter":
-            raise StandardError("Cannot set Fighter options for non-Fighter")
+            raise Exception("Cannot set Fighter options for non-Fighter")
         self.ftr_mast = weapon
         self.add_sa("weapon mastery ({})".format(weapon))
 
@@ -941,9 +941,9 @@ class Foundation:
 
     def monk_ki_tot(self):
         if self.charClass != "Monk":
-            raise StandardError("Cannot set Monk options for non-Monk")
+            raise Exception("Cannot set Monk options for non-Monk")
         if self.level >= 4:    
-            self.ki_pool = (self.level / 2) + self.stat_bonus(self.wistot())
+            self.ki_pool = int(self.level / 2) + self.stat_bonus(self.wistot())
         else:
             self.ki_pool = 0
 
@@ -953,10 +953,10 @@ class Foundation:
 
     def set_ranger_favored_enemy(self, types):
         if self.charClass != "Ranger":
-            raise StandardError("Cannot set Ranger options for non-Ranger")
-        tot_bon_count = (self.level * 4 / 5) + 2
+            raise Exception("Cannot set Ranger options for non-Ranger")
+        tot_bon_count = int(self.level * 4 / 5) + 2
         if sum([x[1] for x in types]) != tot_bon_count:
-            raise StandardError("Wrong bonus assignment for Favored Enemy")
+            raise Exception("Wrong bonus assignment for Favored Enemy")
         self.rgr_fe = types
 
         fe_text = []
@@ -1024,7 +1024,7 @@ class Foundation:
         if self.has("Raging"):
             self.add_bon(stat_bon,"morale",self.rage_bon())
 
-        return sum(stat_bon.itervalues())
+        return sum(stat_bon.values())
 
     def dextot(self):
         if self.dex == None:
@@ -1039,7 +1039,7 @@ class Foundation:
         if self.has("Fatigued"):
             self.add_bon(stat_bon,"untyped",-2)
 
-        return sum(stat_bon.itervalues())
+        return sum(stat_bon.values())
 
     def contot(self):
         if self.con == None:
@@ -1052,7 +1052,7 @@ class Foundation:
         if self.has("Raging"):
             self.add_bon(stat_bon,"morale",self.rage_bon())
 
-        return sum(stat_bon.itervalues())
+        return sum(stat_bon.values())
 
     def inttot(self):
         if self.int == None:
@@ -1062,7 +1062,7 @@ class Foundation:
 
         self.add_bon(stat_bon,"stat",self.int)
 
-        return sum(stat_bon.itervalues())
+        return sum(stat_bon.values())
 
     def wistot(self):
         if self.wis == None:
@@ -1072,7 +1072,7 @@ class Foundation:
 
         self.add_bon(stat_bon,"stat",self.wis)
 
-        return sum(stat_bon.itervalues())
+        return sum(stat_bon.values())
 
     def chatot(self):
         if self.cha == None:
@@ -1082,7 +1082,7 @@ class Foundation:
 
         self.add_bon(stat_bon,"stat",self.cha)
 
-        return sum(stat_bon.itervalues())
+        return sum(stat_bon.values())
 
     #############################
     #
@@ -1110,7 +1110,7 @@ class Foundation:
         
         if self.charClass == "Monk":
             self.add_bon(AC_bon,"Wis",self.stat_bonus(self.wistot()))
-            self.add_bon(AC_bon,"monk",self.level / 4)
+            self.add_bon(AC_bon,"monk",int(self.level / 4))
 
         #############################
         #
@@ -1144,7 +1144,7 @@ class Foundation:
         if touch:
             temp_AC_bons = self.get_touch_AC_bons(temp_AC_bons)
 
-        return 10 + sum(temp_AC_bons.itervalues())
+        return 10 + sum(temp_AC_bons.values())
 
     def get_FF_AC_bons(self, temp_AC_bons):
 
@@ -1246,9 +1246,9 @@ class Foundation:
 
         atk_bon = self.get_attack_roll_mods(atk_bon, dist, FRA, type, subtype, weap, nofeat)
 
-        atk_bon_tot = sum(atk_bon.itervalues())
+        atk_bon_tot = sum(atk_bon.values())
 
-        atk_bon_list = map(lambda x: x + atk_bon_tot, bab)
+        atk_bon_list = list(map(lambda x: x + atk_bon_tot, bab))
 
         #############################
         #
@@ -1317,7 +1317,7 @@ class Foundation:
         elif man == "Trip":
             self.add_bon(cmb,"feat",self.improved_trip_bon())
 
-        cmb_tot = sum(cmb.itervalues())
+        cmb_tot = sum(cmb.values())
 
         return cmb_tot
 
@@ -1389,7 +1389,7 @@ class Foundation:
         
         if self.charClass == "Monk":
             self.add_bon(cmd,"Wis",self.stat_bonus(self.wistot()))
-            self.add_bon(cmd,"monk",self.level / 4)
+            self.add_bon(cmd,"monk",int(self.level / 4))
 
         size_bon = 0
 
@@ -1430,7 +1430,7 @@ class Foundation:
             if key in ["circumstance", "deflection", "dodge", "insight", "luck", "morale", "profane", "sacred"]:
                 self.add_bon(cmd,key,AC_bons[key])
 
-        cmd_tot = 10 + sum(cmd.itervalues())
+        cmd_tot = 10 + sum(cmd.values())
 
         return cmd_tot
 
@@ -1477,12 +1477,12 @@ class Foundation:
 
         if self.has_offhand() and not offhand:
             if str_bon > 0:
-                self.add_bon(dmg_bon,"Str",(str_bon / 2))
+                self.add_bon(dmg_bon,"Str",int((str_bon / 2)))
             else:
                 self.add_bon(dmg_bon,"Str",str_bon)
         elif self.weap_hands(weap) == 2 and "R" not in self.weap_type(weap):
             if str_bon > 0:
-                self.add_bon(dmg_bon,"Str",(str_bon * 3 / 2))
+                self.add_bon(dmg_bon,"Str",int((str_bon * 3 / 2)))
             else:
                 self.add_bon(dmg_bon,"Str",str_bon)
         elif self.ambi and "R" in self.weap_type(weap):
@@ -1515,7 +1515,7 @@ class Foundation:
                 if dist <= 30:
                     self.add_bon(dmg_bon,"feat",self.feat.pbs_bon(self))
 
-        return sum(dmg_bon.itervalues())
+        return sum(dmg_bon.values())
 
     #############################
     #
@@ -1617,9 +1617,9 @@ class Foundation:
         speed = self.fort
 
         if speed == "Fast":
-            save = (self.HD / 2) + 2
+            save = int(self.HD / 2) + 2
         else:
-            save = (self.HD / 3)
+            save = int(self.HD / 3)
 
         save_bon = dict()
 
@@ -1627,16 +1627,16 @@ class Foundation:
         self.add_bon(save_bon,"stat",self.stat_bonus(self.contot()))
         self.add_bon(save_bon,"untyped",self.feat.great_fortitude_bon(self))
 
-        return sum(save_bon.itervalues())
+        return sum(save_bon.values())
 
     def get_ref(self):
 
         speed = self.ref
 
         if speed == "Fast":
-            save = (self.HD / 2) + 2
+            save = int(self.HD / 2) + 2
         else:
-            save = (self.HD / 3)
+            save = int(self.HD / 3)
 
         save_bon = dict()
 
@@ -1644,16 +1644,16 @@ class Foundation:
         self.add_bon(save_bon,"stat",self.stat_bonus(self.dextot()))
         self.add_bon(save_bon,"untyped",self.feat.lightning_reflexes_bon(self))
 
-        return sum(save_bon.itervalues())
+        return sum(save_bon.values())
 
     def get_will(self):
 
         speed = self.will
 
         if speed == "Fast":
-            save = (self.HD / 2) + 2
+            save = int(self.HD / 2) + 2
         else:
-            save = (self.HD / 3)
+            save = int(self.HD / 3)
 
         save_bon = dict()
 
@@ -1661,9 +1661,9 @@ class Foundation:
         self.add_bon(save_bon,"stat",self.stat_bonus(self.wistot()))
         self.add_bon(save_bon,"untyped",self.feat.iron_will_bon(self))
         if self.has("Raging"):
-            self.add_bon(save_bon,"morale",self.rage_bon() / 2)
+            self.add_bon(save_bon,"morale",int(self.rage_bon() / 2))
 
-        return sum(save_bon.itervalues())
+        return sum(save_bon.values())
 
     #############################
     #
@@ -1680,7 +1680,7 @@ class Foundation:
             if self.charClass == "Barbarian" and self.armor_type() != "Heavy":
                 move += 10
             elif self.charClass == "Monk" and self.armor_name() == "":
-                move += (self.level / 3) * 10
+                move += int(self.level / 3) * 10
 
         if self.has("Exhausted"):
             move /= 2
@@ -2087,13 +2087,13 @@ class Character(Foundation):
         if self.charClass in ["Barbarian", "Fighter", "Paladin", "Ranger"]:
             self.bab = range(self.level, 0, -5)
         elif self.charClass in ["Bard", "Cleric", "Druid", "Monk", "Rogue"]:
-            self.bab = range(self.level * 3 / 4, 0, -5)
+            self.bab = range(int(self.level * 3 / 4), 0, -5)
             if not self.bab:
-                self.bab = [self.level * 3 / 4]
+                self.bab = [int(self.level * 3 / 4)]
         else:
-            self.bab = range(self.level / 2, 0, -5)
+            self.bab = range(int(self.level / 2), 0, -5)
             if not self.bab:
-                self.bab = [self.level / 2]
+                self.bab = [int(self.level / 2)]
 
     def set_spellcast_stats(self):
 
@@ -2216,7 +2216,7 @@ class Character(Foundation):
             if self.level >= 13:
                 self.add_sq("diamond soul")
             if self.level >= 15:
-                self.add_sa("quivering palm (1/day, DC {})".format(10 + (self.level / 2) + self.stat_bonus(self.wistot())))
+                self.add_sa("quivering palm (1/day, DC {})".format(10 + int(self.level / 2) + self.stat_bonus(self.wistot())))
             if self.level >= 16:
                 self.ki_types.append("adamantine")
             if self.level >= 17:
@@ -2230,7 +2230,7 @@ class Character(Foundation):
     
     def set_feat_abilities(self):
         if self.feat.stunning_fist(self):
-            self.add_sa("stunning fist ({}/day, DC {})".format(self.level if self.charClass == "Monk" else (self.level / 4), 10 + (self.level / 2) + self.stat_bonus(self.wistot())))
+            self.add_sa("stunning fist ({}/day, DC {})".format(self.level if self.charClass == "Monk" else int(self.level / 4), 10 + int(self.level / 2) + self.stat_bonus(self.wistot())))
 
     def update(self):
 
@@ -2395,13 +2395,13 @@ class Monster(Foundation):
         if self.type in ["Construct", "Dragon", "Magical Beast", "Monstrous Humanoid", "Outsider"]:
             self.bab = range(self.HD, 0, -5)
         elif self.type in ["Aberration", "Animal", "Humanoid", "Ooze", "Plant", "Undead", "Vermin"]:
-            self.bab = range(self.HD * 3 / 4, 0, -5)
+            self.bab = range(int(self.HD * 3 / 4), 0, -5)
             if not self.bab:
-                self.bab = [self.HD * 3 / 4]
+                self.bab = [int(self.HD * 3 / 4)]
         else:
-            self.bab = range(self.HD / 2, 0, -5)
+            self.bab = range(int(self.HD / 2), 0, -5)
             if not self.bab:
-                self.bab = [self.HD / 2]
+                self.bab = [int(self.HD / 2)]
 
     def set_hit_die(self):
 

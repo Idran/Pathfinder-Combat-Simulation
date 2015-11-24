@@ -90,14 +90,14 @@ training_dummy = character.Character(charClass="Fighter", level=1, str=10, dex=1
 
 
 
-print "{}: {}".format(test_ftr1_2h.name,test_ftr1_2h.print_all_atks())
-#print "{}: {}".format(monster.name,monster.print_atk_line())
-print "{}: {}".format(training_dummy.name,training_dummy.print_all_atks())
-print ""
-print "{}: AC {} ({})".format(test_ftr1_2h.name,test_ftr1_2h.get_AC(),test_ftr1.print_AC_bons())
-#print "{}: AC {} ({})".format(monster.name,monster.get_AC(),monster.print_AC_bons())
-print "{}: AC {} ({})".format(training_dummy.name,training_dummy.get_AC(),training_dummy.print_AC_bons())
-print ""
+print("{}: {}".format(test_ftr1_2h.name,test_ftr1_2h.print_all_atks()))
+#print("{}: {}".format(monster.name,monster.print_atk_line()))
+print("{}: {}".format(training_dummy.name,training_dummy.print_all_atks()))
+print("")
+print("{}: AC {} ({})".format(test_ftr1_2h.name,test_ftr1_2h.get_AC(),test_ftr1.print_AC_bons()))
+#print("{}: AC {} ({})".format(monster.name,monster.get_AC(),monster.print_AC_bons()))
+print("{}: AC {} ({})".format(training_dummy.name,training_dummy.get_AC(),training_dummy.print_AC_bons()))
+print("")
 
 temp = time.clock()
 stat = "Str"
@@ -139,12 +139,12 @@ for i in range(20):
     test_ftr1_2h.str += 1
 
 #    if i % 100 == 0:
-#        print "i: {}".format(i)
-#        print "ftr1_2h refs: {}".format(sys.getrefcount(test_ftr1_2h))
-#        print "barb1 refs: {}".format(sys.getrefcount(test_barb1))
-#        print "mat refs: {}".format(sys.getrefcount(mat))
-#        print "fight refs: {}".format(sys.getrefcount(fight))
-#        print "fight size: {}".format(sys.getsizeof(fight))
+#        print("i: {}".format(i))
+#        print("ftr1_2h refs: {}".format(sys.getrefcount(test_ftr1_2h)))
+#        print("barb1 refs: {}".format(sys.getrefcount(test_barb1)))
+#        print("mat refs: {}".format(sys.getrefcount(mat)))
+#        print("fight refs: {}".format(sys.getrefcount(fight)))
+#        print("fight size: {}".format(sys.getsizeof(fight)))
 
 #    fight.clear_out()
 
@@ -153,12 +153,12 @@ for i in range(20):
 
 time_elapsed = time.clock()
 
-print "{} vs. {}:\n".format(test_ftr1_2h.name, training_dummy.name)
-print "Average damage per round as {} changes:".format(stat)
+print("{} vs. {}:\n".format(test_ftr1_2h.name, training_dummy.name))
+print("Average damage per round as {} changes:".format(stat))
 print
 for stats in stat_track:
-    print "{}: {:.2f}".format(stats[0],stats[1])
-#print "Sample combat log:\n"
-#print fight.output_log()
+    print("{}: {:.2f}".format(stats[0],stats[1]))
+#print("Sample combat log:\n")
+#print(fight.output_log())
 print
 print "Time elapsed: {:.3f} seconds".format(time_elapsed)
