@@ -1,7 +1,7 @@
 import copy
 
 class Spell:
-    """Weapon data structure"""
+    """Spell data structure"""
 
     def __init__(self, name="", level=None, school=None, subschool=[], desc=[], cast_time="std", comp="V", range=0, aim=None, dur=0, save=None, sr=False, effect=None):
         if level == None:
@@ -50,19 +50,19 @@ class Spell:
     def class_parse(self,cls):
     
         if cls == "b":
-            return "bard"
+            return "Bard"
         if cls == "c":
-            return "cleric"
+            return "Cleric"
         if cls == "d":
-            return "druid"
+            return "Druid"
         if cls == "p":
-            return "paladin"
+            return "Paladin"
         if cls == "r":
-            return "ranger"
+            return "Ranger"
         if cls == "s":
-            return "sorcerer"
+            return "Sorcerer"
         if cls == "w":
-            return "wizard"
+            return "Wizard"
         
         return ""
     
