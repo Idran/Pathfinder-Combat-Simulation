@@ -41,7 +41,7 @@ def deadly_aim_bon(self):
         return 0
 
 def deadly_aim_pen(self):
-    if self.deadly_aim:
+    if deadly_aim(self):
         return int((self.bab[0] / 5) + 1) * -1
     else:
         return 0

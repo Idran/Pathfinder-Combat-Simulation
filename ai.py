@@ -6,6 +6,7 @@ class AI:
     
         self.char = char
         self.node = "Ready"
+        self.node_arg = ""
         self.mat = mat
         self.tactic = ["Attack"]
         self.target = "Closest"
@@ -19,6 +20,7 @@ class AI:
     
     def act(self):
         
+        self.node = "Ready"        
         act = []
         log = []
         
@@ -28,8 +30,6 @@ class AI:
             temp = self.pick_action()
             act += temp[0]
             log += temp[1]
-        
-        self.node = "Ready"
         
         return [act,log]
     
@@ -48,8 +48,10 @@ class AI:
             return self.attacking()
         elif self.node == "Moving":
             return self.moving()
-        elif self.node == "Swapping":
-            return self.swapping()
+        elif self.node == "Selecting Attack":
+            return self.selecting_atk()
+        elif self.node == "Special Attack":
+            return self.satk()
         elif self.node == "Targeting":
             return self.targeting()
         else:
@@ -147,39 +149,79 @@ class AI:
         
         return [act,log]
     
-    def swapping(self):
+    def satk(self):
+        
+        act = []
+        log = []
+        
+        if self.node_arg == "fob":
+            if self.moves == 0:
+                act.append(["satk","fob"])
+            
+            self.node = "Decided"
+            act.append(["end"])
+        
+        self.node_arg = ""
+            
+        return [act,log]    
+    
+    def selecting_atk(self):
     
         act = []
         log = []
         
         target = self.char.target
         
-        FRA = (self.moves > 0)
+        FRA = (self.moves == 0)
         
         ranged = self.char.best_ranged_weap(target, self.mat.dist_ft(self.char.loc, target.loc), FRA)
-        melee = self.char.best_melee_equip(target, self.mat.dist_ft(self.char.loc, target.loc), FRA)
-        curr_weap = self.char.curr_weap()
+        
+        melee_opts = self.char.best_melee_opt(target, self.mat.dist_ft(self.char.loc, target.loc), FRA)
+        melee_type = melee_opts[0]
+        melee_weap = melee_opts[1]
+        
+        curr_weap = self.char.weap_list(no_array=True)
+        if len(curr_weap) == 1:
+            curr_weap = curr_weap[0]
+            
         swap = False
         
+        #print("{} current weapon: {}".format(self.char.name, curr_weap))
+        #print("{} best melee: {}".format(self.char.name, melee_opts))
+        #print("{} best ranged: {}".format(self.char.name, ranged))
+        #print("{} tactic: {}".format(self.char.name, self.tactic))
+        #print("{} threatens {}: {}".format(self.char.name,self.char.target.name,self.mat.threaten(self.char, self.char.target)))
+        
+        dist_to_target = self.mat.dist_ft(self.char.loc, target.loc)
+        speed = self.char.get_move()
+        melee_weap_range = self.char.threat_range(melee_weap)
+        
         if self.tactic[0] in ["Close"]:
-            if not ranged or self.mat.threaten(self.char, self.char.target):
-                if curr_weap != melee:
-                    act.append(["swap",melee])
+            #print ("{} is considering Close options".format(self.char.name))
+            if not ranged or (dist_to_target - speed < melee_weap_range[1]):
+                #print("{} is thinking about melee".format(self.char.name))
+                if curr_weap != melee_weap:
+                    act.append(["swap",melee_weap])
                     swap = True
             else:
+                #print("{} is thinking about ranged".format(self.char.name))
                 if curr_weap != ranged:
                     act.append(["swap",ranged])
                     swap = True
         
         elif self.tactic[0] in ["Maneuver"]:        
             if self.char.weap_name() == "unarmed strike" and curr_weap != melee:
-                act.append["swap",melee]
+                act.append["swap",melee_weap]
                 swap = True
             
         if self.mat.can_attack(self.char, self.char.target):
             if swap and self.char.weap_swap() == "move":
                 self.moves += 1
-            self.node = "Attacking"
+            if melee_type == "weap":
+                self.node = "Attacking"
+            else:
+                self.node = "Special Attack"
+                self.node_arg = "fob"
         else:
             if swap and self.char.bab[0] == 0:
                 self.moves += 1
@@ -228,7 +270,7 @@ class AI:
             else:
                 self.node = "Moving"
         elif self.tactic[0] in ["Close","Maneuver"]:
-            self.node = "Swapping"
+            self.node = "Selecting Attack"
         
         return [act,log]
 
@@ -253,7 +295,6 @@ class AI:
         return act
 
     def is_down(self):
-    
         return self.char.has("Prone")
     
     def safe_to_stand(self):

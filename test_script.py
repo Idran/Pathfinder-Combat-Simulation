@@ -88,15 +88,30 @@ test_barb1.set_rage()
 
 ##########################################################
 
+test_monk1 = character.Character(charClass="Monk", level=1, str=12, dex=16, con=10, int=13, wis=15, cha=8, feat_list=["Combat Reflexes", "Dodge", "Improved Unarmed Strike", "Stunning Fist", "Weapon Finesse"], name="Careful Initiate", loc=[4,5], hp=9, ambi=False, side=3)
+
+test_monk1.add_weapon(items.kama.copy())
+test_monk1.add_weapon(items.crossbow_light.copy())
+
+shuriken = items.shuriken.copy()
+shuriken.set_ammo(5)
+
+test_monk1.add_weapon(items.shuriken)
+
+##########################################################
+
+fighter1 = test_monk1
+fighter2 = test_ftr1
+
 print("{}:".format(test_ftr1_2h.name))
-print(test_ftr1_2h.print_AC_line())
-print(test_ftr1_2h.print_save_line())
-print(test_ftr1_2h.print_all_atks())
+print(fighter1.print_AC_line())
+print(fighter1.print_save_line())
+print(fighter1.print_all_atks())
 print("\n\n")
-print("{}:".format(test_barb1.name))
-print(test_barb1.print_AC_line())
-print(test_barb1.print_save_line())
-print(test_barb1.print_all_atks())
+print("{}:".format(fighter2.name))
+print(fighter2.print_AC_line())
+print(fighter2.print_save_line())
+print(fighter2.print_all_atks())
 print("")
 
 mat = battlemat.Battlemat()
@@ -104,11 +119,11 @@ fight = combat.Combat()
 
 fight.set_mat(mat)
 
-fight.add_fighter(test_ftr1_2h)
-fight.add_fighter(test_barb1)
+fight.add_fighter(fighter1)
+fight.add_fighter(fighter2)
 
-fight.set_tactic(test_ftr1_2h,"Attack")
-fight.set_tactic(test_barb1,"Close")
+fight.set_tactic(fighter1,"Close")
+fight.set_tactic(fighter2,"Close")
 
 fight.set_init()
 
@@ -122,16 +137,18 @@ while not fight.check_combat_end() and roundcount < 50:
 #        print("Unexpected error: {}".format(sys.exc_info()))
 
 print(fight.output_log())
-print(test_ftr1_2h.get_atk_bon(0, True, test_barb1.type, test_barb1.subtype))
-print(test_ftr1_2h.avg_weap_dmgs(test_barb1))
-print(test_ftr1_2h.avg_weap_dmgs(test_barb1,prn=True))
-print(test_ftr1_2h.best_dual_wield(test_barb1,prn=True))
-print(test_ftr1_2h.best_melee_equip(test_barb1,prn=True))
-print(test_ftr1_2h.weap_name(test_ftr1_2h.best_melee_weap(test_barb1)))
-print(test_ftr1_2h.weap_name(test_ftr1_2h.best_ranged_weap(test_barb1)))
-print(test_barb1.get_atk_bon(0, True, test_ftr1_2h.type, test_ftr1_2h.subtype))
-print(test_barb1.avg_weap_dmgs(test_ftr1_2h))
-print(test_barb1.avg_weap_dmgs(test_ftr1_2h,prn=True))
-print(test_barb1.best_melee_equip(test_ftr1_2h,prn=True))
-print(test_barb1.weap_name(test_barb1.best_melee_weap(test_ftr1_2h)))
-print(test_barb1.weap_name(test_barb1.best_ranged_weap(test_ftr1_2h)))
+print(fighter1.get_atk_bon(0, True, fighter2.type, fighter2.subtype))
+print(fighter1.avg_weap_dmgs(fighter2))
+print(fighter1.avg_weap_dmgs(fighter2,prn=True))
+print(fighter1.best_dual_wield(fighter2,prn=True))
+print(fighter1.best_melee_equip(fighter2,prn=True))
+print(fighter1.best_melee_opt(fighter2,prn=True))
+print(fighter1.weap_name(fighter1.best_melee_weap(fighter2)))
+print(fighter1.weap_name(fighter1.best_ranged_weap(fighter2)))
+print(fighter2.get_atk_bon(0, True, fighter1.type, fighter1.subtype))
+print(fighter2.avg_weap_dmgs(fighter1))
+print(fighter2.avg_weap_dmgs(fighter1,prn=True))
+print(fighter2.best_melee_equip(fighter1,prn=True))
+print(fighter2.best_melee_opt(fighter1,prn=True))
+print(fighter2.weap_name(fighter2.best_melee_weap(fighter1)))
+print(fighter2.weap_name(fighter2.best_ranged_weap(fighter1)))

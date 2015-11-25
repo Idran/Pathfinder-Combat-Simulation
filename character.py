@@ -329,14 +329,17 @@ class Foundation:
 
     # weap_list: returns list of weapons wielded (as array for future functionality expansion)
     
-    def weap_list(self):
+    def weap_list(self,no_array=False):
         list = []
         i = 0
         
         while i < len(self.slots["wield"]):        # Using while loop in order to vary index step by weapon hands
             item = self.slots["wield"][i]
             if item != None and self.item_type(item) == "weapon":
-                list.append([item])
+                if no_array:
+                    list.append(item)
+                else:
+                    list.append([item])
             i += self.weap_hands(item)
         
         return list
@@ -470,10 +473,10 @@ class Foundation:
 #
 # Attack selection functions
 
-    def avg_weap_dmg(self, weap, target, dist=0, FRA=True, offhand=False, oh_calc=False, light=False):
+    def avg_weap_dmg(self, weap, target, dist=0, FRA=True, offhand=False, oh_calc=False, light=False, fob=False):
             
         avg_dmg = 0
-        weap_bon = self.get_atk_bon(dist, FRA, target.type, target.subtype, weap=weap, offhand=offhand, bon_calc=oh_calc, light=light)
+        weap_bon = self.get_atk_bon(dist, FRA, target.type, target.subtype, weap=weap, offhand=offhand, bon_calc=oh_calc, light=light, fob=fob)
         dmg_bon = self.get_base_dmg_bon(dist, target.type, target.subtype, weap=weap, offhand=offhand)
         AC = target.get_AC(self.type, self.subtype, atk_type=self.weap_type(weap))
         avg_base_dmg = self.weap_avg_dmg(weap)
@@ -502,7 +505,7 @@ class Foundation:
         return avg_dmg
     
 
-    def avg_weap_dmgs(self, target, dist=0, weap_list=None, FRA=True, offhand=False, prn=False, oh_calc=False, light=False):
+    def avg_weap_dmgs(self, target, dist=0, weap_list=None, FRA=True, offhand=False, prn=False, oh_calc=False, light=False, fob=False):
         if weap_list == None:
             weap_list = self.weap_list_all()
         
@@ -510,7 +513,7 @@ class Foundation:
         
         for weap_i in weap_list:
                                
-            avg_dmg = self.avg_weap_dmg(weap_i, target, dist, FRA, offhand, oh_calc, light)
+            avg_dmg = self.avg_weap_dmg(weap_i, target, dist, FRA, offhand, oh_calc, light, fob)
             
             avg_dmgs.append([weap_i,avg_dmg])
             
@@ -525,18 +528,53 @@ class Foundation:
             
             return output_list
                 
-    def best_weap(self, target, dist=0, weap_list=None, FRA=True, offhand=False, dmg_val=False):
+    def best_weap(self, target, dist=0, weap_list=None, FRA=True, offhand=False, dmg_val=False, fob=False):
         if weap_list == None:
             weap_list = self.weap_list()
         
         if dmg_val:
-            return self.avg_weap_dmgs(target, dist, weap_list, FRA, offhand=offhand)[0]
+            return self.avg_weap_dmgs(target, dist, weap_list, FRA, offhand=offhand, fob=fob)[0]
         else:
-            return self.avg_weap_dmgs(target, dist, weap_list, FRA, offhand=offhand)[0][0]
+            return self.avg_weap_dmgs(target, dist, weap_list, FRA, offhand=offhand, fob=fob)[0][0]
 
     #############################
     #
     # Melee attack selection functions
+    
+    def best_melee_opt(self, target, dist=0, FRA=True, prn=False):        
+        melee_opts = []
+        
+        best_weap_val = self.best_melee_equip(target, dist, FRA, dmg_val=True)
+        
+        if best_weap_val:
+            best_weap = ["weap",best_weap_val[0],best_weap_val[1]]
+            melee_opts.append(best_weap)
+        
+        if "flurry of blows" in self.sa and FRA:
+            best_fob_val = self.best_melee_fob(target, dist, FRA, dmg_val=True)
+            
+            if best_fob_val:
+                best_fob = ["fob",best_fob_val[0],best_fob_val[1]]
+                melee_opts.append(best_fob)
+        
+        melee_opts.sort(key=lambda i:i[2], reverse=True)
+        
+        if not prn:
+            return melee_opts[0]
+        else:
+            output_list = dict()
+            for [atk_type,weap,avg] in melee_opts:
+                if atk_type == "weap":
+                    if type(weap) is list:
+                        weap_name = self.weap_name(weap[0]) + ' and ' + self.weap_name(weap[1])
+                    else:
+                        weap_name = self.weap_name(weap)
+                elif atk_type == "fob":
+                    weap_name = self.weap_name(weap) + " flurry of blows"
+                output_list[weap_name] = avg
+                        
+            return output_list       
+        
 
     def best_melee_weap(self, target, dist=0, FRA=True, dmg_val=False):
         if not self.melee_weaps:
@@ -616,7 +654,7 @@ class Foundation:
                         
             return output_list
     
-    def best_melee_equip(self, target, dist=0, FRA=True, prn=False):
+    def best_melee_equip(self, target, dist=0, FRA=True, prn=False, dmg_val=False):
         if not self.melee_weaps:
             return None
         
@@ -646,7 +684,10 @@ class Foundation:
         best_opts.sort(key=lambda i: i[1], reverse=True)
         
         if not prn:
-            return best_opts[0][0]
+            if dmg_val:
+                return best_opts[0]
+            else:
+                return best_opts[0][0]
         else:
             output_list = dict()
             for [weap,avg] in best_opts:
@@ -657,7 +698,25 @@ class Foundation:
                 output_list[weap_name] = avg
                         
             return output_list
+
+    #############################
+    #
+    # Melee class attack selection functions
+    
+    def best_melee_fob(self, target, dist=0, prn=False, dmg_val=False):
+        if not self.melee_weaps:
+            return None
         
+        monk_melee_weaps = []
+        
+        for weap in self.melee_weaps:
+            if "Monk" in self.weap_group(weap):
+                monk_melee_weaps.append(weap)
+        
+        if not monk_melee_weaps:
+            return None
+            
+        return self.best_weap(target, dist, monk_melee_weaps, FRA=True, offhand=False, dmg_val=dmg_val, fob=True)
 
     #############################
     #
@@ -1257,10 +1316,10 @@ class Foundation:
         if not nofeat:
             if "R" in self.weap_type():
                 if FRA:
-                    if self.rapid_shot():
+                    if self.feat.rapid_shot(self):
                         atk_bon_list.insert(0,atk_bon_list[0])
                 else:
-                    atk_bon_list[0] = atk_bon_list[0] + self.bullseye_shot_bon(FRA)
+                    atk_bon_list[0] = atk_bon_list[0] + self.feat.bullseye_shot_bon(self,FRA)
 
         if FRA:
             return atk_bon_list
@@ -1309,13 +1368,13 @@ class Foundation:
         cmb = self.get_attack_roll_mods(cmb, dist, False, type, subtype, weap, nofeat)
         
         if man == "Disarm":
-            self.add_bon(cmb,"feat",self.improved_disarm_bon())
+            self.add_bon(cmb,"feat",self.feat.improved_disarm_bon(self))
             if self.weap_name(weap) == "unarmed strike":
                 self.add_bon(cmb,"untyped",-4)
             if self.weap_disarm():
                 self.add_bon(cmb,"weapon",2)
         elif man == "Trip":
-            self.add_bon(cmb,"feat",self.improved_trip_bon())
+            self.add_bon(cmb,"feat",self.feat.improved_trip_bon(self))
 
         cmb_tot = sum(cmb.values())
 
@@ -1353,7 +1412,7 @@ class Foundation:
                 pass
             elif "R" in self.weap_type():
                 if dist < 30:
-                    self.add_bon(atk_bon,"feat",self.pbs_bon())
+                    self.add_bon(atk_bon,"feat",self.feat.pbs_bon(self))
 
         #############################
         #
@@ -1415,9 +1474,9 @@ class Foundation:
         self.add_bon(cmd,"size",size_bon)
         
         if man == "Disarm":
-            self.add_bon(cmd,"feat",self.improved_disarm_bon())
+            self.add_bon(cmd,"feat",self.feat.improved_disarm_bon(self))
         elif man == "Trip":
-            self.add_bon(cmd,"feat",self.improved_trip_bon())
+            self.add_bon(cmd,"feat",self.feat.improved_trip_bon(self))
             if self.legs > 2:
                 self.add_bon(cmd,"untyped",(self.legs - 2) * 2)
 
@@ -1704,17 +1763,20 @@ class Foundation:
     #
     # Threat range functions
 
-    def threat_range(self):
+    def threat_range(self, val=None):
+        if val == None:
+            val = self.slots["wield"][0]
+            
         tr = [0,0]
 
-        if "M" in self.weap_type():
+        if "M" in self.weap_type(val):
             tr = [5, self.reach]
-            if self.weap_reach():
+            if self.weap_reach(val):
                 tr = [self.reach + 5, self.reach * 2]
         else:
-            if self.snap_shot():
+            if self.feat.snap_shot(self):
                 tr = [5,5]
-            if self.snap_shot_imp():
+            if self.feat.snap_shot_imp(self):
                 tr = [5,15]
 
         return tr
@@ -1857,7 +1919,7 @@ class Foundation:
     def attack(self, targ_AC, dist=5, FRA=True, type=None, subtype=None, fob=False):
 
         dmg = 0
-        hit_miss = self.check_attack(targ_AC, dist, FRA, type, subtype, fob)
+        hit_miss = self.check_attack(targ_AC, dist, FRA, type, subtype, fob=fob)
         dmg_vals = [0 for i in hit_miss]
         dmg_list_out = [None for i in hit_miss]
 
@@ -1977,7 +2039,7 @@ class Foundation:
         if fob:
             atk_out += "flurry of blows "
 
-        atk_bon = self.get_atk_bon(dist, FRA, type, subtype, weap, nofeat, fob)
+        atk_bon = self.get_atk_bon(dist, FRA, type, subtype, weap, nofeat, fob=fob)
 
         if len(atk_bon) == 1:
             temp = "{:+d}".format(atk_bon[0])
@@ -2003,6 +2065,17 @@ class Foundation:
         atk_out += ")"
 
         return atk_out
+    
+    # print_fob: prints flurry atk line for current weapon
+    
+    def print_fob(self, dist=0, type=None, subtype=None, nofeat=False):
+        weap_list = self.weap_list()
+        output = ["" for i in range(len(weap_list))]
+        
+        for i,weap in enumerate(weap_list):
+            output[i] = self.print_atk_line(dist, FRA, type, subtype, weap[0], nofeat, fob=True)
+        
+        return '; '.join(output)
 
     # print_HD: prints hit dice of character in standard format
     

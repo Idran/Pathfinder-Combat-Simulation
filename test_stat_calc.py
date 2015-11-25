@@ -33,7 +33,7 @@ test_barb1.set_rage()
 
 ##########################################################
 
-test_monk1 = character.Character(charClass="Monk", level=20, str=12, dex=16, con=10, int=13, wis=15, cha=8, feat_list=["Combat Reflexes", "Dodge", "Improved Unarmed Strike", "Stunning Fist", "Weapon Finesse"], name="Careful Initiate", loc=[4,5], hp=9, ambi=False)
+test_monk1 = character.Character(charClass="Monk", level=1, str=12, dex=16, con=10, int=13, wis=15, cha=8, feat_list=["Combat Reflexes", "Dodge", "Improved Unarmed Strike", "Stunning Fist", "Weapon Finesse"], name="Careful Initiate", loc=[4,5], hp=9, ambi=False)
 
 test_monk1.add_weapon(items.kama.copy())
 test_monk1.add_weapon(items.crossbow_light.copy())

@@ -152,12 +152,14 @@ class Combat:
                         break
                 elif action[0] == "attack":
                     self.attack(fighter, fighter.target, action[1])
+                elif action[0] == "satk":
+                    self.satk(fighter, fighter.target, action[1])
                 elif action[0] == "stand":
                     self.log("{} stands up".format(fighter.name))
                     fighter.drop_condition("Prone")
                     self.check_for_aoo(fighter, fighter.loc)
                     if self.check_death(fighter):
-                        break
+                        break        
                 elif action[0] == "swap":
                     fighter.set_weapon(action[1])
                     self.log("{} switches weapons to {}".format(fighter.name,fighter.weap_name()))
@@ -231,17 +233,36 @@ class Combat:
     #
     # Attack functions
 
-    def attack(self, fighter, target, FRA=False):
+    def attack(self, fighter, target, FRA=False, fob=False):
         if fighter.has("Prone") and "R" in fighter.weap_type() and "Crossbows" not in fighter.weap_group():
             self.log("{0} cannot attack; {0} is Prone".format(fighter.name))
+            return False
         dist_to_target = self.mat.dist_ft(fighter.loc, target.loc)
-        self.log("{} attacks {}: {}".format(fighter.name, target.name,fighter.print_all_atks(dist_to_target, FRA)))
+        self.log("{} attacks {}: {}".format(fighter.name, target.name,fighter.print_all_atks(dist_to_target, FRA, target.type, target.subtype)))
         dmg = fighter.attack(target.get_AC(type=fighter.type, subtype=fighter.subtype), dist_to_target, FRA, fighter.type, fighter.subtype)
 
         self.log("{} takes {} damage".format(target.name, dmg[0]))
         self.log("  ({})".format(fighter.print_atk_dmg(dmg[1])))
         target.take_damage(dmg[0])
         self.log("{} at {}".format(target.name, target.print_hp()))
+
+    def satk(self, fighter, target, satk_type):
+        if satk_type in ["fob"]:
+            if fighter.has("Prone") and "R" in fighter.weap_type() and "Crossbows" not in fighter.weap_group():
+                self.log("{0} cannot attack; {0} is Prone".format(fighter.name))
+                return False
+                
+        dist_to_target = self.mat.dist_ft(fighter.loc, target.loc)
+        
+        if satk_type == "fob":
+            self.log("{} attacks {}: {}".format(fighter.name, target.name,fighter.print_atk_line(dist=dist_to_target, fob=True)))
+            
+            dmg = fighter.attack(target.get_AC(type=fighter.type, subtype=fighter.subtype), dist_to_target, True, fighter.type, fighter.subtype, fob=True)
+
+            self.log("{} takes {} damage".format(target.name, dmg[0]))
+            self.log("  ({})".format(fighter.print_atk_dmg(dmg[1])))
+            target.take_damage(dmg[0])
+            self.log("{} at {}".format(target.name, target.print_hp()))
     
     def maneuver_check(self, fighter, target, dist, man):
         CMD = target.CMD(fighter.type, fighter.subtype, target.has("Flat-Footed"), man)
