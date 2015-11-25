@@ -5,6 +5,7 @@ class Foundation:
     import equip
     import textwrap
     import feat
+    import satk_list as satk
     import ai as ai_class
     import sys
 
@@ -59,8 +60,11 @@ class Foundation:
         self.rgr_fe = []
         
         self.sa = []
+        self.sa_list = []
         self.sq = []
+        self.sq_list = []
         self.da = []
+        self.da_list = []
         self.immune = []
         
         self.lang = []
@@ -2304,6 +2308,7 @@ class Character(Foundation):
     def set_feat_abilities(self):
         if self.feat.stunning_fist(self):
             self.add_sa("stunning fist ({}/day, DC {})".format(self.level if self.charClass == "Monk" else int(self.level / 4), 10 + int(self.level / 2) + self.stat_bonus(self.wistot())))
+            self.sa_list.append(self.satk.stunning_fist.copy())
 
     def update(self):
 

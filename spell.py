@@ -3,7 +3,7 @@ import copy
 class Spell:
     """Spell data structure"""
 
-    def __init__(self, name="", level=None, school=None, subschool=[], desc=[], cast_time="std", comp="V", range=0, aim=None, dur=0, save=None, sr=False, effect=None):
+    def __init__(self, name="", level=None, school=None, subschool=[], desc=[], cast_time="std", comp="V", range=0, aim=None, dur=0, sr=False, effect=None):
         if level == None:
             level = "s1w1"
         if school == None:
@@ -20,7 +20,6 @@ class Spell:
         self.range = range
         self.aim = aim
         self.dur = dur
-        self.save = save
         self.sr = sr
         
         self.targ_num = 0
@@ -81,6 +80,8 @@ class Spell:
                 for c in enumerate(dice):
                     if c[1].isdigit():
                         dice[c[0]] = int(c[1])
+                    else:
+                        dice[c[0]] = c[1]
                         
                 damage[0] = dice
                 if damage[1] == "":
@@ -89,4 +90,7 @@ class Spell:
                     damage[1] = int(damage[1])
                 
                 self.dmg.append(damage)
+
+    def copy(self):
+        return copy.copy(self)
         
