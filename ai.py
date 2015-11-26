@@ -174,7 +174,7 @@ class AI:
         
         if self.tactic[0] in ["Close"]:
             if self.char.get_hp_perc <= 0.5:
-                for satk in self.char.satk_list:
+                for satk in self.char.sa_list:
                     if set.intersection(satk.cond_list,self.disable_list):
                         temp = self.trigger(satk)
                         if temp[0]:
@@ -329,7 +329,7 @@ class AI:
         log = []
         
         used = satk.use()
-        if !used:
+        if not used:
             return [[],[]]
         
         for action in satk.acts:

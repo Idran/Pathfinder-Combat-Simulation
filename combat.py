@@ -167,6 +167,8 @@ class Combat:
                     self.disarm(fighter, target)
                 elif action[0] == "trip":
                     self.trip(fighter, target)
+                else:
+                    pass
 
             if not survive:
                 continue

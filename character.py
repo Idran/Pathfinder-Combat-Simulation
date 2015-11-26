@@ -1517,7 +1517,7 @@ class Foundation:
                 else:
                     self.drop_condition(condition)
                     
-        for satk in self.satk_list:
+        for satk in self.sa_list:
             satk.round()
 
     #############################
