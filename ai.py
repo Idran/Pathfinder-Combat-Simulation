@@ -11,6 +11,8 @@ class AI:
         self.tactic = ["Attack"]
         self.target = "Closest"
         
+        self.disable_list = ["stun"]
+        
         self.update()
         
     def __sizeof__(self):
@@ -163,7 +165,30 @@ class AI:
         
         self.node_arg = ""
             
-        return [act,log]    
+        return [act,log]
+    
+    def selecting_act(self):
+    
+        act = []
+        log = []
+        
+        if self.tactic[0] in ["Close"]:
+            if self.char.get_hp_perc <= 0.5:
+                for satk in self.char.satk_list:
+                    if set.intersection(satk.cond_list,self.disable_list):
+                        temp = self.trigger(satk)
+                        if temp[0]:
+                            act += temp[0]
+                            log += temp[1]
+                            self.node = "Decided"
+                            act.append(["end"])
+                            break
+                else:
+                    self.node = "Selecting Attack"
+            else:
+                self.node = "Selecting Attack"
+        
+        return[act,log]
     
     def selecting_atk(self):
     
@@ -171,14 +196,17 @@ class AI:
         log = []
         
         target = self.char.target
+        dist_to_target = self.mat.dist_ft(self.char.loc, target.loc)
+        speed = self.char.get_move()
         
         FRA = (self.moves == 0)
         
-        ranged = self.char.best_ranged_weap(target, self.mat.dist_ft(self.char.loc, target.loc), FRA)
+        ranged = self.char.best_ranged_weap(target, dist_to_target, FRA)
         
-        melee_opts = self.char.best_melee_opt(target, self.mat.dist_ft(self.char.loc, target.loc), FRA)
+        melee_opts = self.char.best_melee_opt(target, dist_to_target, FRA)
         melee_type = melee_opts[0]
         melee_weap = melee_opts[1]
+        melee_weap_range = self.char.threat_range(melee_weap)
         
         curr_weap = self.char.weap_list(no_array=True)
         if len(curr_weap) == 1:
@@ -191,10 +219,6 @@ class AI:
         #print("{} best ranged: {}".format(self.char.name, ranged))
         #print("{} tactic: {}".format(self.char.name, self.tactic))
         #print("{} threatens {}: {}".format(self.char.name,self.char.target.name,self.mat.threaten(self.char, self.char.target)))
-        
-        dist_to_target = self.mat.dist_ft(self.char.loc, target.loc)
-        speed = self.char.get_move()
-        melee_weap_range = self.char.threat_range(melee_weap)
         
         if self.tactic[0] in ["Close"]:
             #print ("{} is considering Close options".format(self.char.name))
@@ -300,4 +324,21 @@ class AI:
     def safe_to_stand(self):
         return (not self.mat.check_threat(self.char, self.loc) or ("R" in self.char.weap_type() and "Crossbows" not in self.char.weap_group()))
         
+    def trigger(self, satk):
+        act = []
+        log = []
         
+        used = satk.use()
+        if !used:
+            return [[],[]]
+        
+        for action in satk.acts:
+            if action[0] in ["cond","damage"]:
+                act.append(action)
+            elif action[0] == "attack":
+                if self.moves == 0:
+                    act.append(["attack",True])
+                else:
+                    act.append(["attack",False])        
+        
+        return [act,log]

@@ -3,7 +3,7 @@ import copy
 class SpAtk:
     """Spell data structure"""
 
-    def __init__(self, name="", range=0, aim=None, dur=0, sr=False, effect=None):
+    def __init__(self, name="", range=0, aim=None, dur=0, sr=False, effect=None, uses=0, ref_rate="rd", ref_count=1):
         if aim == None:
             aim = ["t",0]
         
@@ -14,6 +14,20 @@ class SpAtk:
         self.sr = sr
         
         self.targ_num = 0
+        
+        self.uses = uses
+        self.consumed = 0
+        if ref_rate == "rd":
+            ref_rate = 1
+        elif ref_rate == "min":
+            ref_rate = 10
+        elif self.ref_rate == "hr":
+            ref_rate = 60
+        elif ref_rate == "day":
+            ref_rate = 14400
+        
+        self.refresh_ctr = ref_rate * ref_count
+        self.counter = 0        
         
         self.acts = []
         
@@ -62,6 +76,19 @@ class SpAtk:
                 self.dmg = True
             else:
                 self.acts.append(type)
+    
+    def use(self):
+        if self.consumed < self.uses:
+            self.consumed += 1
+            return True
+        else:
+            return False
+    
+    def round(self):
+        self.counter += 1
+        if self.counter == self.refresh_ctr:
+            self.counter = 0
+            self.consumed = 0
 
     def copy(self):
         return copy.copy(self)

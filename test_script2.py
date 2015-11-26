@@ -97,16 +97,18 @@ test_monk1.add_weapon(items.shuriken)
 ##########################################################
 
 fighter1 = test_monk1
-fighter2 = test_barb1
+fighter2 = test_ftr1
 
 fighter1_count = 0
 fighter1_hp = 0
+fighter1_maxhp = fighter1.get_hp()
 fighter1_round = 0
 monster_count = 0
 monster_hp = 0
 monster_round = 0
 fighter2_count = 0
 fighter2_hp = 0
+fighter2_maxhp = fighter2.get_hp()
 fighter2_round = 0
 
 num_combat = 10000
@@ -186,16 +188,16 @@ fighter2_round = (fighter2_round / fighter2_count) if fighter2_count > 0 else "N
 
 print("{} vs. {}, {} iterations:\n".format(fighter1.name, fighter2.name, num_combat))
 print("{}: {:.2%}".format(fighter1.name,float(fighter1_count) / num_combat))
-print("Average HP when victorious: {}".format(int(fighter1_hp)))
+print("Average HP when victorious: {}/{}".format(int(fighter1_hp,fighter1_maxhp)))
 print("Average rounds before end: {}\n".format(int(fighter1_round)))
 #print("{}: {:.2%}".format(monster.name,float(monster_count) / num_combat))
 #print("Average HP when victorious: {}".format(monster_hp))
 #print("Average rounds before end: {}\n".format(monster_round))
 print("{}: {:.2%}".format(fighter2.name,float(fighter2_count) / num_combat))
-print("Average HP when victorious: {}".format(int(fighter2_hp)))
+print("Average HP when victorious: {}/{}".format(int(fighter2_hp,fighter2_maxhp)))
 print("Average rounds before end: {}\n".format(int(fighter2_round)))
-print("Sample combat log:\n")
-print(fight.output_log())
+#print("Sample combat log:\n")
+#print(fight.output_log())
 print
 print("Time elapsed: {:.3f} seconds".format(time_elapsed))
 print("Est. time per iteration: {:.3f} seconds".format(time_elapsed / num_combat))

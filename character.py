@@ -1516,6 +1516,9 @@ class Foundation:
                     self.drop_rage()
                 else:
                     self.drop_condition(condition)
+                    
+        for satk in self.satk_list:
+            satk.round()
 
     #############################
     #
@@ -1647,6 +1650,11 @@ class Foundation:
 
     def get_hp(self):
         return max(self.hp + self.get_hp_bon(),self.HD)
+    
+    def get_hp_perc(self):
+        maxhp = self.get_hp()
+        curhp = maxhp - self.damage
+        return curhp / maxhp
 
     #############################
     #
