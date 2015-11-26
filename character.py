@@ -2316,7 +2316,13 @@ class Character(Foundation):
     def set_feat_abilities(self):
         if self.feat.stunning_fist(self):
             self.add_sa("stunning fist ({}/day, DC {})".format(self.level if self.charClass == "Monk" else int(self.level / 4), 10 + int(self.level / 2) + self.stat_bonus(self.wistot())))
-            self.sa_list.append(self.satk.stunning_fist.copy())
+            stun_fist = self.satk.stunning_fist.copy()
+            if self.charClass == "Monk":
+                uses_day = self.level
+            else:
+                uses_day = self.level // 4
+            stun_fist.set_uses(uses_day,"day")
+            self.sa_list.append(stun_fist)
 
     def update(self):
 
