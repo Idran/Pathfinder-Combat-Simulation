@@ -352,7 +352,7 @@ class Foundation:
         list = []
         
         for item in range(len(self.equip_list)):
-            if item != None and self.item_type(item) == "weapon":
+            if self.equip_list[item] != None and self.item_type(item) == "weapon":
                 list.append(item)
         
         return list
@@ -837,6 +837,10 @@ class Foundation:
         if condition not in self.conditions.keys():
             if condition == "Fatigued" and "Exhausted" in self.conditions.keys():
                 self.conditions["Exhausted"] = max(self.conditions["Exhausted"],duration)
+            elif condition == "Stunned":
+                self.conditions["Stunned"] = duration
+                for i in range(self.hands):
+                    self.drop("wield,{}".format(i))
             else:
                 self.conditions[condition] = duration
         elif condition == "Fatigued":
@@ -1157,7 +1161,8 @@ class Foundation:
 
         stat_bon = min(self.armor_max_dex(), self.stat_bonus(self.dextot()))
 
-        self.add_bon(AC_bon,"Dex",stat_bon)
+        if not self.has("Stunned"):
+            self.add_bon(AC_bon,"Dex",stat_bon)
 
         #############################
         #
@@ -1195,6 +1200,9 @@ class Foundation:
                 
         if self.has("Raging"):
             self.add_bon(AC_bon,"rage",-2)
+        
+        if self.has("Stunned"):
+            self.add_bon(AC_bon,"condition",-2)
 
         return AC_bon
 
@@ -1454,6 +1462,13 @@ class Foundation:
             self.add_bon(cmd,"Wis",self.stat_bonus(self.wistot()))
             self.add_bon(cmd,"monk",int(self.level / 4))
 
+        #############################
+        #
+        # Condition bonuses
+        
+        if self.has("Stunned"):
+            self.add_bon(cmd,"condition",-4)
+
         size_bon = 0
 
         if self.size == "Fine":
@@ -1519,6 +1534,19 @@ class Foundation:
                     
         for satk in self.sa_list:
             satk.round()
+    
+    def can_act(self):
+        if self.damage_con != "Normal":
+            return False
+        
+        disable_list = ["Stunned","Paralyzed","Petrified","Unconscious"]
+        
+        for condition in disable_list:
+            if self.has(condition):
+                return [False,condition]
+        else:
+            return [True,""]
+        
 
     #############################
     #

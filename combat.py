@@ -122,9 +122,6 @@ class Combat:
         for init_entry in self.init_order:
             fighter = init_entry[0]
             fighter.round_pass()
-            if not self.has_acted[fighter.name]:
-                self.has_acted[fighter.name] = True
-                fighter.drop_condition("Flat-Footed")
 
             #############################
             #
@@ -132,6 +129,24 @@ class Combat:
 
             if fighter in self.defeated:
                 continue
+
+            #############################
+            #
+            # Skip combatants that cannot act temporarily
+            
+            act_status = fighter.can_act()
+            
+            if not act_status[0]:
+                self.log("{} unable to act due to {} condition".format(fighter.name,act_status[1]))
+                continue
+
+            #############################
+            #
+            # Remove FF from those actually acting                
+                
+            if not self.has_acted[fighter.name]:
+                self.has_acted[fighter.name] = True
+                fighter.drop_condition("Flat-Footed")
 
             #############################
             #
@@ -291,6 +306,8 @@ class Combat:
             DC_stat_bon = fighter.stat_bonus(fighter.wistot())
         elif DC_type == "cha":
             DC_stat_bon = fighter.stat_bonus(fighter.chatot())
+            
+        #DC_stat_bon = 99
         
         DC = 10 + (fighter.level // 2) + DC_stat_bon
         
@@ -302,6 +319,8 @@ class Combat:
             self.log("{} failed their save ({})".format(target.name,cond_check[1]))
             self.log("{} now has the {} condition".format(target.name, cond_type))
             target.set_condition(cond_type,rds)
+            if cond_type == "Stunned":
+                self.log("{} has dropped all wielded items".format(target.name))
         else:
             self.log("{} passed their save ({})".format(target.name,cond_check[1]))
     
@@ -320,16 +339,16 @@ class Combat:
             result = self.maneuver_check(fighter, target, dist_to_target, "Disarm")
             if result[0]:
                 self.log("{} succeeds".format(fighter.name))
-                item = target.drop("wield,0")
+                item = self.drop(target,0)
                 self.log("{} drops {}".format(target.name, item.fullname()))
                 if result[1] >= 10:
-                    item = target.drop("wield,1")
+                    item = self.drop(target,1)
                     if item:
                         self.log("{} drops {}".format(target.name, item.fullname()))
             else:
                 self.log("{} fails to disarm".format(fighter.name))
                 if result[1] <= -10:
-                    item = fighter.drop("wield,0")
+                    item = self.drop(fighter,0)
                     if item:
                         self.log("{} drops {}".format(fighter.name, item.fullname()))
             return True    
@@ -354,7 +373,10 @@ class Combat:
                     fighter.set_condition("Prone")                    
             return True    
         else:
-            return False  
+            return False
+            
+    def drop(self, target, slot):
+        return target.drop("wield,{}".format(slot))
 
 ###################################################################
 #

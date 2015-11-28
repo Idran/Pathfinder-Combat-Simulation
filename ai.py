@@ -30,7 +30,7 @@ class AI:
         
         while self.node != "Decided":
             temp = self.pick_action()
-            print("{}: {}".format(self.char.name,self.node))
+            #print("{}: {}".format(self.char.name,self.node))
             act += temp[0]
             log += temp[1]
         
