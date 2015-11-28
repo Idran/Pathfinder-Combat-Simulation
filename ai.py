@@ -11,7 +11,7 @@ class AI:
         self.tactic = ["Attack"]
         self.target = "Closest"
         
-        self.disable_list = ["stun"]
+        self.disable_list = ["Stunned"]
         
         self.update()
         
@@ -30,6 +30,7 @@ class AI:
         
         while self.node != "Decided":
             temp = self.pick_action()
+            print("{}: {}".format(self.char.name,self.node))
             act += temp[0]
             log += temp[1]
         
@@ -50,6 +51,8 @@ class AI:
             return self.attacking()
         elif self.node == "Moving":
             return self.moving()
+        elif self.node == "Selecting Action":
+            return self.selecting_act()
         elif self.node == "Selecting Attack":
             return self.selecting_atk()
         elif self.node == "Special Attack":
@@ -173,11 +176,11 @@ class AI:
         log = []
         
         if self.tactic[0] in ["Close"]:
-            if self.char.get_hp_perc <= 0.5:
+            if self.char.get_hp_perc() <= 0.5:
                 for satk in self.char.sa_list:
-                    if set.intersection(satk.cond_list,self.disable_list):
+                    if set.intersection(set(satk.cond_list),set(self.disable_list)):
                         temp = self.trigger(satk)
-                        if temp[0]:
+                        if temp[0] or temp[1]:
                             act += temp[0]
                             log += temp[1]
                             self.node = "Decided"
@@ -293,8 +296,10 @@ class AI:
                 self.node = "Attacking"
             else:
                 self.node = "Moving"
-        elif self.tactic[0] in ["Close","Maneuver"]:
+        elif self.tactic[0] in ["Maneuver"]:
             self.node = "Selecting Attack"
+        elif self.tactic[0] in ["Close"]:
+            self.node = "Selecting Action"
         
         return [act,log]
 
@@ -331,6 +336,8 @@ class AI:
         used = satk.use()
         if not used:
             return [[],[]]
+        
+        log.append("{} is trying to use {} on {}".format(self.char.name,satk.name,self.char.target.name))
         
         for action in satk.acts:
             if action[0] in ["cond","damage"]:

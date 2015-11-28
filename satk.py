@@ -35,7 +35,7 @@ class SpAtk:
         elif ref_rate == "min":
             ref_rate = 10
         elif ref_rate == "hr":
-            ref_rate = 60
+            ref_rate = 600
         elif ref_rate == "day":
             ref_rate = 14400
         

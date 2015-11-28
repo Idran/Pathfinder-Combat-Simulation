@@ -1874,6 +1874,21 @@ class Foundation:
             return [False, result]
         else:    
             return [result >= 0, result]
+    
+    def check_save(self, stype, DC):
+        
+        if stype == "F":
+            save_bon = self.get_fort()
+        elif stype == "R":
+            save_bon = self.get_ref()
+        elif stype == "W":
+            save_bon = self.get_will()
+        
+        save_roll = self.random.randint(1,20) + save_bon
+        
+        save_pass = (save_roll >= DC)   #done this way rather than direct return to better support later expansion
+        
+        return [save_pass,save_roll]
 
     def roll_dmg(self, dist, crit=False, type=None, subtype=None, weap=None):
         

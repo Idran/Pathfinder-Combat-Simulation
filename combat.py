@@ -163,10 +163,12 @@ class Combat:
                 elif action[0] == "swap":
                     fighter.set_weapon(action[1])
                     self.log("{} switches weapons to {}".format(fighter.name,fighter.weap_name()))
+                elif action[0] == "cond":
+                    self.set_cond(fighter, fighter.target, action[1:])
                 elif action[0] == "disarm":
-                    self.disarm(fighter, target)
+                    self.disarm(fighter, fighter.target)
                 elif action[0] == "trip":
-                    self.trip(fighter, target)
+                    self.trip(fighter, fighter.target)
                 else:
                     pass
 
@@ -265,6 +267,43 @@ class Combat:
             self.log("  ({})".format(fighter.print_atk_dmg(dmg[1])))
             target.take_damage(dmg[0])
             self.log("{} at {}".format(target.name, target.print_hp()))
+    
+    def set_cond(self, fighter, target, cond_info):
+        
+        cond_type,save_type,DC_type,rds = cond_info
+        rds = int(rds)
+    
+        self.log("{} is attempting to apply {} to {}".format(fighter.name, cond_type, target.name))
+        
+        save_type = save_type[0]
+        
+        save_type_long = {"F":"fortitude","R":"reflex","W":"will"}[save_type]
+        
+        if DC_type == "str":
+            DC_stat_bon = fighter.stat_bonus(fighter.strtot())
+        elif DC_type == "dex":
+            DC_stat_bon = fighter.stat_bonus(fighter.dextot())
+        elif DC_type == "con":
+            DC_stat_bon = fighter.stat_bonus(fighter.contot())
+        elif DC_type == "int":
+            DC_stat_bon = fighter.stat_bonus(fighter.inttot())
+        elif DC_type == "wis":
+            DC_stat_bon = fighter.stat_bonus(fighter.wistot())
+        elif DC_type == "cha":
+            DC_stat_bon = fighter.stat_bonus(fighter.chatot())
+        
+        DC = 10 + (fighter.level // 2) + DC_stat_bon
+        
+        self.log("{} is making a {} save against DC {}".format(target.name, save_type_long, DC))
+        
+        cond_check = target.check_save(save_type,DC)
+        
+        if not cond_check[0]:
+            self.log("{} failed their save ({})".format(target.name,cond_check[1]))
+            self.log("{} now has the {} condition".format(target.name, cond_type))
+            target.set_condition(cond_type,rds)
+        else:
+            self.log("{} passed their save ({})".format(target.name,cond_check[1]))
     
     def maneuver_check(self, fighter, target, dist, man):
         CMD = target.CMD(fighter.type, fighter.subtype, target.has("Flat-Footed"), man)
