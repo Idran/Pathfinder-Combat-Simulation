@@ -45,6 +45,12 @@ test_monk1.add_weapon(items.shuriken)
 
 ##########################################################
 
+test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con=14, int=17, wis=12, cha=8, feat_list=["Alertness","Combat Casting","Improved Initiative","Scribe Scroll"], name="Cautious Mage", loc=[7,9], hp=6, side=4)
+
+test_wiz1.add_weapon(items.quarterstaff.copy(), active=True)
+
+##########################################################
+
 monster = character.Character(charClass="Fighter", level=10, str=18, dex=10, con=8, int=14, wis=10, cha=12, feat_list=["Combat Expertise", "Critical Focus", "Dodge", "Improved Critical (guisarme)", "Improved Trip", "Intimidating Prowess", "Leadership", "Persuasive", "Power Attack", "Run", "Toughness"], ambi=True, name="Warlord", loc=[10,10], hp=55, AC=23, side=2)
 
 monster.set_fighter_weap_train(["Polearms","Close"])
@@ -59,4 +65,4 @@ monsterarm.set_bon(1)
 
 monster.add_armor(monsterarm, active=True)
 
-print(test_monk1.print_stat_block())
+print(test_wiz1.print_stat_block())

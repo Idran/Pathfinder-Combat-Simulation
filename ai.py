@@ -11,7 +11,7 @@ class AI:
         self.tactic = ["Attack"]
         self.target = "Closest"
         
-        self.disable_list = ["Stunned"]
+        self.disable_list = ["Stunned","Paralyzed","Petrified","Unconscious"]
         
         self.update()
         

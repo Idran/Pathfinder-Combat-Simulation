@@ -10,6 +10,8 @@ crossbow_light = equip.Weapon(name="light crossbow", type="Simple", group=["Cros
 
 sling = equip.Weapon(name="sling", type="Simple", group=["Thrown"], atk_damage=[1,4], atk_type="RT", crit_range=20, range=50, spb="B", ammo=10)
 
+quarterstaff = equip.Weapon(name="quarterstaff", type="Simple", group=["Double","Monk"], atk_damage=[1,6], atk_type="M", crit_range=20, spb="B", hands=2)
+
 
 flail_heavy = equip.Weapon(name="heavy flail", type="Martial", group=["Flails"], atk_damage=[1,10], atk_type="M", crit_range=19, spb="B", hands=2, disarm=True, trip=True)
 

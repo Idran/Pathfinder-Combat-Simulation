@@ -2,7 +2,7 @@ def arcane_strike(self):
     return "Arcane Strike" in self.feat_list
 
 def arcane_strike_bon(self):
-    if self.arcane:
+    if arcane_strike(self) and self.arcane:
         return int(self.CL / 5) + 1
     else:
         return 0
