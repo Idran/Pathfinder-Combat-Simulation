@@ -100,7 +100,7 @@ test_monk1.add_weapon(items.shuriken)
 
 ##########################################################
 
-test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con=14, int=17, wis=12, cha=8, feat_list=["Alertness","Combat Casting","Improved Initiative","Scribe Scroll"], name="Cautious Mage", loc=[7,9], hp=9, side=4)
+test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con=14, int=17, wis=12, cha=8, feat_list=["Alertness","Combat Casting","Improved Initiative","Scribe Scroll"], name="Cautious Mage", loc=[7,9], hp=6, side=4)
 
 test_wiz1.add_weapon(items.quarterstaff.copy(), active=True)
 
@@ -109,7 +109,7 @@ test_wiz1.add_weapon(items.quarterstaff.copy(), active=True)
 fighter1 = test_monk1
 fighter2 = test_barb1
 
-print("{}:".format(test_ftr1_2h.name))
+print("{}:".format(fighter1.name))
 print(fighter1.print_AC_line())
 print(fighter1.print_save_line())
 print(fighter1.print_all_atks())

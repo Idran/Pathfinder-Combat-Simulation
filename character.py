@@ -1258,6 +1258,8 @@ class Foundation:
     # Attack roll functions
 
     def get_atk_bon(self, dist, FRA, type, subtype, weap=None, nofeat=False, offhand=False, fob=False, bon_calc=False, off=False, light=False):
+        if weap == None:
+            weap = self.slots["wield"][0]
 
         atk_bon = dict()
         
@@ -1314,6 +1316,9 @@ class Foundation:
                 self.add_bon(atk_bon,"feat",self.feat.deadly_aim_pen(self))
                 if FRA:
                     self.add_bon(atk_bon,"feat",self.feat.rapid_shot_pen(self))
+            
+        if self.feat.weapon_focus(self,weap):
+            self.add_bon(atk_bon,"feat",1)
 
         atk_bon = self.get_attack_roll_mods(atk_bon, dist, FRA, type, subtype, weap, nofeat)
 

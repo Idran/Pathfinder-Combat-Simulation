@@ -36,7 +36,7 @@ quinn.add_armor(quinnarm, active=True)
 
 ##########################################################
 
-test_ftr1 = character.Character(charClass="Fighter", level=1, str=17, dex=14, con=12, int=8, wis=13, cha=10, feat_list=["Iron Will", "Power Attack", "Toughness"], name="Corwyn Klas", loc=[1,2], hp=10, ambi=False, side=1)
+test_ftr1 = character.Character(charClass="Fighter", level=1, str=17, dex=14, con=12, int=8, wis=13, cha=10, feat_list=["Iron Will", "Power Attack", "Toughness"], name="Corwyn Klas", loc=[1,2], hp=10, side=1)
 
 test_ftr1.add_weapon(items.longsword.copy(), active=True)
 
@@ -55,7 +55,7 @@ test_ftr1.add_shield(items.wooden_shield_heavy.copy(), active=True)
 
 ##########################################################
 
-test_ftr1_2h = character.Character(charClass="Fighter", level=1, str=17, dex=15, con=12, int=8, wis=13, cha=10, feat_list=["Iron Will", "Power Attack", "Toughness", "Two-Weapon Fighting"], name="Corwyn Klas (2h)", loc=[1,2], hp=10, ambi=False, side=1)
+test_ftr1_2h = character.Character(charClass="Fighter", level=1, str=17, dex=15, con=12, int=8, wis=13, cha=10, feat_list=["Iron Will", "Power Attack", "Toughness", "Two-Weapon Fighting"], name="Corwyn Klas (2h)", loc=[1,2], hp=10, side=1)
 
 test_ftr1_2h.add_weapon(items.longsword.copy(), active=True)
 
@@ -72,7 +72,7 @@ test_ftr1_2h.add_armor(items.breastplate.copy(), active=True)
 
 ##########################################################
 
-test_barb1 = character.Character(charClass="Barbarian", level=1, str=17, dex=13, con=14, int=10, wis=12, cha=8, feat_list=["Cleave", "Power Attack"], name="Arjana", loc=[5,5], hp=12, ambi=False, fc=["h"], side=2)
+test_barb1 = character.Character(charClass="Barbarian", level=1, str=17, dex=13, con=14, int=10, wis=12, cha=8, feat_list=["Cleave", "Power Attack"], name="Arjana", loc=[5,5], hp=12, fc=["h"], side=2)
 
 test_barb1.add_weapon(items.greatsword.copy())
 test_barb1.add_weapon(items.flail_heavy.copy(), active=True)
@@ -84,7 +84,7 @@ test_barb1.set_rage()
 
 ##########################################################
 
-test_monk1 = character.Character(charClass="Monk", level=1, str=12, dex=16, con=10, int=13, wis=15, cha=8, feat_list=["Combat Reflexes", "Dodge", "Improved Unarmed Strike", "Stunning Fist", "Weapon Finesse"], name="Careful Initiate", loc=[4,5], hp=9, ambi=False, side=3)
+test_monk1 = character.Character(charClass="Monk", level=1, str=12, dex=16, con=10, int=13, wis=15, cha=8, feat_list=["Combat Reflexes", "Dodge", "Improved Unarmed Strike", "Stunning Fist", "Weapon Finesse"], name="Careful Initiate", loc=[4,5], hp=9, side=3)
 
 test_monk1.add_weapon(items.kama.copy())
 test_monk1.add_weapon(items.crossbow_light.copy())
