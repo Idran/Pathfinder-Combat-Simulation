@@ -69,9 +69,10 @@ class Foundation:
         
         self.cast_stat = None
         
-        self.spell_list_mem = [{} for i in range(0,9)]
-        self.spell_mem_max = [0 for i in range(0,9)]
+        self.spell_list_mem = [{} for i in range(0,10)]
+        self.spell_mem_max = [0 for i in range(0,10)]
         self.sla_list = []
+        self.max_spell_lvl = 0
         
         self.lang = []
         self.lang_spec = []
@@ -183,19 +184,17 @@ class Foundation:
         if active:
             self.set_shield(len(self.equip_list) - 1)
     
-    def add_spell_mem(self, spell):
+    def add_spell_mem(self, spell, count=1):
         level_list = spell.lvl_parse()
         if self.charClass not in level_list:
             raise Exception("This spell cannot be used by class {}".format(self.charClass))
             
         spell_lev = level_list[self.charClass]
-        if sum(self.spell_list_mem[spell_lev].values()) >= self.spell_mem_max[spell_lev]:
+        spells_mem = self.spell_list_mem[spell_lev].values()
+        if sum(i[1] for i in spells_mem) + count > self.spell_mem_max[spell_lev]:
             raise Exception("Not enough free spell slots of level {} to add spell".format(spell_lev))
         
-        if spell.name in self.spell_list_mem[spell_lev]:
-            self.spell_list_mem[spell_lev][spell.name] += 1
-        else:
-            self.spell_list_mem[spell_lev][spell.name] = 1
+        self.spell_list_mem[spell_lev][spell.name] = [spell,count]
 
 ###################################################################
 #
@@ -1578,7 +1577,7 @@ class Foundation:
         self.add_bon(conc,"CL",self.CL())
         self.add_bon(conc,"Stat",self.stat_bonus(self.casttot()))
         
-        conc_tot = 10 + sum(conc.values())
+        conc_tot = sum(conc.values())
         
         return conc_tot
 
@@ -2078,6 +2077,17 @@ class Foundation:
 #
 # Output functions
 
+    # ordinal: outputs the ordinal version of an integer input
+    
+    def ordinal(self, num):    
+        suffixes = {1: 'st', 2: 'nd', 3: 'rd'}
+        if 10 <= num % 100 <= 20:
+            suffix = 'th'
+        else:
+            suffix = suffixes.get(num % 10, 'th')
+            
+        return str(num) + suffix
+
     # print_dmg: prints weapon damage for given weapon in standard format, with all current feats and buffs
     #            pass nofeat=True to not include feat bonuses
 
@@ -2442,8 +2452,10 @@ class Character(Foundation):
                 self.spell_mem_max[0] = 3
             else:
                 self.spell_mem_max[0] = 4
+            
+            cast_bon = self.stat_bonus(self.casttot())
 
-            for i in range(1,9):
+            for i in range(1,10):
                 start_level = (2*i) - 1
                 if self.level < start_level:
                     continue
@@ -2455,6 +2467,13 @@ class Character(Foundation):
                     self.spell_mem_max[i] = 3
                 else:
                     self.spell_mem_max[i] = 4
+                
+                if cast_bon < i:
+                    pass
+                else:
+                    self.spell_mem_max[i] += ((cast_bon - i) // 4 + 1)
+                
+                self.max_spell_lvl = i
     
     def set_feat_abilities(self):
         if self.feat.stunning_fist(self):
@@ -2548,6 +2567,39 @@ class Character(Foundation):
         for i in range(len(ranged_set[0:-1])):
             ranged_set[i] += " or"
         ranged_line = "Ranged {}".format(" or ".join(ranged_set))
+        
+        if self.CL() > 0:
+            if self.charClass in ["Cleric","Wizard","Paladin","Ranger"]:
+                spell_type = "Prepared"
+            elif self.charClass in ["Bard","Sorcerer"]:
+                spell_type = "Known"
+        
+        spell_line = [[] for i in range(0,self.max_spell_lvl+1)]
+        
+        for i in range(self.max_spell_lvl,-1,-1):
+            if i != 0:
+                spell_line[i] = self.ordinal(i) + " - "
+            else:
+                spell_line[i] = "0 - "
+                
+            spell_text = []
+            
+            for spell_name in self.spell_list_mem[i].keys():
+                spell = self.spell_list_mem[i][spell_name][0]
+                spell_count = self.spell_list_mem[i][spell_name][1]
+                
+                spell_desc = spell_name
+                
+                if spell_count > 1:
+                    spell_desc += " x{}".format(spell_count)
+                
+                if spell.has_save():
+                    spell_desc += " (DC {})".format(10 + i + self.stat_bonus(self.casttot()))
+                
+                spell_text.append(spell_desc)
+            
+            spell_line[i] += ", ".join(sorted(spell_text))
+                
 
         wordwrap = self.textwrap.TextWrapper(subsequent_indent="  ", width=textwidth)
         wordwrap_indent = self.textwrap.TextWrapper(initial_indent="  ", subsequent_indent="    ", width=textwidth)
@@ -2583,6 +2635,10 @@ class Character(Foundation):
                 out.append(wordwrap_indent.fill(ranged))
         if self.sa:
             out.append(wordwrap.fill("Special Attacks {}".format(", ".join(sorted(self.sa)))))
+        if self.CL() > 0:
+            out.append(wordwrap.fill("{} Spells {} (CL {}; concentration {:+d})".format(self.charClass,spell_type,self.ordinal(self.CL()),self.concentration())))
+            for i in range(self.max_spell_lvl,-1,-1):
+                out.append(wordwrap_indent.fill(spell_line[i]))
         out.append(separator)
         out.append(wordwrap.fill("STATISTICS"))
         out.append(separator)

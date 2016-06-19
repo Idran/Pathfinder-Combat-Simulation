@@ -1,6 +1,7 @@
 import equip
 import character
 import items
+import spell_list as spells
 
 test_ftr1 = character.Character(charClass="Fighter", level=1, str=17, dex=14, con=12, int=8, wis=13, cha=10, feat_list=["Iron Will", "Power Attack", "Toughness"], name="Corwyn Klas", loc=[1,2], hp=10, ambi=False)
 
@@ -45,9 +46,15 @@ test_monk1.add_weapon(items.shuriken)
 
 ##########################################################
 
-test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con=14, int=17, wis=12, cha=8, feat_list=["Alertness","Combat Casting","Improved Initiative","Scribe Scroll"], name="Cautious Mage", loc=[7,9], hp=6, side=4)
+test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con=14, int=17, wis=12, cha=8, feat_list=["Alertness","Combat Casting","Improved Initiative","Scribe Scroll"], name="Holdreda Danton", loc=[7,9], hp=6, side=4)
 
 test_wiz1.add_weapon(items.quarterstaff.copy(), active=True)
+
+test_wiz1.add_spell_mem(spells.burning_hands.copy())
+test_wiz1.add_spell_mem(spells.mage_armor.copy())
+test_wiz1.add_spell_mem(spells.bleed.copy())
+test_wiz1.add_spell_mem(spells.detect_magic.copy())
+test_wiz1.add_spell_mem(spells.resistance.copy())
 
 ##########################################################
 
@@ -65,4 +72,4 @@ monsterarm.set_bon(1)
 
 monster.add_armor(monsterarm, active=True)
 
-print(test_monk1.print_stat_block())
+print(test_wiz1.print_stat_block())

@@ -7,7 +7,7 @@ class Spell:
         if level == None:
             level = "s1w1"
         if school == None:
-            school = ["D"]
+            school = "D"
         if aim == None:
             aim = ["t",0]
         
@@ -27,6 +27,8 @@ class Spell:
         self.buff = []
         self.debuff = []
         self.dmg = []
+        
+        self.save = []
         
         self.effect_parse(effect)
 
@@ -57,12 +59,20 @@ class Spell:
             return "Cleric"
         if cls == "d":
             return "Druid"
+        if cls == "i":
+            return "Inquisitor"
+        if cls == "m":
+            return "Magus"
+        if cls == "o":
+            return "Oracle"
         if cls == "p":
             return "Paladin"
         if cls == "r":
             return "Ranger"
         if cls == "s":
             return "Sorcerer"
+        if cls == "u":
+            return "Summoner"
         if cls == "w":
             return "Wizard"
         
@@ -93,6 +103,18 @@ class Spell:
                     damage[1] = int(damage[1])
                 
                 self.dmg.append(damage)
+                
+                if damage[2] == "N":
+                    self.save.append(None)
+                else:
+                    self.save.append(damage[2])
+    
+    def has_save(self):
+        for i in self.save:
+            if i != None:
+                return True
+        
+        return False
 
     def copy(self):
         return copy.copy(self)
