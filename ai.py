@@ -178,7 +178,7 @@ class AI:
         if self.tactic[0] in ["Close"]:
             if self.char.get_hp_perc() <= 0.5:
                 for satk in self.char.sa_list:
-                    if set.intersection(set(satk.cond_list),set(self.disable_list)):
+                    if set.intersection(set(satk.cond_list),set(self.disable_list)): #Checking for disabling special attacks
                         temp = self.trigger(satk)
                         if temp[0] or temp[1]:
                             act += temp[0]
@@ -246,9 +246,14 @@ class AI:
                 self.moves += 1
             if melee_type == "weap":
                 self.node = "Attacking"
-            else:
+            elif melee_type == "fob":
                 self.node = "Special Attack"
                 self.node_arg = "fob"
+            else:
+                log.append("{0} does nothing".format(self.char.name))
+                self.node = "Decided"
+                act.append(["end"])
+                
         else:
             if swap and self.char.bab[0] == 0:
                 self.moves += 1
