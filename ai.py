@@ -55,6 +55,8 @@ class AI:
             return self.selecting_act()
         elif self.node == "Selecting Attack":
             return self.selecting_atk()
+        elif self.node == "Selecting Spell":
+            return self.selecting_spl()
         elif self.node == "Special Attack":
             return self.satk()
         elif self.node == "Targeting":
@@ -190,6 +192,8 @@ class AI:
                     self.node = "Selecting Attack"
             else:
                 self.node = "Selecting Attack"
+        elif self.tactic[0] in ["Spell"]:
+            self.node = "Selecting Spell"
         
         return[act,log]
     
@@ -260,6 +264,15 @@ class AI:
             self.node = "Moving"
         
         return [act,log]
+    
+    def selecting_spl():
+    
+        act = []
+        log = []
+        
+        pass
+    
+        return[act,log]
     
     def targeting(self):
     

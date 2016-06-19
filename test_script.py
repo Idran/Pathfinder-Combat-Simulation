@@ -3,6 +3,7 @@ import character
 import combat
 import equip
 import items
+import spell_list as spells
 import sys
 
 jaya = character.Character(charClass="Bard", level=10, str=11, dex=18, con=14, int=13, wis=10, cha=16, feat_list=["Improved Initiative", "Point-Blank Shot", "Precise Shot", "Bullseye Shot", "Rapid Shot", "Arcane Strike"], ambi=True, name="Jaya", loc=[1,2], hp=67, AC=19)
@@ -100,9 +101,11 @@ test_monk1.add_weapon(items.shuriken)
 
 ##########################################################
 
-test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con=14, int=17, wis=12, cha=8, feat_list=["Alertness","Combat Casting","Improved Initiative","Scribe Scroll"], name="Cautious Mage", loc=[7,9], hp=6, side=4)
+test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con=14, int=17, wis=12, cha=8, feat_list=["Alertness","Combat Casting","Improved Initiative","Scribe Scroll"], name="Holdreda Danton", loc=[7,9], hp=6, side=4)
 
 test_wiz1.add_weapon(items.quarterstaff.copy(), active=True)
+
+test_wiz1.add_spell_mem(spells.burning_hands.copy())
 
 ##########################################################
 

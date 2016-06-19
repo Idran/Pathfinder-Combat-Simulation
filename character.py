@@ -6,6 +6,7 @@ class Foundation:
     import textwrap
     import feat
     import satk_list as satk
+    import spell_list as spell
     import ai as ai_class
     import sys
 
@@ -40,7 +41,6 @@ class Foundation:
         self.bab = 0
         self.arcane = False
         self.divine = False
-        self.CL = 0
         self.hit_die = 10
         self.damage = 0
         self.damage_con = "Normal"
@@ -66,6 +66,12 @@ class Foundation:
         self.da = []
         self.da_list = []
         self.immune = []
+        
+        self.cast_stat = None
+        
+        self.spell_list_mem = [{} for i in range(0,9)]
+        self.spell_mem_max = [0 for i in range(0,9)]
+        self.sla_list = []
         
         self.lang = []
         self.lang_spec = []
@@ -176,6 +182,20 @@ class Foundation:
         self.equip_list.append(shield)
         if active:
             self.set_shield(len(self.equip_list) - 1)
+    
+    def add_spell_mem(self, spell):
+        level_list = spell.lvl_parse()
+        if self.charClass not in level_list:
+            raise Exception("This spell cannot be used by class {}".format(self.charClass))
+            
+        spell_lev = level_list[self.charClass]
+        if sum(self.spell_list_mem[spell_lev].values()) >= self.spell_mem_max[spell_lev]:
+            raise Exception("Not enough free spell slots of level {} to add spell".format(spell_lev))
+        
+        if spell.name in self.spell_list_mem[spell_lev]:
+            self.spell_list_mem[spell_lev][spell.name] += 1
+        else:
+            self.spell_list_mem[spell_lev][spell.name] = 1
 
 ###################################################################
 #
@@ -1150,6 +1170,16 @@ class Foundation:
         self.add_bon(stat_bon,"stat",self.cha)
 
         return sum(stat_bon.values())
+    
+    def casttot(self):
+        if self.cast_stat == None:
+            return -999
+        elif self.cast_stat == "i":
+            return self.inttot()
+        elif self.cast_stat == "w":
+            return self.wistot()
+        elif self.cast_stat == "h":
+            return self.chatot()
 
     #############################
     #
@@ -1444,6 +1474,26 @@ class Foundation:
 
     #############################
     #
+    # CL functions
+    
+    def CL(self):
+        
+        CL = dict()
+        
+        if self.charClass in ["Bard","Cleric","Druid","Sorcerer","Wizard"]:
+            self.add_bon(CL,"base",self.level)
+        elif self.charClass in ["Paladin","Ranger"] and self.level >= 4:
+            self.add_bon(CL,"base",self.level - 3)
+        else:
+            return 0
+        
+        CL_tot = sum(CL.values())
+        
+        return CL_tot
+        
+
+    #############################
+    #
     # CMD functions
 
     def CMD(self, type=None, subtype=None, FF=False, man=None):
@@ -1516,6 +1566,21 @@ class Foundation:
         cmd_tot = 10 + sum(cmd.values())
 
         return cmd_tot
+
+    #############################
+    #
+    # Concentration functions
+
+    def concentration(self):
+
+        conc = dict()
+        
+        self.add_bon(conc,"CL",self.CL())
+        self.add_bon(conc,"Stat",self.stat_bonus(self.casttot()))
+        
+        conc_tot = 10 + sum(conc.values())
+        
+        return conc_tot
 
     #############################
     #
@@ -2230,17 +2295,25 @@ class Character(Foundation):
 
     def set_spellcast_stats(self):
 
-        if self.charClass in ["Bard", "Sorcerer", "Wizard"]:
+        if self.charClass in ["Bard", "Sorcerer"]:
             self.arcane = True
-            self.CL = self.level
+            self.cast_stat = "h"
+        
+        if self.charClass in ["Wizard"]:
+            self.arcane = True
+            self.cast_stat = "i"
 
         if self.charClass in ["Cleric", "Druid"]:
             self.divine = True
-            self.CL = self.level
+            self.cast_stat = "w"
 
-        if self.charClass in ["Paladin", "Ranger"] and self.level >= 4:
+        if self.charClass in ["Paladin"] and self.level >= 4:
             self.divine = True
-            self.CL = self.level - 3
+            self.cast_stat = "h"
+
+        if self.charClass in ["Ranger"] and self.level >= 4:
+            self.divine = True
+            self.cast_stat = "w"
 
     def set_hit_die(self):
 
@@ -2360,6 +2433,28 @@ class Character(Foundation):
             if self.level >= 20:
                 self.add_sq("perfect self")
                 self.type = "Outsider"
+        
+        elif self.charClass == "Wizard":
+            if "Scribe Scroll" not in self.feat_list:
+                self.feat_list.append("Scribe Scroll")
+
+            if self.level == 1:
+                self.spell_mem_max[0] = 3
+            else:
+                self.spell_mem_max[0] = 4
+
+            for i in range(1,9):
+                start_level = (2*i) - 1
+                if self.level < start_level:
+                    continue
+                elif self.level == start_level:
+                    self.spell_mem_max[i] = 1
+                elif self.level <= start_level + 2:
+                    self.spell_mem_max[i] = 2
+                elif self.level <= start_level + 5:
+                    self.spell_mem_max[i] = 3
+                else:
+                    self.spell_mem_max[i] = 4
     
     def set_feat_abilities(self):
         if self.feat.stunning_fist(self):

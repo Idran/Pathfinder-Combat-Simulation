@@ -34,15 +34,18 @@ class Spell:
     #
     # Parsing functions
     
-    def lvl_parse(self,level):
+    def lvl_parse(self,level=None):
+    
+        if level == None:
+            level = self.level
         
-        lvl_int = []
+        lvl_int = {}
         temp_class = ""
         for c in level:
             if c.isalpha():
                 temp_class = self.class_parse(c)
                 continue
-            lvl_int.append([temp_class,int(c)])
+            lvl_int[temp_class] = int(c)
         
         return lvl_int
     
