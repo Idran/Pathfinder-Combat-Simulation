@@ -86,6 +86,9 @@ class AI:
         if self.tactic[0] in ["Attack","Close","Maneuver"]:
             self.node = "Targeting"
             return [[],[]]
+        if self.tactic[0] in ["Spell"]:
+            self.node = "Selecting Spell"
+            return [[],[]]
         if self.tactic[0] in ["Nothing"]:
             self.node = "Decided"
             return[["end"],[]]
@@ -265,12 +268,41 @@ class AI:
         
         return [act,log]
     
-    def selecting_spl():
+    def selecting_spl(self):
     
         act = []
         log = []
         
-        pass
+        max_level = self.char.max_spell_lvl
+        spell_data_list = []
+        combatant_data = {"Ally":[],"Enemy":[]}
+        
+        for other in self.fighters:
+            if other.side == self.char.side:
+                side = "Ally"
+            else:
+                side = "Enemy"
+            
+            combatant_data[side].append(other)
+        
+        if self.tactic[1] in ["Damage"]:
+            if len(combatant_data["Enemy"]) > 1:
+                spell_list1 = self.char.spell_list("Damage","Multi")
+                spell_list2 = self.char.spell_list("Damage","Single",-1,"Max")
+                
+                spell_list = spell_list1 + spell_list2
+                
+                spell_list.sort(key=lambda i: i.lvl_parse()[self.char.charClass], reverse=True)
+            else:
+                spell_list = self.char.spell_list("Damage")
+            
+            #print("Start0")
+            #for spell in spell_list:
+            #    print("Spell: {}, Level: {}".format(spell.name,spell.lvl_parse()[self.char.charClass]))
+            #print("End0")
+            
+            self.node = "Decided"
+            act.append(["end"])
     
         return[act,log]
     

@@ -7,7 +7,7 @@ class Spell:
         if level == None:
             level = "s1w1"
         if school == None:
-            school = "D"
+            school = "di"
         if aim == None:
             aim = ["t",0]
         
@@ -108,6 +108,29 @@ class Spell:
                     self.save.append(None)
                 else:
                     self.save.append(damage[2])
+            
+            if type[0] == "buff":
+                buff = type[1].split(",")
+                
+                self.buff.append(buff)
+            
+            if type[0] == "debuff":
+                debuff = type[1].split(",")
+                
+                self.debuff.append(debuff)
+
+    #############################
+    #
+    # Spell data
+    
+    def is_single(self):
+        if self.aim[0] == "t":
+            return True
+        else:
+            return False
+    
+    def is_multi(self):
+        return not self.is_single()
     
     def has_save(self):
         for i in self.save:

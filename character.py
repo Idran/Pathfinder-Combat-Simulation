@@ -494,6 +494,82 @@ class Foundation:
 
 ###################################################################
 #
+# Spell data retrieval functions
+    
+    def spell_list(self,type="All",target="All",minlevel=0,maxlevel="Max"):
+        
+        spell_list = self.mem_spell_list(type,target)
+        
+        return spell_list
+
+    def mem_spell_list(self,type="All",target="All",minlevel=0,maxlevel="Max"):
+        spell_list = []
+        spell_list_temp = []
+        
+        if maxlevel == "Max":
+            maxlevel = self.max_spell_lvl
+        
+        if maxlevel > 9:
+            maxlevel = 9
+        
+        if minlevel > 9:
+            minlevel = 9
+            
+        if minlevel > maxlevel:
+            minlevel = maxlevel
+        
+        if maxlevel < 0:
+            maxlevel = self.max_spell_lvl + maxlevel
+            if maxlevel < 0:
+                maxlevel = 0
+        
+        if minlevel < 0:
+            minlevel = maxlevel + minlevel
+            if minlevel < 0:
+                minlevel = 0
+    
+        for SL in range(maxlevel,minlevel-1,-1):
+            spell_list_temp = self.spell_list_mem[SL].copy()
+            if len(spell_list_temp) == 0:
+                continue
+            
+            for spellname,spells_memd in spell_list_temp.items():
+                
+                [spell,count] = spells_memd
+                #print("spell: {}, count: {}".format(spell.name,count))
+                if count <= 0:
+                    continue
+                if type == "All":
+                    spell_list.append(spell)
+                    continue
+                if type == "Damage" and spell.dmg:
+                    spell_list.append(spell)
+                    continue
+                if type == "Buff" and spell.buff:
+                    spell_list.append(spell)
+                    continue
+                if type == "Debuff" and spell.debuff:
+                    spell_list.append(spell)
+                    continue
+            
+            spell_list_temp = spell_list[:]
+            spell_list = []
+                    
+            for spell in spell_list_temp:
+                if target == "All":
+                    spell_list.append(spell)
+                    continue
+                if target == "Single" and spell.is_single():
+                    spell_list.append(spell)
+                    continue
+                if target == "Multi" and spell.is_multi():
+                    spell_list.append(spell)
+                    continue            
+        
+        return spell_list
+
+###################################################################
+#
 # Attack selection functions
 
     def avg_weap_dmg(self, weap, target, dist=0, FRA=True, offhand=False, oh_calc=False, light=False, fob=False):

@@ -106,11 +106,15 @@ test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con
 test_wiz1.add_weapon(items.quarterstaff.copy(), active=True)
 
 test_wiz1.add_spell_mem(spells.burning_hands.copy())
+test_wiz1.add_spell_mem(spells.mage_armor.copy())
+test_wiz1.add_spell_mem(spells.bleed.copy())
+test_wiz1.add_spell_mem(spells.detect_magic.copy())
+test_wiz1.add_spell_mem(spells.resistance.copy())
 
 ##########################################################
 
 fighter1 = test_monk1
-fighter2 = test_barb1
+fighter2 = test_wiz1
 
 print("{}:".format(fighter1.name))
 print(fighter1.print_AC_line())
@@ -132,7 +136,7 @@ fight.add_fighter(fighter1)
 fight.add_fighter(fighter2)
 
 fight.set_tactic(fighter1,"Close")
-fight.set_tactic(fighter2,"Close")
+fight.set_tactic(fighter2,"Spell,Damage")
 
 fight.set_init()
 
