@@ -28,7 +28,7 @@ class Spell:
         self.debuff = []
         self.dmg = []
         
-        self.save = []
+        self.save = False
         
         self.effect_parse(effect)
 
@@ -102,22 +102,30 @@ class Spell:
                 else:
                     damage[1] = int(damage[1])
                 
-                self.dmg.append(damage)
+                self.dmg.append(damage) #damage dice in index 0 (L=level variable), max dice in index 1, save in index 2, damage type in index 3
                 
-                if damage[2] == "N":
-                    self.save.append(None)
-                else:
-                    self.save.append(damage[2])
+                save_data = damage[2]
+                
+                if save_data != "N" and (len(save_data) == 2 or save_data[2] != "h"):
+                    self.save = True
             
             if type[0] == "buff":
                 buff = type[1].split(",")
                 
                 self.buff.append(buff)
+                
+                save_data = buff[3]
+                
+                if save_data != "N" and (len(save_data) == 2 or save_data[2] != "h"):
+                    self.save = True
             
             if type[0] == "debuff":
                 debuff = type[1].split(",")
                 
-                self.debuff.append(debuff)
+                save_data = debuff[3]
+                
+                if save_data != "N" and (len(save_data) == 2 or save_data[2] != "h"):
+                    self.save = True
 
     #############################
     #
@@ -133,11 +141,112 @@ class Spell:
         return not self.is_single()
     
     def has_save(self):
-        for i in self.save:
-            if i != None:
-                return True
+    
+        return self.save
+    
+    def is_valid_target(self,target):
+        if self.aim[0] != "t":
+            return True
         
-        return False
+        valid = False
+        
+        # Targeting restrictions
+        
+        # Effect-based restrictions
+        
+        for debuff in self.debuff:
+            if debuff[1] == "cond":
+                if debuff[3] == "end" and target.has(debuff[2]):
+                    valid = True
+                if debuff[3] != "end" and not target.has(debuff[2]):
+                    valid = True
+        
+        return valid
+    
+    def get_DC(self,caster):
+        level_list = self.lvl_parse()
+        SL = level_list[caster.charClass]
+        cast_bon = caster.stat_bonus(caster.casttot())
+        
+        return 10 + SL + cast_bon
+    
+    def avg_damage(self,caster,target):
+        if not self.dmg:
+            return 0
+        
+        CL = caster.CL()
+        
+        avg_dmg_tot = 0
+        
+        for damage in self.dmg:
+            [dice,lvlmax,save,types] = damage
+            
+            if dice[0] == "L":
+                if lvlmax == 0:
+                    dice[0] = CL
+                else:
+                    dice[0] = min(CL,lvlmax)
+            
+            avg_dmg = (dice[0] + (dice[0]*dice[1])) / 2
+                
+            for l in types:
+                pass
+            
+            if save != "N":
+                avg_dmg_fail = avg_dmg
+                avg_dmg_pass = avg_dmg
+                
+                if save[0] == "R" and "improved evasion" in target.da:
+                    avg_dmg_fail = avg_dmg / 2
+                else:
+                    avg_dmg_fail = avg_dmg
+
+                if len(save) > 1:
+                    if save[1] == "2":
+                        if save[0] == "R" and "evasion" in target.da:
+                            avg_dmg_pass = 0
+                        else:
+                            avg_dmg_pass = avg_dmg / 2
+                    if save[1] == "0":
+                        avg_dmg_pass = 0
+
+                if save != "N" and (len(save) == 2 or save[2] != "h"):
+                    save_bon = self.get_save_bon(save,target)
+
+                goal_score = self.get_DC(caster) - save_bon
+
+                chance_pass = max(min((20 - goal_score + 1) / 20,0.95),0.05)
+
+                avg_dmg = (avg_dmg_pass * chance_pass) + (avg_dmg_fail * (1-chance_pass))
+            
+                #print("Average damage on pass: {}".format(avg_dmg_pass))
+                #print("Average damage on fail: {}".format(avg_dmg_fail))
+                #print("DC: {}".format(self.get_DC(caster)))
+                #print("Target save bon: {}".format(save_bon))
+                #print("Goal score: {}".format(goal_score))
+                #print("Chance to pass: {}".format(chance_pass))
+                
+            #print("Average damage: {}".format(avg_dmg))
+            
+            avg_dmg_tot += avg_dmg
+            
+        return avg_dmg_tot
+            
+            
+    #############################
+    #
+    # Utility functions
+    
+    def get_save_bon(self,save,target):
+        if save[0] == "F":
+            save_bon = target.get_fort()
+        if save[0] == "R":
+            save_bon = target.get_ref()
+        if save[0] == "W":
+            save_bon = target.get_will()
+        
+        return save_bon
+        
 
     def copy(self):
         return copy.copy(self)

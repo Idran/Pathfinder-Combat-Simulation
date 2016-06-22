@@ -273,6 +273,8 @@ class AI:
         act = []
         log = []
         
+        log.append("{} is selecting a spell".format(self.char.name))
+        
         max_level = self.char.max_spell_lvl
         spell_data_list = []
         combatant_data = {"Ally":[],"Enemy":[]}
@@ -289,20 +291,40 @@ class AI:
             if len(combatant_data["Enemy"]) > 1:
                 spell_list1 = self.char.spell_list("Damage","Multi")
                 spell_list2 = self.char.spell_list("Damage","Single",-1,"Max")
+                spell_list3 = self.char.spell_list("Debuff","Multi")
+                spell_list4 = self.char.spell_list("Debuff","Single",-1,"Max")
+                
+                spell_list = spell_list1 + spell_list2 + spell_list3 + spell_list4
+                
+                spell_list = list(set(spell_list))
+                
+                spell_list.sort(key=lambda i: i.lvl_parse()[self.char.charClass], reverse=True)
+                
+            if len(combatant_data["Enemy"]) == 1 or len(spell_list) == 0:
+                spell_list1 = self.char.spell_list("Damage")
+                spell_list2 = self.char.spell_list("Debuff")
                 
                 spell_list = spell_list1 + spell_list2
                 
+                spell_list = list(set(spell_list))
+                
                 spell_list.sort(key=lambda i: i.lvl_parse()[self.char.charClass], reverse=True)
-            else:
-                spell_list = self.char.spell_list("Damage")
+                
             
-            #print("Start0")
-            #for spell in spell_list:
-            #    print("Spell: {}, Level: {}".format(spell.name,spell.lvl_parse()[self.char.charClass]))
-            #print("End0")
+            print("Start0")
+            for spell in spell_list:
+                print("Spell: {}, Level: {}".format(spell.name,spell.lvl_parse()[self.char.charClass]))
+                print("Avg dmg vs self: {}".format(spell.avg_damage(self.char,self.char)))
+            print("End0")
             
-            self.node = "Decided"
-            act.append(["end"])
+        if len(spell_list) == 0:
+            self.set_tactic("Retreat")
+            log.append("Out of usable spells; retreating")
+            self.node = "Ready"
+            return[[],log]
+            
+        self.node = "Decided"
+        act.append(["end"])
     
         return[act,log]
     
