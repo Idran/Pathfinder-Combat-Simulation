@@ -312,10 +312,10 @@ class AI:
                 
             
             print("Start0")
-            for spell in spell_list:
-                print("Spell: {}, Level: {}".format(spell.name,spell.lvl_parse()[self.char.charClass]))
-                print("Avg dmg vs self: {}".format(spell.avg_damage(self.char,self.char)))
-            print("End0")
+            #for spell in spell_list:
+            #    print("Spell: {}, Level: {}".format(spell.name,spell.lvl_parse()[self.char.charClass]))
+            #    print("Avg dmg vs self: {}".format(spell.avg_damage(self.char,self.char)))
+            #print("End0")
             
         if len(spell_list) == 0:
             self.set_tactic("Retreat")
