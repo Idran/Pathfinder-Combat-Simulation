@@ -43,6 +43,7 @@ class Foundation:
         self.divine = False
         self.hit_die = 10
         self.damage = 0
+        self.temp_dmg = 0
         self.damage_con = "Normal"
         self.equip_list = []
         self.melee_weaps = []
@@ -65,6 +66,8 @@ class Foundation:
         self.sq_list = []
         self.da = []
         self.da_list = []
+        self.vuln = []
+        self.res = {}
         self.immune = []
         
         self.cast_stat = None
@@ -969,6 +972,22 @@ class Foundation:
         if quality in self.da:
             self.da.remove(quality)
     
+    def add_vuln(self, elem):
+        if elem not in self.vuln:
+            self.vuln.append(elem)
+    
+    def del_vuln(self, elem):
+        if elem in self.vuln:
+            self.vuln.remove(elem)
+    
+    def add_res(self, elem, amt):
+        if elem not in self.res:
+            self.res[elem] = amt
+    
+    def del_res(self, elem):
+        if elem in self.res:
+            del self.res[elem]
+    
     def add_imm(self, elem):
         if elem not in self.immune:
             self.immune.append(elem)
@@ -1758,6 +1777,25 @@ class Foundation:
 
     #############################
     #
+    # Defensive ability functions
+    
+    def is_weak(self,atktype):
+    
+        return atktype in self.vuln
+    
+    def res_amt(self,atktype):
+    
+        if atktype in self.res:
+            return self.res[atktype]
+    
+        return 0
+    
+    def is_immune(self,atktype):
+    
+        return atktype in self.immune
+
+    #############################
+    #
     # DR functions
 
     def get_dr(self):
@@ -1827,7 +1865,18 @@ class Foundation:
     def get_hp_perc(self):
         maxhp = self.get_hp()
         curhp = maxhp - self.damage
-        return curhp / maxhp
+        return max(curhp / maxhp,0)
+    
+    def get_hp_temp_perc(self):
+        maxhp = self.get_hp()
+        curhp = maxhp - self.damage - self.temp_dmg
+        return max(curhp / maxhp,0)
+    
+    def temp_dmg_add(self,dmg):
+        self.temp_dmg += dmg
+    
+    def temp_dmg_reset(self):
+        self.temp_dmg = 0
 
     #############################
     #

@@ -287,6 +287,8 @@ class AI:
             
             combatant_data[side].append(other)
         
+        # Generating spell list
+        
         if self.tactic[1] in ["Damage"]:
             if len(combatant_data["Enemy"]) > 1:
                 spell_list1 = self.char.spell_list("Damage","Multi")
@@ -309,13 +311,6 @@ class AI:
                 spell_list = list(set(spell_list))
                 
                 spell_list.sort(key=lambda i: i.lvl_parse()[self.char.charClass], reverse=True)
-                
-            
-            print("Start0")
-            #for spell in spell_list:
-            #    print("Spell: {}, Level: {}".format(spell.name,spell.lvl_parse()[self.char.charClass]))
-            #    print("Avg dmg vs self: {}".format(spell.avg_damage(self.char,self.char)))
-            #print("End0")
             
         if len(spell_list) == 0:
             self.set_tactic("Retreat")
@@ -323,6 +318,43 @@ class AI:
             self.node = "Ready"
             return[[],log]
             
+            #print("Start0")
+            #for spell in spell_list:
+            #    print("Spell: {}, Level: {}".format(spell.name,spell.lvl_parse()[self.char.charClass]))
+            #    print("Avg dmg vs self: {}".format(spell.avg_damage(self.char,self.char)))
+            #print("End0")
+        
+        # Checking spell target options
+        
+        avg_dmg_table = []
+        spell_choice = []
+        
+        if self.tactic[1] in ["Damage"]:
+            for spell in spell_list:
+                avg_dmg = 0
+                if spell.aim[0] == "t":
+                    target_table = []
+                    for i in range(0,spell.targ_parse(self.char)):
+                        avg_dmg_table = self.single_target_dmg_spell_eval(spell,combatant_data["Enemy"])
+                        
+                        if not avg_dmg_table:
+                            continue
+                            
+                        selection = avg_dmg_table[0]
+                        target_table.append(selection[1])
+                        avg_dmg += selection[2]
+                        selection[1].temp_dmg_add(selection[2])
+                        
+                    for enemy in combatant_data["Enemy"]:
+                        enemy.temp_dmg_reset()
+                    spell_choice.append([spell.name,avg_dmg,target_table[:]])
+                elif spell.aim[0] == "a":
+                    spell_area = spell.get_area()
+                    
+        
+        for entry in spell_choice:
+            print("[{},{},{}]".format(entry[0],entry[1],entry[2]))
+        
         self.node = "Decided"
         act.append(["end"])
     
@@ -421,3 +453,22 @@ class AI:
                     act.append(["attack",False])        
         
         return [act,log]
+    
+    def single_target_dmg_spell_eval(self,spell,enemy_list):
+        avg_dmg_table = []
+        
+        range = spell.get_range(self.char)
+
+        for enemy in enemy_list:
+            if not spell.is_valid_target(enemy):
+                continue
+            dist_to_target = self.mat.dist_ft(self.char.loc, enemy.loc)
+            if dist_to_target > range:
+                continue
+
+            avg_dmg_table.append([spell,enemy,spell.avg_damage(self.char,enemy)])
+
+        avg_dmg_table.sort(key=lambda i:i[1].get_hp_temp_perc())
+        avg_dmg_table.sort(key=lambda i:i[2])
+        
+        return avg_dmg_table

@@ -106,7 +106,7 @@ test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con
 test_wiz1.add_weapon(items.quarterstaff.copy(), active=True)
 
 test_wiz1.add_spell_mem(spells.burning_hands.copy())
-test_wiz1.add_spell_mem(spells.mage_armor.copy())
+test_wiz1.add_spell_mem(spells.magic_missile.copy())
 test_wiz1.add_spell_mem(spells.bleed.copy())
 test_wiz1.add_spell_mem(spells.detect_magic.copy())
 test_wiz1.add_spell_mem(spells.resistance.copy())
