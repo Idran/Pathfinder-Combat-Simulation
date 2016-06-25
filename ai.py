@@ -30,7 +30,7 @@ class AI:
         
         while self.node != "Decided":
             temp = self.pick_action()
-            print("{}: {}".format(self.char.name,self.node))
+            #print("{}: {}".format(self.char.name,self.node))
             act += temp[0]
             log += temp[1]
         
@@ -187,6 +187,10 @@ class AI:
             if self.char.get_hp_perc() <= 0.5:
                 for satk in self.char.sa_list:
                     if set.intersection(set(satk.cond_list),set(self.disable_list)): #Checking for disabling special attacks
+                        if not self.range_check(satk):
+                            continue
+                        if not self.prereq_check(satk):
+                            continue
                         temp = self.trigger(satk)
                         if temp[0] or temp[1]:
                             act += temp[0]
@@ -316,8 +320,8 @@ class AI:
                 spell_list.sort(key=lambda i: i.lvl_parse()[self.char.charClass], reverse=True)
             
         if len(spell_list) == 0:
-            self.set_tactic("Retreat")
-            log.append("Out of usable spells; retreating")
+            log.append("Out of usable spells; switching to Close tactic")
+            self.set_tactic("Close")
             self.node = "Ready"
             return[[],log]
             
@@ -455,9 +459,10 @@ class AI:
 ###################################################################
 #
 # Action functions
-    
-    def can_trip(self, target):
-        return target.type not in ["Ooze"] and target.legs > 0 and not target.has("Prone")
+
+    #############################
+    #
+    # Movement functions
     
     def move_to_target(self, act):
         
@@ -472,34 +477,22 @@ class AI:
         
         return act
 
+    #############################
+    #
+    # Attack functions
+    
+    def can_trip(self, target):
+        return target.type not in ["Ooze"] and target.legs > 0 and not target.has("Prone")
+
     def is_down(self):
         return self.char.has("Prone")
     
     def safe_to_stand(self):
         return (not self.mat.check_threat(self.char, self.loc) or ("R" in self.char.weap_type() and "Crossbows" not in self.char.weap_group()))
-        
-    def trigger(self, satk):
-        act = []
-        log = []
-        
-        used = satk.use()
-        if not used:
-            return [[],[]]
-        
-        log.append("{} is trying to use {} on {}".format(self.char.name,satk.name,self.char.target.name))
-        
-        post_damage = 0
-        
-        for action in satk.acts:
-            if action[0] in ["cond","damage","if"]:
-                act.append(action)
-            elif action[0] == "attack":
-                if self.moves == 0:
-                    act.append(["attack",True])
-                else:
-                    act.append(["attack",False])        
-        
-        return [act,log]
+
+    #############################
+    #
+    # Magic functions
     
     def single_target_dmg_spell_eval(self,spell,enemy_list):
         avg_dmg_table = []
@@ -524,3 +517,63 @@ class AI:
         avg_dmg_table.sort(key=lambda i:i[2])
         
         return avg_dmg_table
+
+    #############################
+    #
+    # Special Attack functions
+    
+    def prereq_check(self,satk):
+        
+        prereqs = satk.prereqs
+        
+        if not prereqs:
+            return True
+        
+        for weap_name in prereqs["weap"]:
+            if self.char.weap_name != weap_name:
+                weap_data = self.char.owns_weapon(weap_name)
+                if not weap_data[0]:
+                    return False
+        
+        return True
+                
+    
+    def range_check(self,satk):
+        if satk.range == "M":
+            return self.mat.threaten(self.char,self.char.target)
+        
+    def trigger(self, satk):
+        act = []
+        log = []
+        
+        used = satk.use()
+        if not used:
+            return [[],[]]
+        
+        log.append("{} is trying to use {} on {}".format(self.char.name,satk.name,self.char.target.name))
+                
+        prereqs = satk.prereqs
+        weap_data = None
+        
+        if "weap" in prereqs:
+            weap_name = prereqs["weap"][0]
+            if self.char.weap_name() != weap_name:
+                weap_data = self.char.owns_weapon(weap_name)[1]
+                log.append("Swapping to {} to enable {}".format(weap_name,satk.name))
+                act.append(["swap",weap_data])
+                if self.char.weap_swap() == "move" or self.char.bab[0] == 0:
+                    self.moves += 1
+        
+        if self.moves == 2:
+            return[act,log]
+        
+        for action in satk.acts:
+            if action[0] in ["cond","damage","if"]:
+                act.append(action)
+            elif action[0] == "attack":
+                if self.moves == 0:
+                    act.append(["attack",True])
+                else:
+                    act.append(["attack",False])        
+        
+        return [act,log]

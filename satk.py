@@ -3,7 +3,7 @@ import copy
 class SpAtk:
     """Spell data structure"""
 
-    def __init__(self, name="", range=0, aim=None, dur=0, sr=False, effect=None, uses=1, ref_rate="rd", ref_count=1):
+    def __init__(self, name="", range=0, aim=None, dur=0, sr=False, effect=None, uses=1, ref_rate="rd", ref_count=1, prereqs=None):
         if aim == None:
             aim = ["t",0]
         
@@ -25,6 +25,9 @@ class SpAtk:
         self.dmg = False
         
         self.effect_parse(effect)
+        
+        self.prereqs = {}
+        self.prereq_parse(prereqs)
     
     def set_uses(self, uses=1, ref_rate="rd", ref_count=1):
         
@@ -48,6 +51,17 @@ class SpAtk:
     
     def targ_parse(self):
         return 0
+    
+    def prereq_parse(self, prereqs):
+        prereq_list = prereqs.split(";")
+        
+        for pr in prereq_list:
+            prereq = pr.split(",")
+            
+            if prereq[0] not in self.prereqs:
+                self.prereqs[prereq[0]] = [prereq[1]]
+            else:
+                self.prereqs[prereq[0]].append(prereq[1])
     
     def effect_parse(self, effect):
         effect_list = effect.split(";")

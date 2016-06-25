@@ -378,6 +378,13 @@ class Foundation:
                 list.append(item)
         
         return list
+    
+    def owns_weapon(self,weap_name):
+        for item in range(len(self.equip_list)):
+            if self.equip_list[item] != None and self.item_type(item) == "weapon" and self.weap_name(item) == weap_name:
+                return [True,item]
+        
+        return [False,None]
         
     ##################################################################################
 

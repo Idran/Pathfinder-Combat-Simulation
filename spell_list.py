@@ -1,7 +1,7 @@
 import spell
 
 burning_hands = spell.Spell(name="burning hands", level="m1s1w1", school="ev", desc="f", comp="VS", range="15", aim=["a","CB"], effect="damage Ld4,5,R2,f")
-magic_missile = spell.Spell(name="magic missile", level="m1s1w1", school="ev", desc="o", comp="VS", range="medium", aim=["t","R1,9,2"], effect="damage 1d4+1,,N,o")
+magic_missile = spell.Spell(name="magic missile", level="m1s1w1", school="ev", desc="o", comp="VS", range="medium", aim=["t","R1,9,2"], effect="damage 5d1,,N,o")
 
 mage_armor = spell.Spell(name="mage armor", level="s1u1w1", school="co", subschool=["creation"], desc="o", comp="VSF", range="0", aim=["t","1"], effect="buff armor,armor,4,W0h", dur="hLD")
 

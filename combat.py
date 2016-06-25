@@ -148,8 +148,6 @@ class Combat:
             
             act_status = fighter.can_act()
             
-            print("{}".format(act_status))
-            
             if not act_status[0]:
                 self.log("{} unable to act due to {} condition".format(fighter.name,act_status[1]))
                 continue
@@ -192,7 +190,7 @@ class Combat:
                     if action[1] == "dmg":
                         if post_damage == pre_damage:
                             self.log("Conditional failed, no damage taken")
-                            iter_result.__next__()
+                            next(iter_result)
                             continue
                         else:
                             self.log("Conditional passed")
