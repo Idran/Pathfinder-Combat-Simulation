@@ -30,7 +30,7 @@ class AI:
         
         while self.node != "Decided":
             temp = self.pick_action()
-            #print("{}: {}".format(self.char.name,self.node))
+            print("{}: {}".format(self.char.name,self.node))
             act += temp[0]
             log += temp[1]
         
@@ -92,6 +92,9 @@ class AI:
         if self.tactic[0] in ["Nothing"]:
             self.node = "Decided"
             return[["end"],[]]
+            
+        self.node = "Decided"
+        return[["end"],[]]
     
     def attacking(self):
         
@@ -413,6 +416,9 @@ class AI:
             pot_target = None
 
             for other in self.fighters:
+                active_check = other.is_active()
+                if not active_check[0]:
+                    continue
                 if other.side != self.char.side:
                     other_dist = self.mat.dist_tile(self.char.loc, other.loc)
                     if other_dist < target_dist:
@@ -425,6 +431,7 @@ class AI:
                 log.append("{0} has no target; {0} does nothing".format(self.char.name))
                 self.node = "Decided"
                 act.append(["end"])
+                return [act,log]
 
         dist_to_target = self.mat.dist_ft(self.char.loc, self.char.target.loc)
         log.append("Distance from {} to {}: {} ft.".format(self.char.name, self.char.target.name, dist_to_target))
@@ -481,8 +488,10 @@ class AI:
         
         log.append("{} is trying to use {} on {}".format(self.char.name,satk.name,self.char.target.name))
         
+        post_damage = 0
+        
         for action in satk.acts:
-            if action[0] in ["cond","damage"]:
+            if action[0] in ["cond","damage","if"]:
                 act.append(action)
             elif action[0] == "attack":
                 if self.moves == 0:

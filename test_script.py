@@ -5,6 +5,7 @@ import equip
 import items
 import spell_list as spells
 import sys
+import traceback
 
 jaya = character.Character(charClass="Bard", level=10, str=11, dex=18, con=14, int=13, wis=10, cha=16, feat_list=["Improved Initiative", "Point-Blank Shot", "Precise Shot", "Bullseye Shot", "Rapid Shot", "Arcane Strike"], ambi=True, name="Jaya", loc=[1,2], hp=67, AC=19)
 
@@ -143,11 +144,19 @@ fight.set_init()
 roundcount = 0
 
 while not fight.check_combat_end() and roundcount < 50:
-#    try:
+    try:
         roundcount += 1
         fight.combat_round()
-#    except:
-#        print("Unexpected error: {}".format(sys.exc_info()))
+    except:
+        print("Unexpected error, dumping log")
+        print("=====================================================================================")
+        print(fight.output_log())
+        print("=====================================================================================")
+        print("Log dump complete")
+        print("-----------------")
+        print("Error details:")
+        traceback.print_exc()
+        sys.exit()
 
 print(fight.output_log())
 print(fighter1.get_atk_bon(0, True, fighter2.type, fighter2.subtype))

@@ -148,6 +148,8 @@ class Combat:
             
             act_status = fighter.can_act()
             
+            print("{}".format(act_status))
+            
             if not act_status[0]:
                 self.log("{} unable to act due to {} condition".format(fighter.name,act_status[1]))
                 continue
@@ -163,6 +165,9 @@ class Combat:
             #############################
             #
             # Run AI routine
+
+            if fighter.target in self.defeated:
+                self.clear_target(fighter)
             
             result = fighter.ai.act()
             
@@ -170,9 +175,27 @@ class Combat:
             
             survive = True
             
-            for action in result[0]:
+            post_damage = 0
+            
+            iter_result = iter(result[0])
+            
+            for action in iter_result:
+                if fighter.target:
+                    pre_damage = post_damage
+                    post_damage = fighter.target.damage
+                else:
+                    pre_damage = 0
+                    post_damage = 0
                 if action[0] == "end":
                     break
+                elif action[0] == "if":
+                    if action[1] == "dmg":
+                        if post_damage == pre_damage:
+                            self.log("Conditional failed, no damage taken")
+                            iter_result.__next__()
+                            continue
+                        else:
+                            self.log("Conditional passed")
                 elif action[0] == "move":
                     survive = self.move_path(fighter, action[1])
                 elif action[0] == "attack":

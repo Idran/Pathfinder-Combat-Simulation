@@ -1706,9 +1706,18 @@ class Foundation:
         for satk in self.sa_list:
             satk.round()
     
-    def can_act(self):
+    def is_active(self):
         if self.damage_con != "Normal":
-            return False
+            return [False,self.damage_con]
+        else:
+            return [True,""]
+    
+    def can_act(self):
+    
+        active_check = self.is_active()
+        
+        if not active_check[0]:
+            return active_check
         
         disable_list = ["Stunned","Paralyzed","Petrified","Unconscious"]
         
