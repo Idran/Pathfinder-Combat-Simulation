@@ -73,6 +73,18 @@ class Combat:
     def clear_target(self, fighter):
         self.log("{} targets no one".format(fighter.name))
         fighter.target = None
+    
+    def aoo_possible(self, fighter, tile):
+        for foe in self.fighters:
+            if foe.side == fighter.side:
+                continue
+                
+            if tile in self.threat_tiles[foe.name] and self.can_attempt_aoo(foe):
+                return True
+        
+        return False
+
+        # Note: current test only works for 1x1 combatants, fix in future
 
     def check_for_aoo(self, fighter, tile):
         for foe in self.fighters:
@@ -160,15 +172,15 @@ class Combat:
             
             for action in result[0]:
                 if action[0] == "end":
-                    pass
+                    break
                 elif action[0] == "move":
                     survive = self.move_path(fighter, action[1])
-                    if not survive:
-                        break
                 elif action[0] == "attack":
                     self.attack(fighter, fighter.target, action[1])
                 elif action[0] == "satk":
                     self.satk(fighter, fighter.target, action[1])
+                elif action[0] == "cast":
+                    survive = self.cast(fighter, action[2], action[1])
                 elif action[0] == "stand":
                     self.log("{} stands up".format(fighter.name))
                     fighter.drop_condition("Prone")
@@ -186,6 +198,9 @@ class Combat:
                     self.trip(fighter, fighter.target)
                 else:
                     pass
+                
+                if not survive:
+                    break
 
             if not survive:
                 continue
@@ -377,6 +392,61 @@ class Combat:
             
     def drop(self, target, slot):
         return target.drop("wield,{}".format(slot))
+
+    #############################
+    #
+    # Magic functions
+    
+    def cast(self, fighter, target_list, spell):
+    
+        cast_defensive = False
+        SL = spell.lvl_parse()[fighter.charClass]
+        
+        if self.aoo_possible(fighter, fighter.loc):
+            conc_bon = fighter.concentration()
+            DC = 15 + 2*SL
+            check_goal = DC - conc_bon
+            
+            if check_goal <= 10:
+                self.log("{0} casts defensively; {0} is making a concentration check against DC {1}".format(fighter.name,DC))
+                conc_result = fighter.check_conc(DC)
+                if conc_result[0]:
+                    self.log("{} passed their concentration check ({})".format(fighter.name,conc_result[1]))
+                    cast_defensive = True
+                else:
+                    self.log("{0} failed their concentration check ({1}); {0} loses spell".format(fighter.name,conc_result[1]))
+                    fighter.cast(spell)
+                    return True
+        
+        if not cast_defensive:
+            pre_dmg = fighter.damage
+            self.check_for_aoo(fighter, fighter.loc)
+            if self.check_death(fighter):
+                return False
+            if fighter.damage > pre_dmg:
+                damage_taken = fighter.damage - pre_dmg
+                DC = 10 + damage_taken + SL
+                self.log("{0} took {1} damage while casting; {0} is making a concentration check against DC {2}".format(fighter.name,damage_taken,DC))
+                conc_result = fighter.check_conc(DC)
+                if conc_result[0]:
+                    self.log("{} passed their concentration check ({})".format(fighter.name,conc_result[1]))
+                else:
+                    self.log("{0} failed their concentration check ({1}); {0} loses spell".format(fighter.name,conc_result[1]))
+                    fighter.cast(spell)
+                    return True
+        
+        fighter.cast(spell)
+        for target in target_list:
+            result = spell.cast_on(target, fighter)
+            self.combatlog += result[1]
+            spell_dmg = result[0]
+            self.log("{} takes {} damage".format(target.name, spell_dmg))
+            if spell_dmg > 0:
+                target.take_damage(spell_dmg)
+                self.log("{} at {}".format(target.name, target.print_hp()))
+        
+        return True
+        
 
 ###################################################################
 #

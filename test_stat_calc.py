@@ -73,5 +73,8 @@ monsterarm.set_bon(1)
 monster.add_armor(monsterarm, active=True)
 
 print(test_monk1.print_stat_block())
-for i in range(5,45,5):
-    print("{}: {}".format(i,spells.burning_hands.get_quarter_circle_sweep(i)))
+print("{}".format(spells.burning_hands.get_range(test_wiz1)))
+print("-----")
+for entry in spells.burning_hands.get_area(test_wiz1):
+    print("{}".format(entry))
+print("=====")

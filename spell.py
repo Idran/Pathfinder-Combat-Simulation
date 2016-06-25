@@ -1,5 +1,6 @@
 import copy
 import re
+import random
 
 class Spell:
     """Spell data structure"""
@@ -33,6 +34,7 @@ class Spell:
         
         self.class_parse = {"b":"Bard", "c":"Cleric", "d":"Druid", "i":"Inquisitor", "m":"Magus", "o":"Oracle", "p":"Paladin", "r":"Ranger", "s":"Sorcerer", "u":"Summoner", "w":"Wizard"}
         self.type_parse = {"f":"Fire", "o":"Force"}
+        self.save_parse = {"F":"Fortitute", "R":"Reflex", "W":"Will"}
         
         self.effect_parse(effect)
 
@@ -166,12 +168,16 @@ class Spell:
         
         # Effect-based restrictions
         
-        for debuff in self.debuff:
-            if debuff[1] == "cond":
-                if debuff[3] == "end" and target.has(debuff[2]):
-                    valid = True
-                if debuff[3] != "end" and not target.has(debuff[2]):
-                    valid = True
+        if self.dmg:
+            valid = True
+        
+        if self.debuff:
+            for debuff in self.debuff:
+                if debuff[1] == "cond":
+                    if debuff[3] == "end" and target.has(debuff[2]):
+                        valid = True
+                    if debuff[3] != "end" and not target.has(debuff[2]):
+                        valid = True
         
         return valid
     
@@ -205,10 +211,12 @@ class Spell:
         
         if self.aim[1] == "L":
             area_set = self.get_line_area(spell_rng)
+        elif self.aim[1][0] == "C":
+            area_set = self.get_cone_area(spell_rng)
             
         return area_set
     
-    def get_quarter_circle_sweep(self,spell_rng):
+    def get_quarter_circle_sweep(self,spell_rng,filled=False):
         
         outer_point_set = []
         
@@ -226,7 +234,123 @@ class Spell:
             point = [x + diag,diag]
             outer_point_set.append(point)
         
+        if filled:
+            for x1,y1 in outer_point_set:
+                for y in range(0,y1):
+                    if [x1,y] not in outer_point_set:
+                        outer_point_set.append([x1,y])
+        
+        outer_point_set.sort(key=lambda i:i[0])
+        outer_point_set.sort(key=lambda i:i[1], reverse=True)
+        
         return outer_point_set
+    
+    def get_quarter_circle_sweep_tilted(self,spell_rng,filled=False):
+        
+        outer_point_set = []
+        outer_point_set_2 = []
+        
+        square_count = spell_rng // 5
+        
+        for y_mod in range(1,square_count + 1):
+            y = square_count - y_mod
+            diag = int((y_mod - 1) * 2 / 3)
+            point = [diag,y + diag]
+            outer_point_set.append(point)
+        
+        for x1,y1 in outer_point_set:
+            outer_point_set_2.append([-x1 - 1,y1])
+        
+        if filled:
+            for x1,y1 in outer_point_set:
+                for y in range(x1,y1):
+                    if [x1,y] not in outer_point_set:
+                        outer_point_set.append([x1,y])
+                        
+            for x1,y1 in outer_point_set_2:
+                for y in range(-(x1 + 1),y1):
+                    if [x1,y] not in outer_point_set_2:
+                        outer_point_set_2.append([x1,y])
+        
+        outer_point_set = outer_point_set + outer_point_set_2
+        
+        outer_point_set.sort(key=lambda i:i[0])
+        outer_point_set.sort(key=lambda i:i[1], reverse=True)
+        
+        return outer_point_set
+    
+    def get_cone_area(self,spell_rng):
+        area_set = []
+        
+        # Diagonal cones
+        
+        base_area = self.get_quarter_circle_sweep(spell_rng,True)
+        
+        area_set.append(base_area[:]) # NE cone
+        
+        temp_area = []
+        for x1,y1 in base_area:
+            temp_area.append([x1,-y1 - 1])
+        
+        temp_area.sort(key=lambda i:i[0])
+        temp_area.sort(key=lambda i:i[1], reverse=True)
+        
+        area_set.append(temp_area[:]) # SE cone
+        
+        temp_area = []
+        for x1,y1 in base_area:
+            temp_area.append([-x1 - 1,y1])
+        
+        temp_area.sort(key=lambda i:i[0])
+        temp_area.sort(key=lambda i:i[1], reverse=True)
+        
+        area_set.append(temp_area[:]) # NW cone
+        
+        temp_area = []
+        for x1,y1 in base_area:
+            temp_area.append([-x1 - 1,-y1 - 1])
+        
+        temp_area.sort(key=lambda i:i[0])
+        temp_area.sort(key=lambda i:i[1], reverse=True)
+        
+        area_set.append(temp_area[:]) # SW cone
+        
+        # Straight cones
+        
+        base_area = self.get_quarter_circle_sweep_tilted(spell_rng,True)
+        
+        area_set.append(base_area[:]) # N cone
+        
+        temp_area = []
+        for x1,y1 in base_area:
+            temp_area.append([x1,-y1 - 1])
+        
+        temp_area.sort(key=lambda i:i[0])
+        temp_area.sort(key=lambda i:i[1], reverse=True)
+        
+        area_set.append(temp_area[:]) # S cone
+        
+        temp_area = []
+        for x1,y1 in base_area:
+            temp_area.append([y1,x1])
+        
+        temp_area.sort(key=lambda i:i[0])
+        temp_area.sort(key=lambda i:i[1], reverse=True)
+        
+        area_set.append(temp_area[:]) # E Cone
+        
+        temp_area = []
+        for x1,y1 in base_area:
+            temp_area.append([-y1 - 1,x1])
+        
+        temp_area.sort(key=lambda i:i[0])
+        temp_area.sort(key=lambda i:i[1], reverse=True)
+        
+        area_set.append(temp_area[:]) # W Cone
+        
+        area_set_2 = [area_set,["NE","SE","NW","SW","N","S","E","W"]]
+        
+        return area_set_2
     
     def get_line_area(self,spell_rng):
         area_set = []
@@ -263,15 +387,15 @@ class Spell:
                 
                 if target.is_weak(dmgtype):
                     avg_dmg *= 1.5
-                    print("Weak to {}".format(dmgtype))
+                    #print("Weak to {}".format(dmgtype))
                 elif target.res_amt(dmgtype) > 0:
                     avg_dmg -= target.res_amt(dmgtype)
                     if avg_dmg < 0:
                         avg_dmg = 0
-                    print("Resistance {} against {}".format(target.res_amt(dmgtype),dmgtype))
+                    #print("Resistance {} against {}".format(target.res_amt(dmgtype),dmgtype))
                 elif target.is_immune(dmgtype):
                     avg_dmg = 0
-                    print("Immune to {}".format(dmgtype))
+                    #print("Immune to {}".format(dmgtype))
             
             if self.sr:
                 SR_goal_score = target.get_sr() - CL
@@ -319,7 +443,93 @@ class Spell:
             avg_dmg_tot += avg_dmg
             
         return avg_dmg_tot
+
+    def cast_on(self,target,caster):
+        
+        CL = caster.CL()
+        
+        for damage in self.dmg:
+        
+            spell_dmg = 0
+            spell_log = []
             
+            target_SR = target.get_sr()
+            
+            if self.sr and target_SR > 0:
+                spell_log.append("{0} is making a caster level check against SR {1}".format(caster.name,target_SR))
+                
+                SR_goal_score = target_SR - CL
+
+                SR_roll = random.randint(1,20)
+                
+                if SR_roll < SR_goal_score:
+                    spell_log.append("{0} failed their caster level check ({1})".format(caster.name,SR_roll + CL))
+                    return [spell_dmg,spell_log]
+                else:
+                    spell_log.append("{0} passed their caster level check ({1})".format(caster.name,SR_roll + CL))
+                
+            [dice,lvlmax,save,types] = damage
+            
+            if dice[0] == "L":
+                if lvlmax == 0:
+                    dice[0] = CL
+                else:
+                    dice[0] = min(CL,lvlmax)
+            
+            for i in range(0,dice[0]):
+                spell_dmg += random.randint(1,dice[1])
+                    
+            spell_dmg += dice[2]
+                
+            for l in types:
+                dmgtype = self.type_parse[l]
+                
+                if target.is_weak(dmgtype):
+                    spell_log.append("{0} is vulnerable to {1}; {0} takes 1.5x damage".format(target.name,dmgtype))
+                    spell_dmg *= 1.5
+                elif target.res_amt(dmgtype) > 0:
+                    spell_log.append("{0} has {1} resistance {2}".format(target.name,dmgtype,target.res_amt(dmgtype)))
+                    spell_dmg -= target.res_amt(dmgtype)
+                    if spell_dmg < 0:
+                        spell_dmg = 0
+                elif target.is_immune(dmgtype):
+                    spell_log.append("{0} is immune to {1}".format(target.name,dmgtype))
+                    spell_dmg = 0
+                    return [spell_dmg,spell_log]
+            
+            if save != "N" and (len(save) == 2 or save[2] != "h"):
+
+                save_bon = self.get_save_bon(save,target)
+                DC = self.get_DC(caster)
+        
+                spell_log.append("{} is making a {} save against DC {}".format(target.name, self.save_parse[save[0]], DC))
+                
+                save_roll = random.randint(1,20) + save_bon
+                
+                if save_roll < DC:
+                    spell_log.append("{} failed their save ({})".format(target.name,save_roll))
+                    if save[0] == "R" and "improved evasion" in target.da:
+                        spell_log.append("{} has improved evasion and so takes half damage".format(target.name))
+                        spell_dmg = spell_dmg // 2
+                else:
+                    spell_log.append("{} passed their save ({})".format(target.name,save_roll))
+                    if save[1] == "2":
+                        if save[0] == "R" and "evasion" in target.da:
+                            spell_log.append("{} has evasion and so takes no damage".format(target.name))
+                            spell_dmg = 0
+                            return[spell_dmg,spell_log]
+                        else:
+                            spell_log.append("{} takes half damage".format(target.name))
+                            spell_dmg = spell_dmg // 2
+                            spell_dmg = max(1,spell_dmg)
+                    if save[1] == "0":
+                        spell_log.append("{} takes no damage".format(target.name))
+                        spell_dmg = 0
+                        return[spell_dmg,spell_log]
+            
+        return [spell_dmg,spell_log]
+
+
             
     #############################
     #

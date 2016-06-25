@@ -347,13 +347,51 @@ class AI:
                         
                     for enemy in combatant_data["Enemy"]:
                         enemy.temp_dmg_reset()
-                    spell_choice.append([spell.name,avg_dmg,target_table[:]])
-                elif spell.aim[0] == "a":
-                    spell_area = spell.get_area()
-                    
+                    log_line = "{} attempts to cast {} at target(s) {}".format(self.char.name,spell.name,list(map(lambda i:i.name,target_table)))
+                    spell_choice.append([spell,avg_dmg,target_table[:],log_line])
+                elif spell.aim[0] == "a" and spell.aim[1][1] not in ['S','Y']:
+                    spell_area,desc = spell.get_area(self.char)
+                    target_list = self.mat.get_spell_targets(spell_area,self.char)
+
+                    avg_dmg_table = []                    
+                    #print("=====")
+                    corner = ["bottom-left","top-left","bottom-right","top-right"]
+                    for j in range(0,4):
+                        for i,area in enumerate(target_list[j]):
+                            avg_dmg_tot = 0
+                            #print("{}, {}: {}".format(j,i,list(map(lambda j:[j[0]+self.char.loc[0],j[1]+self.char.loc[1]], spell_area[i]))))
+                            if not area:
+                                #print("\tNo targets".format(j,i))
+                                pass
+                            else:
+                                for target in area:
+                                    #print("\t{}: {}".format(target.name,target.loc))
+                                    avg_dmg = spell.avg_damage(self.char,target)
+                                    #print("\t\tAvg dmg: {}".format(avg_dmg))
+                                    if target.side == self.char.side:
+                                        avg_dmg_tot -= 2 * avg_dmg
+                                    else:
+                                        avg_dmg_tot += avg_dmg
+                            #print("\tTotal expected damage: {}".format(avg_dmg_tot))
+                            avg_dmg_table.append([avg_dmg_tot, j, i])
+                            #print("=====")
+                    avg_dmg_table.sort(key=lambda i:i[0], reverse=True)
+                    avg_dmg,j,i = avg_dmg_table[0]
+                    log_line = "{} attempts to cast {} towards {} from {} corner, striking target(s) {}".format(self.char.name,spell.name,desc[i],corner[j],list(map(lambda i:i.name,target_list[j][i])))
+                    spell_choice.append([spell,avg_dmg,target_list[j][i][:],log_line])
+                   
+            spell_choice.sort(key=lambda i:i[1], reverse=True)
+            if spell_choice[0][1] >= 0:
+                spell_pick = [spell_choice[0][0],spell_choice[0][2],spell_choice[0][3]]
+            else:
+                spell_pick = []
         
-        for entry in spell_choice:
-            print("[{},{},{}]".format(entry[0],entry[1],entry[2]))
+        #for entry in spell_choice:
+        #    print("[{},{},{},{}]".format(entry[0],entry[1],list(map(lambda i:i.name,entry[2])),entry[3]))
+        
+        if spell_pick:
+            act.append(["cast",spell_pick[0],spell_pick[1]])
+            log.append(spell_pick[2])
         
         self.node = "Decided"
         act.append(["end"])
@@ -460,11 +498,16 @@ class AI:
         range = spell.get_range(self.char)
 
         for enemy in enemy_list:
+            #print("Checking target validity for {}".format(enemy.name))
             if not spell.is_valid_target(enemy):
+                #print("\t{} not valid target".format(enemy.name))
                 continue
             dist_to_target = self.mat.dist_ft(self.char.loc, enemy.loc)
             if dist_to_target > range:
+                #print("\t{} out of range".format(enemy.name))
                 continue
+                
+            #print("\t{} valid target".format(enemy.name))
 
             avg_dmg_table.append([spell,enemy,spell.avg_damage(self.char,enemy)])
 

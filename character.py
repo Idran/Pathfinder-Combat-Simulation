@@ -995,6 +995,13 @@ class Foundation:
     def del_imm(self, elem):
         if elem in self.immune:
             self.immune.remove(elem)
+    
+    def cast(self, spell):
+        SL = spell.lvl_parse()[self.charClass]
+        spl_name = spell.name
+        
+        if spl_name in self.spell_list_mem[SL]:
+            self.spell_list_mem[SL][spl_name][1] -= 1
 
 ###################################################################
 #
@@ -1372,7 +1379,7 @@ class Foundation:
         return True
 
     def get_aoo_count(self):
-        if self.combat_reflexes():
+        if self.feat.combat_reflexes(self):
             return self.stat_bonus(self.dextot())
         else:
             return 1
@@ -2111,6 +2118,14 @@ class Foundation:
         save_pass = (save_roll >= DC)   #done this way rather than direct return to better support later expansion
         
         return [save_pass,save_roll]
+    
+    def check_conc(self, DC):
+    
+        conc_roll = self.random.randint(1,20) + self.concentration()
+        
+        conc_pass = (conc_roll >= DC)
+        
+        return [conc_pass,conc_roll]
 
     def roll_dmg(self, dist, crit=False, type=None, subtype=None, weap=None):
         

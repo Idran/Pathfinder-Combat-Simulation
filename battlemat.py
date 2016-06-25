@@ -211,6 +211,38 @@ class Battlemat:
         del tile_dest
 
         return path[:-1]
+    
+    def get_spell_targets(self,spell_area,caster):
+        x1,y1 = caster.loc
+        base_loc = [[x1,y1],[x1,y1 + 1],[x1 + 1,y1],[x1 + 1,y1 + 1]]
+        
+        target_list = []
+        
+        for x,y in base_loc:
+            targ_list_square = []
+            for area in spell_area:
+               # print("Area: {}".format(list(map(lambda i:[i[0] + x,i[1] + y],area))))
+                targ_sublist = []
+                for tile in map(lambda i:[i[0] + x,i[1] + y],area):
+                    #print("Checking tile {}".format(tile))
+                    for token in self.tokens:
+                        #print("checking token {} for intersection".format(token.name))
+                        if tile in self.token_occupy(token):
+                            #print("    match")
+                            targ_sublist.append(token)
+                targ_list_square.append(list(set(targ_sublist[:])))
+            #print("List add: ")
+            #print("\t{}".format(targ_list_square))
+            #print("List copy add: ")
+            #print("\t{}".format(targ_list_square[:]))
+            target_list.append(targ_list_square[:])
+        #for thing in target_list:
+            #print("Full list:")
+            #print("\t{}".format(thing))
+            #print("{}".format(list(map(lambda i:(lambda j:j.name, i), thing))))
+        
+        return target_list
+        
 
 
 ###################################################################
