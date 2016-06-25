@@ -161,6 +161,28 @@ class AI:
                 else:
                     self.node = "Decided"
                     act.append(["end"])
+                    
+        if self.tactic[0] in ["Spell"]:
+            spell = self.node_arg
+            
+            if spell.dmg:
+                range = spell.get_range(self.char)
+                dist_to_target = self.mat.dist_ft(self.char.loc, self.char.target.loc)
+                move = min(self.char.get_move(),dist_to_target - range)
+                log.append("{}".format(move))
+                pre_move = self.char.loc
+                act = self.move_to_target(act,move)
+                self.char.loc = self.loc
+                
+                log.append("{} will move from {} to {} before casting".format(self.char.name,pre_move,self.char.loc))
+            
+                if self.moves < 2:
+                    self.node = "Selecting Spell"
+                else:
+                    self.node = "Decided"
+                    act.append(["end"])
+            
+        self.node_arg = ""
         
         return [act,log]
     
@@ -401,20 +423,36 @@ class AI:
                     spell_choice.append([spell,avg_dmg,target_list[j][i][:],log_line])
                    
             spell_choice.sort(key=lambda i:i[1], reverse=True)
-            if spell_choice[0][1] >= 0:
-                spell_pick = [spell_choice[0][0],spell_choice[0][2],spell_choice[0][3]]
+            if spell_choice[0][2] and (spell_choice[0][1] > 0 or spell_choice[0][0].debuff):
+                spell_info = [spell_choice[0][0],spell_choice[0][2],spell_choice[0][3]]
+                spell_pick = True
             else:
-                spell_pick = []
+                spell_info = [spell_choice[0][0],spell_choice[0][2],spell_choice[0][3]]
+                spell_pick = False
         
         #for entry in spell_choice:
-        #    print("[{},{},{},{}]".format(entry[0],entry[1],list(map(lambda i:i.name,entry[2])),entry[3]))
+        #    print("[{},{},{},{}]".format(entry[0].name,entry[1],list(map(lambda i:i.name,entry[2])),entry[3]))
         
         if spell_pick:
-            act.append(["cast",spell_pick[0],spell_pick[1]])
-            log.append(spell_pick[2])
-        
-        self.node = "Decided"
-        act.append(["end"])
+            self.node = "Decided"
+            act.append(["cast",spell_info[0],spell_info[1]])
+            act.append(["end"])
+            log.append(spell_info[2])
+        elif spell_info[1]:
+            log.append("Out of usable spells; switching to Close tactic")
+            self.set_tactic("Close")
+            self.node = "Ready"
+            return[[],log]
+        else:
+            log.append("{} cannot cast a spell".format(self.char.name))
+            if self.moves < 2:
+                log.append("{} moving in range".format(self.char.name))
+                self.node = "Targeting"
+                self.node_arg = spell_info[0]
+            else:
+                log.append("{} cannot act".format(self.char.name))
+                self.node = "Decided"
+                act.append(["end"])
     
         return[act,log]
     
@@ -467,7 +505,8 @@ class AI:
             self.node = "Selecting Attack"
         elif self.tactic[0] in ["Close"]:
             self.node = "Selecting Action"
-        
+        elif self.tactic[0] in ["Spell"]:
+            self.node = "Moving"
         return [act,log]
 
 ###################################################################
@@ -478,13 +517,15 @@ class AI:
     #
     # Movement functions
     
-    def move_to_target(self, act):
+    def move_to_target(self, act, move=-1):
         
         if self.is_down() and self.safe_to_stand():
             act.append(["stand"])
             self.moves += 1
         else:
-            path = self.mat.partial_path(self.char, self.char.target, self.char.get_move())
+            if move == -1:
+                move = self.char.get_move()
+            path = self.mat.partial_path(self.char, self.char.target, move)
             act.append(["move",path])
             self.moves += 1
             self.loc = path[-1:][0]

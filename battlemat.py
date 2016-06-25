@@ -189,7 +189,7 @@ class Battlemat:
         return out_tile
 
 
-    def partial_path(self, token1, token2, move=2000, tile=True, size1=None, size2=None):
+    def partial_path(self, token1, token2, move=20000, tile=True, size1=None, size2=None):
         path = []
         if not tile:
             orig = token1
@@ -197,21 +197,24 @@ class Battlemat:
             token1 = Tile(orig, size1)
             token2 = Tile(dest, size2)
         tile = Tile(token1.loc,token1.tilesize)
-        tile_dest = Tile(self.closest_token_tile(token1, token2))
+        tile_dest = Tile(self.closest_adj_tile(token1, token2))
         step = self.closest_adj_tile(tile_dest, tile)
         total_move = self.dist_ft(token1.loc, step)
-        while not self.token_overlap(tile, token2) and total_move < move and len(path) < 50:
-            path.append(step)
+        path.append(step)
+        while not self.token_overlap(tile, token2) and total_move <= move and len(path) < 50 and step != tile_dest.loc:
             tile.loc = step
             step = self.closest_adj_tile(tile_dest, tile)
             total_move = self.dist_ft(token1.loc, step)
+            path.append(step)
+        if total_move > move:
+            path = path[:-1]
         if not tile:
             del token1
             del token2
         del tile
         del tile_dest
-
-        return path[:-1]
+        
+        return path
     
     def get_spell_targets(self,spell_area,caster):
         x1,y1 = caster.loc
