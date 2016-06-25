@@ -4,7 +4,8 @@ class AI:
 
     def __init__(self, char, mat):
     
-        self.char = char
+        self.char_perm = char
+        self.char = self.char_perm.copy()
         self.node = "Ready"
         self.node_arg = ""
         self.mat = mat
@@ -37,10 +38,12 @@ class AI:
         return [act,log]
     
     def update(self):
+        
+        del self.char
+        self.char = self.char_perm.copy()
     
         self.fighters = self.mat.tokens
         self.moves = 0
-        self.fix_loc = self.char.loc
         self.loc = self.char.loc
     
     def pick_action(self):
@@ -72,7 +75,7 @@ class AI:
         
         self.tactic = tactic.split(',')
     
-    def set_target(self, fighter1, fighter2, log):
+    def set_target(self, fighter1, fighter2, log=[]):
         fighter1.target = fighter2
         log.append("{} targets {}".format(fighter1.name, fighter2.name))
         return log
@@ -158,7 +161,6 @@ class AI:
                 else:
                     self.node = "Decided"
                     act.append(["end"])
-            self.char.loc = self.fix_loc        
         
         return [act,log]
     
@@ -224,6 +226,14 @@ class AI:
         melee_type = melee_opts[0]
         melee_weap = melee_opts[1]
         melee_weap_range = self.char.threat_range(melee_weap)
+        min_tr = 20000
+        for tr in melee_weap_range:
+            if tr[0] < min_tr:
+                min_tr = tr[0]
+        max_tr = -20000
+        for tr in melee_weap_range:
+            if tr[1] > max_tr:
+                max_tr = tr[0]
         
         curr_weap = self.char.weap_list(no_array=True)
         if len(curr_weap) == 1:
@@ -239,20 +249,23 @@ class AI:
         
         if self.tactic[0] in ["Close"]:
             #print ("{} is considering Close options".format(self.char.name))
-            if not ranged or (dist_to_target - speed < melee_weap_range[1]):
+            if not ranged or (dist_to_target - speed < max_tr):
                 #print("{} is thinking about melee".format(self.char.name))
                 if curr_weap != melee_weap:
                     act.append(["swap",melee_weap])
+                    self.char.set_weapon(melee_weap)
                     swap = True
             else:
                 #print("{} is thinking about ranged".format(self.char.name))
                 if curr_weap != ranged:
                     act.append(["swap",ranged])
+                    self.char.set_weapon(ranged)
                     swap = True
         
         elif self.tactic[0] in ["Maneuver"]:        
             if self.char.weap_name() == "unarmed strike" and curr_weap != melee:
                 act.append["swap",melee_weap]
+                self.char.set_weapon(melee_weap)
                 swap = True
             
         if self.mat.can_attack(self.char, self.char.target):
@@ -431,6 +444,7 @@ class AI:
 
             if pot_target != None:
                 log = self.set_target(self.char,pot_target,log)
+                temp = self.set_target(self.char_perm,pot_target)
             else:
                 log.append("{0} has no target; {0} does nothing".format(self.char.name))
                 self.node = "Decided"

@@ -114,18 +114,18 @@ test_wiz1.add_spell_mem(spells.resistance.copy())
 
 ##########################################################
 
-fighter1 = test_monk1
+fighter1 = test_ftr1
 fighter2 = test_wiz1
 
-print("{}:".format(fighter1.name))
-print(fighter1.print_AC_line())
-print(fighter1.print_save_line())
-print(fighter1.print_all_atks())
+print("{} ({} {}):".format(fighter1.name,fighter1.charClass,fighter1.level))
+print("\t{}".format(fighter1.print_AC_line()))
+print("\t{}".format(fighter1.print_save_line()))
+print("\t{}".format(fighter1.print_all_atks()))
 print("\n\n")
-print("{}:".format(fighter2.name))
-print(fighter2.print_AC_line())
-print(fighter2.print_save_line())
-print(fighter2.print_all_atks())
+print("{} ({} {}):".format(fighter2.name,fighter2.charClass,fighter2.level))
+print("\t{}".format(fighter2.print_AC_line()))
+print("\t{}".format(fighter2.print_save_line()))
+print("\t{}".format(fighter2.print_all_atks()))
 print("")
 
 mat = battlemat.Battlemat()

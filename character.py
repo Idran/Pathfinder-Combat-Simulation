@@ -9,6 +9,7 @@ class Foundation:
     import spell_list as spell
     import ai as ai_class
     import sys
+    from copy import copy
 
     def __init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands, legs):
         self.name = name
@@ -845,6 +846,7 @@ class Foundation:
         if type(weap_num) is list:
             self.set_weapon(weap_num[0])
             self.set_off(weap_num[1])
+            return
             
         if self.weap_hands(weap_num) == 1:
             self.slots["wield"][0] = weap_num
@@ -2024,19 +2026,27 @@ class Foundation:
         if val == None:
             val = self.slots["wield"][0]
             
-        tr = [0,0]
-
-        if "M" in self.weap_type(val):
-            tr = [5, self.reach]
-            if self.weap_reach(val):
-                tr = [self.reach + 5, self.reach * 2]
-        else:
-            if self.feat.snap_shot(self):
-                tr = [5,5]
-            if self.feat.snap_shot_imp(self):
-                tr = [5,15]
-
+        tr = []
+        
+        if type(val) is int:
+            val = [val]
+            
+        for i in val:
+            tr_temp = [0,0]
+            
+            if "M" in self.weap_type(i):
+                tr_temp = [5, self.reach]
+                if self.weap_reach(i):
+                    tr_temp = [self.reach + 5, self.reach * 2]
+            else:
+                if self.feat.snap_shot(self):
+                    tr_temp = [5,5]
+                if self.feat.snap_shot_imp(self):
+                    tr_temp = [5,15]
+            tr.append(tr_temp[:])
+        
         return tr
+
 
 ###################################################################
 #
@@ -2865,3 +2875,6 @@ class Monster(Foundation):
 
         self.damage = 0
         self.damage_con = "Normal"
+
+    def copy(self):
+        return copy.copy(self)

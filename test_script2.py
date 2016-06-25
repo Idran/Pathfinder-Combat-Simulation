@@ -3,7 +3,9 @@ import character
 import combat
 import equip
 import items
+import spell_list as spells
 import sys
+import traceback
 import time
 
 jaya = character.Character(charClass="Bard", level=10, str=11, dex=18, con=14, int=13, wis=10, cha=16, feat_list=["Improved Initiative", "Point-Blank Shot", "Precise Shot", "Bullseye Shot", "Rapid Shot", "Arcane Strike"], ambi=True, name="Jaya", loc=[1,2], hp=67, AC=19)
@@ -96,8 +98,20 @@ test_monk1.add_weapon(items.shuriken)
 
 ##########################################################
 
-fighter1 = test_monk1
-fighter2 = test_ftr1
+test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con=14, int=17, wis=12, cha=8, feat_list=["Alertness","Combat Casting","Improved Initiative","Scribe Scroll"], name="Holdreda Danton", loc=[7,9], hp=6, side=4)
+
+test_wiz1.add_weapon(items.quarterstaff.copy(), active=True)
+
+test_wiz1.add_spell_mem(spells.magic_missile.copy())
+test_wiz1.add_spell_mem(spells.magic_missile.copy())
+test_wiz1.add_spell_mem(spells.bleed.copy())
+test_wiz1.add_spell_mem(spells.detect_magic.copy())
+test_wiz1.add_spell_mem(spells.resistance.copy())
+
+##########################################################
+
+fighter1 = test_ftr1
+fighter2 = test_wiz1
 
 fighter1_count = 0
 fighter1_hp = 0
@@ -113,14 +127,13 @@ fighter2_round = 0
 
 num_combat = 10000
 
-print("{}: {}".format(fighter1.name,fighter1.print_all_atks()))
-#print("{}: {}".format(monster.name,monster.print_atk_line()))
-print("{}: {}".format(fighter2.name,fighter2.print_all_atks()))
+print("{}: {} {}".format(fighter1.name,fighter1.charClass,fighter1.level))
+print("\t{}".format(fighter1.print_all_atks()))
+print("\tAC {} ({})".format(fighter1.get_AC(),fighter1.print_AC_bons()))
 print("")
-print("{}: AC {} ({})".format(fighter1.name,fighter1.get_AC(),fighter1.print_AC_bons()))
-#print("{}: AC {} ({})".format(monster.name,monster.get_AC(),monster.print_AC_bons()))
-print("{}: AC {} ({})".format(fighter2.name,fighter2.get_AC(),fighter2.print_AC_bons()))
-print("")
+print("{}: {} {}".format(fighter2.name,fighter2.charClass,fighter2.level))
+print("\t{}".format(fighter2.print_all_atks()))
+print("\tAC {} ({})".format(fighter2.get_AC(),fighter2.print_AC_bons()))
 
 temp = time.clock()
 
@@ -145,7 +158,18 @@ for i in range(num_combat):
     fight.set_init()
 
     while not fight.check_combat_end() and fight.round < 50:
-       fight.combat_round()
+        try:
+            fight.combat_round()
+        except:
+            print("Unexpected error, dumping log")
+            print("=====================================================================================")
+            print(fight.output_log())
+            print("=====================================================================================")
+            print("Log dump complete")
+            print("-----------------")
+            print("Error details:")
+            traceback.print_exc()
+            sys.exit()
 
     if fighter1 in fight.fighters:
         fighter1_count = fighter1_count + 1

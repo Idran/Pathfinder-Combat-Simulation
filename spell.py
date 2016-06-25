@@ -476,6 +476,21 @@ class Spell:
                 else:
                     dice[0] = min(CL,lvlmax)
             
+            log_line = "{0} is dealing {1}d{2}".format(caster.name,dice[0],dice[1])
+            if dice[2] != 0:
+                log_line += "{:+d}".format(dice[2])
+            log_line += " damage"
+            if types:
+                log_line += " ("
+                type_array = []
+                for l in types:
+                    type_array.append(self.type_parse[l])
+                log_line += ", ".join(type_array)
+                log_line += ")"
+            log_line += " to {}".format(target.name)
+            
+            spell_log.append(log_line)
+            
             for i in range(0,dice[0]):
                 spell_dmg += random.randint(1,dice[1])
                     

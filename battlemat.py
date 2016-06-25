@@ -91,28 +91,29 @@ class Battlemat:
 
     def threatened_tiles(self, token):
         threat_range = token.threat_range()
-        min_threat, max_threat = threat_range
-        min_threat //= 5
-        max_threat //= 5
-
-        corner1 = [token.loc[0] - max_threat, token.loc[1] - max_threat]
-        corner2 = [token.loc[0] + token.tilesize[0] + max_threat - 1, token.loc[1] + token.tilesize[1] + max_threat - 1]
-
-        tile_list = self.tile_rect_fill(corner1, corner2)
-        token_tiles = self.token_occupy(token)
-
-        for tile in token_tiles:
-            tile_list.remove(tile)
-
         out_list = []
+        
+        for tr in threat_range:
+            min_threat, max_threat = tr
+            min_threat //= 5
+            max_threat //= 5
 
-        for tile in tile_list:
-            for token_tile in token_tiles:
-                dist = self.dist_tile(tile, token_tile)
+            corner1 = [token.loc[0] - max_threat, token.loc[1] - max_threat]
+            corner2 = [token.loc[0] + token.tilesize[0] + max_threat - 1, token.loc[1] + token.tilesize[1] + max_threat - 1]
 
-                if dist >= min_threat and dist <= max_threat:
-                    out_list.append(tile)
-                    break
+            tile_list = self.tile_rect_fill(corner1, corner2)
+            token_tiles = self.token_occupy(token)
+
+            for tile in token_tiles:
+                tile_list.remove(tile)
+
+            for tile in tile_list:
+                for token_tile in token_tiles:
+                    dist = self.dist_tile(tile, token_tile)
+
+                    if dist >= min_threat and dist <= max_threat and tile not in out_list:
+                        out_list.append(tile)
+                        break
 
         return out_list
 
