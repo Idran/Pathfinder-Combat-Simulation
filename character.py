@@ -2290,6 +2290,7 @@ class Foundation:
         kwargstats["init"] = self.get_init()
         
         kwargstats["loc"] = self.loc
+        kwargstats["tilesize"] = self.tilesize
         kwargstats["side"] = self.side
     
         if side == self.side:
@@ -2948,3 +2949,8 @@ class Charmodel(Foundation):
     
         
         Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands, legs)
+        
+        self.init = init
+        
+        if race:
+            self.race = race
