@@ -13,6 +13,7 @@ class Battlemat:
 
     def __init__(self):
         self.tokens = []
+        self.token_list = []
         self.items = []
         
     def __sizeof__(self):
@@ -28,6 +29,7 @@ class Battlemat:
             return None
 
         self.tokens.append(token)
+        self.token_list.append(token.id)
         return token
     
     def remove_token(self,token):
@@ -35,6 +37,7 @@ class Battlemat:
             return None
         
         self.tokens.remove(token)
+        self.token_list.remove(token.id)
     
     def add_item(self, item, loc):
         self.items.append([item,loc])

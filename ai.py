@@ -1,6 +1,7 @@
 class AI:
 
     import sys
+    import character
 
     def __init__(self, char, mat):
     
@@ -10,7 +11,10 @@ class AI:
         self.node_arg = ""
         self.mat = mat
         self.tactic = ["Attack"]
+        self.motivation = "Neutral"
         self.target = "Closest"
+        self.target_list = []
+        self.mental_map = dict()
         
         self.disable_list = ["Stunned","Paralyzed","Petrified","Unconscious"]
         
@@ -29,6 +33,9 @@ class AI:
         
         self.update()
         
+        if len(self.mental_map) != len(self.mat.tokens):
+            self.build_map()
+        
         while self.node != "Decided":
             temp = self.pick_action()
             #print("{}: {}".format(self.char.name,self.node))
@@ -37,6 +44,17 @@ class AI:
         
         return [act,log]
     
+    def build_map(self):
+    
+        for entity in self.mental_map:
+            if entity.id not in self.mat.token_list:
+                self.mental_map.remove(entity)
+        
+        for entity in self.mat.tokens:
+            if entity.id not in self.mental_map.keys():
+                model_stats = entity.presented_stats(self.char_perm.side)
+                self.mental_map[entity.id] = self.character.Charmodel(**model_stats)
+                
     def update(self):
         
         del self.char
@@ -74,6 +92,10 @@ class AI:
     def set_tactic(self, tactic):
         
         self.tactic = tactic.split(',')
+    
+    def set_motivation(self, motivation):
+    
+        self.motivation = motivation
     
     def set_target(self, fighter1, fighter2, log=[]):
         fighter1.target = fighter2

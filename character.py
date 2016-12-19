@@ -9,10 +9,12 @@ class Foundation:
     import spell_list as spell
     import ai as ai_class
     import sys
+    import uuid
     from copy import copy
 
     def __init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands, legs):
         self.name = name
+        self.id = self.uuid.uuid4()
         self.side = side
         self.AC = AC
         self.move = move
@@ -405,13 +407,18 @@ class Foundation:
 
         return self.equip_list[val].type
 
-    def armor_armor_bon(self, val=None):
+    def armor_armor_bon(self, val=None, public=False):
         if val == None:
             val = self.slots["armor"]
         if val == None or val < 0 or self.item_type(val) != "armor":
             return 0
 
-        return self.equip_list[val].armor_bon + self.equip_list[val].ench_bon
+        bon = self.equip_list[val].armor_bon
+        
+        if not public:
+            bon += self.equip_list[val].ench_bon
+            
+        return bon
 
     def armor_max_dex(self, val=None):
         if val == None:
@@ -468,13 +475,18 @@ class Foundation:
 
         return self.equip_list[val].type
 
-    def shield_shield_bon(self, val=None):
+    def shield_shield_bon(self, val=None, public=False):
         if val == None:
             val = self.slots["wield"][1]
         if val == None or val < 0 or self.item_type(val) != "armor":
             return 0
 
-        return self.equip_list[val].shield_bon + self.equip_list[val].ench_bon
+        bon = self.equip_list[val].shield_bon
+        
+        if not public:
+            bon += self.equip_list[val].ench_bon
+            
+        return bon
 
     def shield_armor_check(self, val=None):
         if val == None:
@@ -1295,7 +1307,7 @@ class Foundation:
     #
     # AC functions
 
-    def get_AC_bons(self, type=None, subtype=None, atk_type="M"):
+    def get_AC_bons(self, type=None, subtype=None, atk_type="M", public=False):
 
         AC_bon = dict()
 
@@ -1308,9 +1320,9 @@ class Foundation:
         #
         # Equipment bonus
 
-        self.add_bon(AC_bon,"armor",self.armor_armor_bon())
+        self.add_bon(AC_bon,"armor",self.armor_armor_bon(public=public))
 
-        self.add_bon(AC_bon,"shield",self.shield_shield_bon())
+        self.add_bon(AC_bon,"shield",self.shield_shield_bon(public=public))
 
         #############################
         #
@@ -1346,9 +1358,9 @@ class Foundation:
 
         return AC_bon
 
-    def get_AC(self, type=None, subtype=None, FF=False, touch=False, atk_type="M"):
+    def get_AC(self, type=None, subtype=None, FF=False, touch=False, atk_type="M", public=False):
 
-        temp_AC_bons = self.get_AC_bons(type=type, subtype=subtype, atk_type=atk_type)
+        temp_AC_bons = self.get_AC_bons(type=type, subtype=subtype, atk_type=atk_type, public=public)
 
         if self.has("Flat-footed") or FF:
             temp_AC_bons = self.get_FF_AC_bons(temp_AC_bons)
@@ -2253,6 +2265,54 @@ class Foundation:
             suffix = suffixes.get(num % 10, 'th')
             
         return str(num) + suffix
+    
+    # presented_stats: the statistics visible to an outside party; used for AI mental models
+    #(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands, legs)
+    
+    def presented_stats(self,side):
+    
+        kwargstats = dict()
+    
+        kwargstats["name"] = self.name
+        
+        kwargstats["type"] = self.type
+        kwargstats["subtype"] = self.subtype
+        kwargstats["race"] = self.race
+        kwargstats["size"] = self.size
+        kwargstats["reach"] = self.reach
+        kwargstats["hands"] = self.hands
+        kwargstats["legs"] = self.legs
+        
+        kwargstats["str"] = self.strtot()
+        kwargstats["dex"] = self.dextot()
+        kwargstats["con"] = self.contot()
+        
+        kwargstats["init"] = self.get_init()
+        
+        kwargstats["loc"] = self.loc
+        kwargstats["side"] = self.side
+    
+        if side == self.side:
+            kwargstats["int"] = self.inttot()
+            kwargstats["wis"] = self.wistot()
+            kwargstats["cha"] = self.chatot()
+            
+            kwargstats["fort"] = self.get_fort()
+            kwargstats["ref"] = self.get_ref()
+            kwargstats["will"] = self.get_will()
+            
+            kwargstats["AC"] = self.get_AC()
+            kwargstats["bab"] = self.bab
+            
+            kwargstats["move"] = self.get_move()
+            
+            kwargstats["hp"] = self.get_hp()
+            kwargstats["HD"] = self.HD
+            
+        else:
+            pass
+    
+        return kwargstats
 
     # print_dmg: prints weapon damage for given weapon in standard format, with all current feats and buffs
     #            pass nofeat=True to not include feat bonuses
@@ -2878,3 +2938,13 @@ class Monster(Foundation):
 
     def copy(self):
         return copy.copy(self)
+
+###################################################################
+
+class Charmodel(Foundation):
+    """Mental model char framework"""
+    
+    def __init__(self, name=None, side=1, AC=10, bab=0, move=30, loc=[0,0], tilesize=[1,1], HD=1, type="Humanoid", subtype=[], size="Medium", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], arcane=False, divine=False, CL=0, reach=5, fort=None, ref=None, will=None, hands=2, legs=2, init=0, race=None):
+    
+        
+        Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands, legs)
