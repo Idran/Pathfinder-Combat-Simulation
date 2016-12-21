@@ -210,7 +210,6 @@ class Combat:
                         break        
                 elif action[0] == "swap":
                     fighter.set_weapon(action[1])
-                    print("{}".format(action[1]))
                     if type(action[1]) is not list:
                         self.log("{} switches weapons to {}".format(fighter.name,fighter.weap_name(action[1])))
                     else:

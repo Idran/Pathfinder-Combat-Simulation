@@ -2266,17 +2266,14 @@ class Foundation:
             
         return str(num) + suffix
     
-    # presented_stats: the statistics visible to an outside party; used for AI mental models
+    # base_presented_stats: the statistics visible to an outside party; used for AI mental models
     #(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands, legs)
     
-    def presented_stats(self,side):
+    def base_presented_stats(self,side):
     
         kwargstats = dict()
-    
-        kwargstats["name"] = self.name
         
         kwargstats["type"] = self.type
-        kwargstats["subtype"] = self.subtype
         kwargstats["race"] = self.race
         kwargstats["size"] = self.size
         kwargstats["reach"] = self.reach
@@ -2287,31 +2284,9 @@ class Foundation:
         kwargstats["dex"] = self.dextot()
         kwargstats["con"] = self.contot()
         
-        kwargstats["init"] = self.get_init()
-        
         kwargstats["loc"] = self.loc
         kwargstats["tilesize"] = self.tilesize
         kwargstats["side"] = self.side
-    
-        if side == self.side:
-            kwargstats["int"] = self.inttot()
-            kwargstats["wis"] = self.wistot()
-            kwargstats["cha"] = self.chatot()
-            
-            kwargstats["fort"] = self.get_fort()
-            kwargstats["ref"] = self.get_ref()
-            kwargstats["will"] = self.get_will()
-            
-            kwargstats["AC"] = self.get_AC()
-            kwargstats["bab"] = self.bab
-            
-            kwargstats["move"] = self.get_move()
-            
-            kwargstats["hp"] = self.get_hp()
-            kwargstats["HD"] = self.HD
-            
-        else:
-            pass
     
         return kwargstats
 

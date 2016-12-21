@@ -14,7 +14,7 @@ class AI:
         self.motivation = "Neutral"
         self.target = "Closest"
         self.target_list = []
-        self.mental_map = dict()
+        self.mental_model = dict()
         
         self.disable_list = ["Stunned","Paralyzed","Petrified","Unconscious"]
         
@@ -44,16 +44,21 @@ class AI:
         
         return [act,log]
     
-    def build_map(self):
+    def build_model(self):
     
-        for entity in self.mental_map:
+        for entity in self.mental_model:
             if entity.id not in self.mat.token_list:
                 self.mental_map.remove(entity)
         
         for entity in self.mat.tokens:
+            if entity.id == self.char_perm.id:
+                continue
             if entity.id not in self.mental_map.keys():
-                model_stats = entity.presented_stats(self.char_perm.side)
-                self.mental_map[entity.id] = self.character.Charmodel(**model_stats)
+                if entity.side == self.char_perm.side and self.char.inttot() > 3:
+                    self.mental_model[entity.id] = entity.copy()
+                else:
+                    model_stats = entity.base_presented_stats(self.char_perm.side)
+                    self.mental_model[entity.id] = self.character.Charmodel(**model_stats)
                 
     def update(self):
         
