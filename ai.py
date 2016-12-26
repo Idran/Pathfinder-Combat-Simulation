@@ -48,28 +48,35 @@ class AI:
     def update_model(self):
     
         for entity in self.mat.tokens:
-            if self.mat.is_visible(self.char_perm,entity):
-                self.model_entry_update(entity)
+            self.model_entry_update(entity)
     
     def model_entry_update(self,entity):
     
         if entity.id in self.mental_model:
-            del self.mental_model[entity.id]
-        #print("Adding {} to {} mental model".format(entity.name,self.char_perm.name))
-        if entity.side == self.char_perm.side and self.char.inttot() > 3:
-            #print("\tSame side")
-            self.mental_model[entity.id] = entity.copy()
-        else:
-            #print("\tDifferent side")
-            model_stats = entity.base_presented_stats(self.char_perm.side)
-            self.mental_model[entity.id] = self.character.Charmodel(**model_stats)
+            self.mental_model[entity.id].round_pass()
+        if self.mat.is_visible(self.char_perm,entity):
+            #print("Updating {} in {} mental model".format(entity.name,self.char_perm.name))
+            if entity.side == self.char_perm.side and self.char.inttot() > 3:
+                #print("\tSame side")
+                if entity.id in self.mental_model:
+                    del self.mental_model[entity.id]
+                model_entity = entity.model_copy()
+                self.mental_model[entity.id] = model_entity
+            else:
+                #print("\tDifferent side")
+                if entity.id not in self.mental_model:
+                    model_stats = entity.base_presented_stats(self.char_perm.side)
+                    self.mental_model[entity.id] = self.character.Charmodel(**model_stats)
+                else:
+                    self.mental_model[entity.id].loc = entity.loc
+                    self.mental_model[entity.id].damage_con = entity.damage_con
                 
     def update(self):
         
         del self.char
         self.char = self.char_perm.copy()
     
-        self.fighters = self.mat.tokens
+        self.fighters = list(self.mental_model.values())
         self.moves = 0
         self.loc = self.char.loc
     
@@ -106,9 +113,10 @@ class AI:
     
         self.motivation = motivation
     
-    def set_target(self, fighter1, fighter2, log=[]):
+    def set_target(self, fighter1, fighter2, fighter2_model, log=[]):
         fighter1.target = fighter2
-        log.append("{} targets {}".format(fighter1.name, fighter2.name))
+        fighter1.target_model = fighter2_model
+        log.append("{} targets {}".format(fighter1.name, fighter2_model.name))
         return log
 
 ###################################################################
@@ -512,8 +520,9 @@ class AI:
                         pot_target = other
 
             if pot_target != None:
-                log = self.set_target(self.char,pot_target,log)
-                temp = self.set_target(self.char_perm,pot_target)
+                true_target = self.mat.token_id_index[pot_target.id]
+                log = self.set_target(self.char,true_target,pot_target,log)
+                temp = self.set_target(self.char_perm,true_target,pot_target)
             else:
                 log.append("{0} has no target; {0} does nothing".format(self.char.name))
                 self.node = "Decided"

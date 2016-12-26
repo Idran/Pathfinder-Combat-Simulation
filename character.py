@@ -1,3 +1,5 @@
+import copy
+
 class Foundation:
     """Base stats and data"""
 
@@ -10,7 +12,6 @@ class Foundation:
     import ai as ai_class
     import sys
     import uuid
-    from copy import copy
 
     def __init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands, legs):
         self.name = name
@@ -88,6 +89,16 @@ class Foundation:
     def __sizeof__(self):
         return object.__sizeof__(self) + \
             sum(sys.getsizeof(v) for v in self.__dict__.values())
+
+    def copy(self):
+        return copy.copy(self)
+    
+    def model_copy(self):
+        model_copy = copy.copy(self)
+        del model_copy.ai
+        model_copy.model = True
+        
+        return model_copy
 
 ###################################################################
 #
@@ -1712,7 +1723,8 @@ class Foundation:
         return condition in self.conditions.keys() and self.conditions[condition] != 0
 
     def round_pass(self):
-        self.ai.update_model()
+        if not self.model:
+            self.ai.update_model()
         
         cond = dict(self.conditions)
         for condition in cond.keys():
@@ -2275,7 +2287,8 @@ class Foundation:
     
         kwargstats = dict()
         
-        kwargstats["name"] = self.race
+        kwargstats["name"] = "{} ({})".format(self.race,self.name)
+        kwargstats["id"] = self.id
         
         kwargstats["type"] = self.type
         kwargstats["race"] = self.race
@@ -2475,6 +2488,8 @@ class Character(Foundation):
 
         self.set_class_abilities()
         self.set_feat_abilities()
+        
+        self.model = False
 
     def equip_unarmed(self):
 
@@ -2883,6 +2898,8 @@ class Monster(Foundation):
 
         self.set_bab()
         self.set_hit_die()
+        
+        self.model = False
 
         if hp == 0:
             self.roll_hp_tot()
@@ -2916,20 +2933,33 @@ class Monster(Foundation):
         self.damage = 0
         self.damage_con = "Normal"
 
-    def copy(self):
-        return copy.copy(self)
-
 ###################################################################
 
 class Charmodel(Foundation):
     """Mental model char framework"""
     
-    def __init__(self, name=None, side=1, AC=10, bab=0, move=30, loc=[0,0], tilesize=[1,1], HD=1, type="Humanoid", subtype=[], size="Medium", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], arcane=False, divine=False, CL=0, reach=5, fort=None, ref=None, will=None, hands=2, legs=2, init=0, race=None):
+    def __init__(self, name=None, side=1, AC=10, bab=0, move=30, loc=[0,0], tilesize=[1,1], HD=1, type="Humanoid", subtype=[], size="Medium", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], arcane=False, divine=False, CL=0, reach=5, fort=None, ref=None, will=None, hands=2, legs=2, init=0, race=None, charClass=None, level=1, fc=[], id=None):
     
         
         Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands, legs)
+        
+        self.model = True
+        self.id = id
         
         self.init = init
         
         if race:
             self.race = race
+        else:
+            self.race = "Unknown"
+        
+        if charClass:
+            self.charClass = charClass
+        else:
+            self.charClass = "Unknown"
+        
+        self.level = level
+        
+        self.HD = HD
+        
+        self.fc = fc

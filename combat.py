@@ -105,7 +105,7 @@ class Combat:
     def take_aoo(self, fighter, target):
         self.log("{} takes an AoO against {}".format(target.name,fighter.name))
         self.aoo_counts[target.name] = self.aoo_counts[target.name] + 1
-        self.attack(target, fighter, False)
+        self.attack(target, fighter, None, False)
 
     def reset_aoo_count(self):
         for fighter in self.fighters:
@@ -123,6 +123,8 @@ class Combat:
         self.log(self.output_init())
 
     def check_death(self, fighter):
+        if fighter not in self.fighters:
+            return True
         if fighter == None:
             return False
         if fighter.damage_con != "Normal":
@@ -200,9 +202,9 @@ class Combat:
                 elif action[0] == "move":
                     survive = self.move_path(fighter, action[1])
                 elif action[0] == "attack":
-                    self.attack(fighter, fighter.target, action[1])
+                    self.attack(fighter, fighter.target, fighter.target_model, action[1])
                 elif action[0] == "satk":
-                    self.satk(fighter, fighter.target, action[1])
+                    self.satk(fighter, fighter.target, fighter.target_model, action[1])
                 elif action[0] == "cast":
                     survive = self.cast(fighter, action[2], action[1])
                 elif action[0] == "stand":
@@ -223,11 +225,11 @@ class Combat:
                         log_line += ", ".join(log_array)
                         self.log(log_line)
                 elif action[0] == "cond":
-                    self.set_cond(fighter, fighter.target, action[1:])
+                    self.set_cond(fighter, fighter.target, fighter.target_model, action[1:])
                 elif action[0] == "disarm":
-                    self.disarm(fighter, fighter.target)
+                    self.disarm(fighter, fighter.target, fighter.target_model)
                 elif action[0] == "trip":
-                    self.trip(fighter, fighter.target)
+                    self.trip(fighter, fighter.target, fighter.target_model)
                 else:
                     pass
                 
@@ -299,7 +301,7 @@ class Combat:
     #
     # Attack functions
 
-    def attack(self, fighter, target, FRA=False, fob=False):
+    def attack(self, fighter, target, target_model, FRA=False, fob=False):
         if fighter.has("Prone") and "R" in fighter.weap_type() and "Crossbows" not in fighter.weap_group():
             self.log("{0} cannot attack; {0} is Prone".format(fighter.name))
             return False
@@ -310,9 +312,11 @@ class Combat:
         self.log("{} takes {} damage".format(target.name, dmg[0]))
         self.log("  ({})".format(fighter.print_atk_dmg(dmg[1])))
         target.take_damage(dmg[0])
+        if target_model != None:
+            target_model.take_damage(dmg[0])
         self.log("{} at {}".format(target.name, target.print_hp()))
 
-    def satk(self, fighter, target, satk_type):
+    def satk(self, fighter, target, target_model, satk_type):
         if satk_type in ["fob"]:
             if fighter.has("Prone") and "R" in fighter.weap_type() and "Crossbows" not in fighter.weap_group():
                 self.log("{0} cannot attack; {0} is Prone".format(fighter.name))
@@ -328,9 +332,10 @@ class Combat:
             self.log("{} takes {} damage".format(target.name, dmg[0]))
             self.log("  ({})".format(fighter.print_atk_dmg(dmg[1])))
             target.take_damage(dmg[0])
+            target_model.take_damage(dmg[0])
             self.log("{} at {}".format(target.name, target.print_hp()))
     
-    def set_cond(self, fighter, target, cond_info):
+    def set_cond(self, fighter, target, target_model, cond_info):
         
         cond_type,save_type,DC_type,rds = cond_info
         rds = int(rds)
@@ -366,6 +371,7 @@ class Combat:
             self.log("{} failed their save ({})".format(target.name,cond_check[1]))
             self.log("{} now has the {} condition".format(target.name, cond_type))
             target.set_condition(cond_type,rds)
+            target_model.set_condition(cond_type,rds)
             if cond_type == "Stunned":
                 self.log("{} has dropped all wielded items".format(target.name))
         else:
@@ -377,7 +383,7 @@ class Combat:
         
         return result
     
-    def disarm(self, fighter, target):
+    def disarm(self, fighter, target, target_model):
         dist_to_target = self.mat.dist_ft(fighter.loc, target.loc)
         self.log("{} attempts to disarm {}".format(fighter.name, target.name))
         if self.can_attempt_aoo(target):
@@ -386,23 +392,23 @@ class Combat:
             result = self.maneuver_check(fighter, target, dist_to_target, "Disarm")
             if result[0]:
                 self.log("{} succeeds".format(fighter.name))
-                item = self.drop(target,0)
+                item = self.drop(target,target_model,0)
                 self.log("{} drops {}".format(target.name, item.fullname()))
                 if result[1] >= 10:
-                    item = self.drop(target,1)
+                    item = self.drop(target,target_model,1)
                     if item:
                         self.log("{} drops {}".format(target.name, item.fullname()))
             else:
                 self.log("{} fails to disarm".format(fighter.name))
                 if result[1] <= -10:
-                    item = self.drop(fighter,0)
+                    item = self.drop(fighter,None,0)
                     if item:
                         self.log("{} drops {}".format(fighter.name, item.fullname()))
             return True    
         else:
             return False
         
-    def trip(self, fighter, target):
+    def trip(self, fighter, target, target_model):
         dist_to_target = self.mat.dist_ft(fighter.loc, target.loc)
         self.log("{} attempts to trip {}".format(fighter.name, target.name))
         if self.can_attempt_aoo(target):
@@ -413,6 +419,7 @@ class Combat:
                 self.log("{} succeeds".format(fighter.name))
                 self.log("{} is tripped".format(target.name))
                 target.set_condition("Prone")
+                target_model.set_condition("Prone")
             else:
                 self.log("{} fails to disarm".format(fighter.name))
                 if result[1] <= -10 and self.can_trip(fighter):
@@ -422,8 +429,11 @@ class Combat:
         else:
             return False
             
-    def drop(self, target, slot):
-        return target.drop("wield,{}".format(slot))
+    def drop(self, target, target_model, slot):
+        ret_val = target.drop("wield,{}".format(slot))
+        if target_model != None:
+            temp = target_model,drop("wield,{}".format(slot))
+        return ret_val
 
     #############################
     #
@@ -469,12 +479,18 @@ class Combat:
         
         fighter.cast(spell)
         for target in target_list:
+            if target.model:
+                target_model = target
+                target = self.fighter_id_index[target.id]
+            else:
+                target_model = fighter.ai.mental_model[target.id]
             result = spell.cast_on(target, fighter)
             self.combatlog += result[1]
             spell_dmg = result[0]
             self.log("{} takes {} damage".format(target.name, spell_dmg))
             if spell_dmg > 0:
                 target.take_damage(spell_dmg)
+                target_model.take_damage(spell_dmg)
                 self.log("{} at {}".format(target.name, target.print_hp()))
         
         return True

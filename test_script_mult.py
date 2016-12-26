@@ -90,7 +90,7 @@ test_barb1.set_rage()
 
 ##########################################################
 
-test_monk1 = character.Character(charClass="Monk", level=1, str=12, dex=16, con=10, int=13, wis=15, cha=8, feat_list=["Combat Reflexes", "Dodge", "Improved Unarmed Strike", "Stunning Fist", "Weapon Finesse"], name="Careful Initiate", loc=[4,5], hp=9, side=3)
+test_monk1 = character.Character(charClass="Monk", level=1, str=12, dex=16, con=10, int=13, wis=15, cha=8, feat_list=["Combat Reflexes", "Dodge", "Improved Unarmed Strike", "Stunning Fist", "Weapon Finesse"], name="Careful Initiate", loc=[4,5], hp=9, side=1)
 
 test_monk1.add_weapon(items.kama.copy())
 test_monk1.add_weapon(items.crossbow_light.copy())
@@ -102,7 +102,7 @@ test_monk1.add_weapon(items.shuriken)
 
 ##########################################################
 
-test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con=14, int=17, wis=12, cha=8, feat_list=["Alertness","Combat Casting","Improved Initiative","Scribe Scroll"], name="Holdreda Danton", loc=[7,9], hp=6, side=4)
+test_wiz1 = character.Character(charClass="Wizard", level=1, str=10, dex=13, con=14, int=17, wis=12, cha=8, feat_list=["Alertness","Combat Casting","Improved Initiative","Scribe Scroll"], name="Holdreda Danton", loc=[7,9], hp=6, side=2)
 
 test_wiz1.add_weapon(items.quarterstaff.copy(), active=True)
 
@@ -113,19 +113,14 @@ test_wiz1.add_spell_mem(spells.detect_magic.copy())
 test_wiz1.add_spell_mem(spells.resistance.copy())
 
 ##########################################################
+fighter_list = [test_ftr1,test_monk1,test_wiz1,test_barb1]
 
-fighter1 = test_ftr1
-fighter2 = test_wiz1
-
-print("{} ({} {}):".format(fighter1.name,fighter1.charClass,fighter1.level))
-print("\t{}".format(fighter1.print_AC_line()))
-print("\t{}".format(fighter1.print_save_line()))
-print("\t{}".format(fighter1.print_all_atks()))
-print("\n\n")
-print("{} ({} {}):".format(fighter2.name,fighter2.charClass,fighter2.level))
-print("\t{}".format(fighter2.print_AC_line()))
-print("\t{}".format(fighter2.print_save_line()))
-print("\t{}".format(fighter2.print_all_atks()))
+for fighter in fighter_list:
+    print("{} ({} {}):".format(fighter.name,fighter.charClass,fighter.level))
+    print("\t{}".format(fighter.print_AC_line()))
+    print("\t{}".format(fighter.print_save_line()))
+    print("\t{}".format(fighter.print_all_atks()))
+    print("\n")
 print("")
 
 mat = battlemat.Battlemat()
@@ -133,11 +128,13 @@ fight = combat.Combat()
 
 fight.set_mat(mat)
 
-fight.add_fighter(fighter1)
-fight.add_fighter(fighter2)
+for fighter in fighter_list:
+    fight.add_fighter(fighter)
 
-fight.set_tactic(fighter1,"Close")
-fight.set_tactic(fighter2,"Spell,Damage")
+fight.set_tactic(test_ftr1,"Close")
+fight.set_tactic(test_monk1,"Close")
+fight.set_tactic(test_barb1,"Close")
+fight.set_tactic(test_wiz1,"Spell,Damage")
 
 fight.set_init()
 
@@ -164,27 +161,9 @@ while not fight.check_combat_end() and roundcount < 50:
         #    print("\t{}: name {}".format(id,mat.token_id_index[id].name))
         sys.exit()
 
-print("=====================================================================================")
 print(fight.output_log())
-print(fighter1.get_atk_bon(0, True, fighter2.type, fighter2.subtype))
-print(fighter1.avg_weap_dmgs(fighter2))
-print(fighter1.avg_weap_dmgs(fighter2,prn=True))
-print(fighter1.best_dual_wield(fighter2,prn=True))
-print(fighter1.best_melee_equip(fighter2,prn=True))
-print(fighter1.best_melee_opt(fighter2,prn=True))
-print(fighter1.weap_name(fighter1.best_melee_weap(fighter2)))
-print(fighter1.weap_name(fighter1.best_ranged_weap(fighter2)))
-for id in fighter1.ai.mental_model:
-    print("{} Model: {}".format(fighter1.name,id))
-    print("\t{}".format(fighter1.ai.mental_model[id].name))
-print("=====================================================================================")
-print(fighter2.get_atk_bon(0, True, fighter1.type, fighter1.subtype))
-print(fighter2.avg_weap_dmgs(fighter1))
-print(fighter2.avg_weap_dmgs(fighter1,prn=True))
-print(fighter2.best_melee_equip(fighter1,prn=True))
-print(fighter2.best_melee_opt(fighter1,prn=True))
-print(fighter2.weap_name(fighter2.best_melee_weap(fighter1)))
-print(fighter2.weap_name(fighter2.best_ranged_weap(fighter1)))
-for id in fighter1.ai.mental_model:
-    print("{} Model: {}".format(fighter2.name,id))
-    print("\t{}".format(fighter2.ai.mental_model[id].name))
+for fighter in fighter_list:
+    print("=====================================================================================")
+    for id in fighter.ai.mental_model:
+        print("{} Model: {}".format(fighter.name,id))
+        print("\t{}".format(fighter.ai.mental_model[id].name))

@@ -13,7 +13,7 @@ class Battlemat:
 
     def __init__(self):
         self.tokens = []
-        self.token_list = []
+        self.token_id_index = dict()
         self.items = []
         
     def __sizeof__(self):
@@ -29,7 +29,7 @@ class Battlemat:
             return None
 
         self.tokens.append(token)
-        self.token_list.append(token.id)
+        self.token_id_index[token.id] = token
         return token
     
     def remove_token(self,token):
@@ -37,7 +37,7 @@ class Battlemat:
             return None
         
         self.tokens.remove(token)
-        self.token_list.remove(token.id)
+        del self.token_id_index[token.id]
     
     def add_item(self, item, loc):
         self.items.append([item,loc])
