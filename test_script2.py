@@ -111,7 +111,7 @@ test_wiz1.add_spell_mem(spells.resistance.copy())
 ##########################################################
 
 fighter1 = test_ftr1
-fighter2 = test_wiz1
+fighter2 = test_monk1
 
 fighter1_count = 0
 fighter1_hp = 0

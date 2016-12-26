@@ -7,6 +7,7 @@ class Combat:
     def __init__(self):
         self.fighters = []
         self.fighternames = []
+        self.fighter_id_index = dict()
         self.aoo_counts = dict()
         self.threat_tiles = dict()
         self.defeated = []
@@ -39,8 +40,10 @@ class Combat:
         fighter.target = None
         self.set_targeting(fighter, "Closest")
         self.set_tactic(fighter, "Attack")
+        
         self.fighters.append(fighter)
         self.fighternames.append(fighter.name)
+        self.fighter_id_index[fighter.id] = fighter
 
         self.aoo_counts[fighter.name] = 0
         self.threat_tiles[fighter.name] = self.mat.threatened_tiles(fighter)

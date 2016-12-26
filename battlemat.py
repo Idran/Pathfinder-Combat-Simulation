@@ -219,6 +219,9 @@ class Battlemat:
         
         return path
     
+    def is_visible(self, viewer, viewee):
+        return True
+    
     def get_spell_targets(self,spell_area,caster):
         x1,y1 = caster.loc
         base_loc = [[x1,y1],[x1,y1 + 1],[x1 + 1,y1],[x1 + 1,y1 + 1]]

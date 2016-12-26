@@ -1712,6 +1712,8 @@ class Foundation:
         return condition in self.conditions.keys() and self.conditions[condition] != 0
 
     def round_pass(self):
+        self.ai.update_model()
+        
         cond = dict(self.conditions)
         for condition in cond.keys():
             if condition == "Raging":
@@ -2272,6 +2274,8 @@ class Foundation:
     def base_presented_stats(self,side):
     
         kwargstats = dict()
+        
+        kwargstats["name"] = self.race
         
         kwargstats["type"] = self.type
         kwargstats["race"] = self.race
