@@ -250,6 +250,8 @@ class Combat:
                 self.clear_target(fighter)
 
         self.round = self.round + 1
+        if self.round == 51:
+            raise OverflowError("Round count exceeded 50, quitting.")
 
 
     def check_combat_end(self):

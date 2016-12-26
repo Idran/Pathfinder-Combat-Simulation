@@ -2069,6 +2069,8 @@ class Foundation:
     def threat_range(self, val=None):
         if val == None:
             val = self.slots["wield"][0]
+        if val == None:
+            return [5, self.reach]
             
         tr = []
         
@@ -2736,6 +2738,16 @@ class Character(Foundation):
         if self.charClass == "Monk":
             self.monk_ki_tot()
             self.monk_ki_check()
+    
+    def freeze_equip(self):
+        self.start_equip_list = self.equip_list
+        self.start_melee_weaps = self.melee_weaps
+        self.start_ranged_weaps = self.ranged_weaps
+        self.start_slots = self.slots
+    
+    def freeze_spells(self):
+    
+        self.start_spell_list_mem = self.spell_list_mem
 
     def reset(self):
 
@@ -2744,6 +2756,13 @@ class Character(Foundation):
         self.conditions = dict()
         self.loc = self.startloc
         self.ki_spent = 0
+        
+        self.equip_list = self.start_equip_list
+        self.melee_weaps = self.start_melee_weaps
+        self.ranged_weaps = self.start_ranged_weaps
+        self.slots = self.start_slots
+        
+        self.spell_list_mem = self.start_spell_list_mem
 
     ############################################
 

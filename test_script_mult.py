@@ -138,9 +138,6 @@ fight.set_tactic(test_wiz1,"Spell,Damage")
 
 fight.set_init()
 
-test_ftr1.damage = 14
-test_monk1.damage = 20
-
 roundcount = 0
 
 while not fight.check_combat_end() and roundcount < 50:
