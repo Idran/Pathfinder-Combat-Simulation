@@ -1401,6 +1401,11 @@ class Foundation:
     # AoO functions
 
     def can_aoo(self):
+    
+        active_check = self.is_active()
+        
+        if not active_check[0] or active_check[1] == "Disabled":
+            return False
         
         if self.has("Flat-footed") and not self.uncanny_dodge():
             return False
@@ -1725,6 +1730,7 @@ class Foundation:
     def round_pass(self):
         if not self.model:
             self.ai.update_model()
+        expire_conditions = []
         
         cond = dict(self.conditions)
         for condition in cond.keys():
@@ -1733,6 +1739,7 @@ class Foundation:
             if self.conditions[condition] > 0:
                 self.conditions[condition] -= 1
             if self.conditions[condition] == 0:
+                expire_conditions.append(condition)
                 if condition == "Raging":
                     self.drop_rage()
                 else:
@@ -1740,12 +1747,16 @@ class Foundation:
                     
         for satk in self.sa_list:
             satk.round()
+        
+        return [expire_conditions]
     
     def is_active(self):
-        if self.damage_con != "Normal":
+        self.check_hp()
+        
+        if self.damage_con not in ["Normal","Disabled"]:
             return [False,self.damage_con]
         else:
-            return [True,""]
+            return [True,self.damage_con]
     
     def can_act(self):
     
@@ -1954,6 +1965,35 @@ class Foundation:
 
     #############################
     #
+    # Movement functions
+
+    def get_move(self):
+        
+        if self.has("Prone"):
+            return 5
+
+        move = self.move
+
+        if "fast movement" in self.sq:
+            if self.charClass == "Barbarian" and self.armor_type() != "Heavy":
+                move += 10
+            elif self.charClass == "Monk" and self.armor_name() == "":
+                move += int(self.level / 3) * 10
+
+        if self.has("Exhausted"):
+            move /= 2
+
+        return move
+    
+    def get_move_acts(self):
+    
+        if self.damage_con == "Disabled":
+            return 1
+        
+        return 2
+
+    #############################
+    #
     # Saving throw functions
 
     def get_fort(self):
@@ -2008,28 +2048,6 @@ class Foundation:
             self.add_bon(save_bon,"morale",int(self.rage_bon() / 2))
 
         return sum(save_bon.values())
-
-    #############################
-    #
-    # Speed functions
-
-    def get_move(self):
-        
-        if self.has("Prone"):
-            return 5
-
-        move = self.move
-
-        if "fast movement" in self.sq:
-            if self.charClass == "Barbarian" and self.armor_type() != "Heavy":
-                move += 10
-            elif self.charClass == "Monk" and self.armor_name() == "":
-                move += int(self.level / 3) * 10
-
-        if self.has("Exhausted"):
-            move /= 2
-
-        return move
 
     #############################
     #
@@ -2157,6 +2175,9 @@ class Foundation:
             return [result >= 0, result]
     
     def check_save(self, stype, DC):
+    
+        if self.damage_con not in ["Normal","Disabled"]:
+            return [False,"No save"]
         
         if stype == "F":
             save_bon = self.get_fort()
@@ -2288,6 +2309,7 @@ class Foundation:
         kwargstats = dict()
         
         kwargstats["name"] = "{} ({})".format(self.race,self.name)
+        kwargstats["orig"] = self
         kwargstats["id"] = self.id
         
         kwargstats["type"] = self.type
@@ -2938,13 +2960,14 @@ class Monster(Foundation):
 class Charmodel(Foundation):
     """Mental model char framework"""
     
-    def __init__(self, name=None, side=1, AC=10, bab=0, move=30, loc=[0,0], tilesize=[1,1], HD=1, type="Humanoid", subtype=[], size="Medium", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], arcane=False, divine=False, CL=0, reach=5, fort=None, ref=None, will=None, hands=2, legs=2, init=0, race=None, charClass=None, level=1, fc=[], id=None):
+    def __init__(self, name=None, side=1, AC=10, bab=0, move=30, loc=[0,0], tilesize=[1,1], HD=1, type="Humanoid", subtype=[], size="Medium", hp=1, str=10, dex=10, con=10, int=10, wis=10, cha=10, feat_list=[], arcane=False, divine=False, CL=0, reach=5, fort=None, ref=None, will=None, hands=2, legs=2, init=0, race=None, charClass=None, level=1, fc=[], id=None, orig=None):
     
         
         Foundation.__init__(self, name, side, AC, move, loc, hp, tilesize, str, dex, con, int, wis, cha, feat_list, type, subtype, size, reach, fort, ref, will, hands, legs)
         
         self.model = True
         self.id = id
+        self.orig = orig
         
         self.init = init
         
@@ -2963,3 +2986,6 @@ class Charmodel(Foundation):
         self.HD = HD
         
         self.fc = fc
+    
+    def is_active(self):
+        return self.orig.is_active()

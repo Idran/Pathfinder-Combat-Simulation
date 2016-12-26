@@ -519,11 +519,13 @@ class Spell:
         
                 spell_log.append("{} is making a {} save against DC {}".format(target.name, self.save_parse[save[0]], DC))
                 
-                save_roll = random.randint(1,20) + save_bon
+                [save_pass,save_roll] = target.check_save(save[0],DC)
                 
-                if save_roll < DC:
+                if not save_pass:
                     spell_log.append("{} failed their save ({})".format(target.name,save_roll))
-                    if save[0] == "R" and "improved evasion" in target.da:
+                    if save_roll == "No save":
+                        pass
+                    elif save[0] == "R" and "improved evasion" in target.da:
                         spell_log.append("{} has improved evasion and so takes half damage".format(target.name))
                         spell_dmg = spell_dmg // 2
                 else:

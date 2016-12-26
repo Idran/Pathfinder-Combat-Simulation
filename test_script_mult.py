@@ -138,6 +138,9 @@ fight.set_tactic(test_wiz1,"Spell,Damage")
 
 fight.set_init()
 
+test_ftr1.damage = 14
+test_monk1.damage = 20
+
 roundcount = 0
 
 while not fight.check_combat_end() and roundcount < 50:
@@ -162,8 +165,8 @@ while not fight.check_combat_end() and roundcount < 50:
         sys.exit()
 
 print(fight.output_log())
-for fighter in fighter_list:
-    print("=====================================================================================")
-    for id in fighter.ai.mental_model:
-        print("{} Model: {}".format(fighter.name,id))
-        print("\t{}".format(fighter.ai.mental_model[id].name))
+#for fighter in fighter_list:
+#    print("=====================================================================================")
+#    for id in fighter.ai.mental_model:
+#        print("{} Model: {}".format(fighter.name,id))
+#        print("\t{}".format(fighter.ai.mental_model[id].name))

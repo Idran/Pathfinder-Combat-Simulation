@@ -78,6 +78,7 @@ class AI:
     
         self.fighters = list(self.mental_model.values())
         self.moves = 0
+        self.move_acts = self.char.get_move_acts()
         self.loc = self.char.loc
     
     def pick_action(self):
@@ -195,7 +196,7 @@ class AI:
                 elif self.tactic[0] in ["Maneuver"]:
                     self.node = "Maneuvering"
             else:
-                if self.moves < 2:
+                if self.moves < self.move_acts:
                     self.node = "Moving"
                 else:
                     self.node = "Decided"
@@ -215,7 +216,7 @@ class AI:
                 
                 log.append("{} will move from {} to {} before casting".format(self.char.name,pre_move,self.char.loc))
             
-                if self.moves < 2:
+                if self.moves < self.move_acts:
                     self.node = "Selecting Spell"
                 else:
                     self.node = "Decided"
@@ -357,13 +358,18 @@ class AI:
         log.append("{} is selecting a spell".format(self.char.name))
         
         max_level = self.char.max_spell_lvl
+        spell_list = []
         spell_data_list = []
         combatant_data = {"Ally":[],"Enemy":[]}
         
         for other in self.fighters:
+            log.append("\t{} checking activity of {}: {}".format(self.char.name,other.name,other.is_active()))
+            active_check = other.is_active()
             if other.side == self.char.side:
                 side = "Ally"
             else:
+                if not active_check[0] and active_check[1] != "Disabled":
+                    continue
                 side = "Enemy"
             
             combatant_data[side].append(other)
@@ -451,6 +457,8 @@ class AI:
                                     #print("\t\tAvg dmg: {}".format(avg_dmg))
                                     if target.side == self.char.side:
                                         avg_dmg_tot -= 2 * avg_dmg
+                                    elif target.damage_con != "Normal":
+                                        avg_dmg_tot += 0.5 * avg_dmg #damage to dying/dead characters not as relevant
                                     else:
                                         avg_dmg_tot += avg_dmg
                             #print("\tTotal expected damage: {}".format(avg_dmg_tot))
@@ -484,7 +492,7 @@ class AI:
             return[[],log]
         else:
             log.append("{} cannot cast a spell".format(self.char.name))
-            if self.moves < 2:
+            if self.moves < self.move_acts:
                 log.append("{} moving in range".format(self.char.name))
                 self.node = "Targeting"
                 self.node_arg = spell_info[0]
@@ -511,7 +519,7 @@ class AI:
 
             for other in self.fighters:
                 active_check = other.is_active()
-                if not active_check[0]:
+                if not active_check[0] and active_check[1] != "Disabled":
                     continue
                 if other.side != self.char.side:
                     other_dist = self.mat.dist_tile(self.char.loc, other.loc)
@@ -659,7 +667,7 @@ class AI:
                 if self.char.weap_swap() == "move" or self.char.bab[0] == 0:
                     self.moves += 1
         
-        if self.moves == 2:
+        if self.moves == self.move_acts:
             return[act,log]
         
         for action in satk.acts:

@@ -127,7 +127,7 @@ class Combat:
             return True
         if fighter == None:
             return False
-        if fighter.damage_con != "Normal":
+        if fighter.damage_con not in ["Normal","Disabled"]:
             self.log("{} is {}".format(fighter.name, fighter.damage_con))
             self.disable_fighter(fighter)
             return True
@@ -138,7 +138,9 @@ class Combat:
         self.reset_aoo_count()
         for init_entry in self.init_order:
             fighter = init_entry[0]
-            fighter.round_pass()
+            round_changes = fighter.round_pass()
+            for cond in round_changes[0]:
+                self.log("{} loses {}".format(fighter.name, cond))
 
             #############################
             #
@@ -152,6 +154,11 @@ class Combat:
             # Skip combatants that cannot act temporarily
             
             act_status = fighter.can_act()
+            
+            if act_status[1] in ["Dying","Dead"]:
+                self.log("{} is {}".format(fighter.name, act_status[1]))
+                self.disable_fighter(fighter)
+                continue
             
             if not act_status[0]:
                 self.log("{} unable to act due to {} condition".format(fighter.name,act_status[1]))
