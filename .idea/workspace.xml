@@ -21,8 +21,8 @@
       <file leaf-file-name="combat.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/combat.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="92">
-              <caret line="478" column="48" lean-forward="true" selection-start-line="478" selection-start-column="48" selection-end-line="478" selection-end-column="48" />
+            <state relative-caret-position="125">
+              <caret line="186" column="0" lean-forward="false" selection-start-line="186" selection-start-column="0" selection-end-line="186" selection-end-column="0" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -30,11 +30,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ai.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="ai.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/ai.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="329">
-              <caret line="334" column="0" lean-forward="false" selection-start-line="334" selection-start-column="0" selection-end-line="334" selection-end-column="0" />
+            <state relative-caret-position="330">
+              <caret line="359" column="33" lean-forward="false" selection-start-line="359" selection-start-column="33" selection-end-line="359" selection-end-column="33" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -45,8 +45,8 @@
       <file leaf-file-name="battlemat.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/battlemat.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="17">
-              <caret line="132" column="0" lean-forward="true" selection-start-line="132" selection-start-column="0" selection-end-line="132" selection-end-column="0" />
+            <state relative-caret-position="178">
+              <caret line="158" column="0" lean-forward="false" selection-start-line="158" selection-start-column="0" selection-end-line="158" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -62,11 +62,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="character.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="character.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/character.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="161">
-              <caret line="918" column="37" lean-forward="false" selection-start-line="918" selection-start-column="37" selection-end-line="918" selection-end-column="37" />
+            <state relative-caret-position="144">
+              <caret line="313" column="0" lean-forward="false" selection-start-line="313" selection-start-column="0" selection-end-line="313" selection-end-column="0" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -77,8 +77,8 @@
       <file leaf-file-name="feat.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/feat.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="194">
-              <caret line="242" column="26" lean-forward="false" selection-start-line="242" selection-start-column="26" selection-end-line="242" selection-end-column="26" />
+            <state relative-caret-position="125">
+              <caret line="203" column="0" lean-forward="false" selection-start-line="203" selection-start-column="0" selection-end-line="203" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -153,12 +153,12 @@
       <find>int=</find>
       <find>type</find>
       <find>AC_keys</find>
-      <find>HD</find>
       <find>AC</find>
       <find>SR</find>
-      <find>charClass</find>
       <find>curhp</find>
       <find>CL</find>
+      <find>HD</find>
+      <find>charClass</find>
     </findStrings>
     <replaceStrings>
       <replace>uuid.</replace>
@@ -178,12 +178,12 @@
       <replace>inl=</replace>
       <replace>type_mon</replace>
       <replace>ac_keys</replace>
-      <replace>hd</replace>
       <replace>ac</replace>
       <replace>sr</replace>
-      <replace>char_class</replace>
       <replace>cur_hp</replace>
       <replace>cl</replace>
+      <replace>hd</replace>
+      <replace>char_class</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -206,10 +206,10 @@
         <option value="$PROJECT_DIR$/test_script2_mult.py" />
         <option value="$PROJECT_DIR$/test_script2.py" />
         <option value="$PROJECT_DIR$/feat.py" />
-        <option value="$PROJECT_DIR$/ai.py" />
         <option value="$PROJECT_DIR$/combat.py" />
         <option value="$PROJECT_DIR$/spell.py" />
         <option value="$PROJECT_DIR$/character.py" />
+        <option value="$PROJECT_DIR$/ai.py" />
       </list>
     </option>
   </component>
@@ -493,11 +493,13 @@
       <configuration name="PythonConfigurationType">
         <watch expression="self.char.name" />
         <watch expression="self.node" />
+        <watch expression="self.node_arg" />
         <watch expression="curr_weap" />
+        <watch expression="self.char.slots['wield']" />
         <watch expression="token1.name" />
         <watch expression="token2.name" />
         <watch expression="self.slots['wield']" />
-        <watch expression="self.char.slots['wield']" />
+        <watch expression="token1.weap_type()" language="Python" />
       </configuration>
     </watches-manager>
   </component>
@@ -594,24 +596,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/feat.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="194">
-          <caret line="242" column="26" lean-forward="false" selection-start-line="242" selection-start-column="26" selection-end-line="242" selection-end-column="26" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/combat.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="92">
-          <caret line="478" column="48" lean-forward="true" selection-start-line="478" selection-start-column="48" selection-end-line="478" selection-end-column="48" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/spell.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="160">
@@ -628,30 +612,48 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/battlemat.py">
+    <entry file="file://$PROJECT_DIR$/feat.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="132" column="0" lean-forward="true" selection-start-line="132" selection-start-column="0" selection-end-line="132" selection-end-column="0" />
+        <state relative-caret-position="125">
+          <caret line="203" column="0" lean-forward="false" selection-start-line="203" selection-start-column="0" selection-end-line="203" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ai.py">
+    <entry file="file://$PROJECT_DIR$/combat.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="329">
-          <caret line="334" column="0" lean-forward="false" selection-start-line="334" selection-start-column="0" selection-end-line="334" selection-end-column="0" />
+        <state relative-caret-position="125">
+          <caret line="186" column="0" lean-forward="false" selection-start-line="186" selection-start-column="0" selection-end-line="186" selection-end-column="0" />
           <folding>
-            <element signature="e#0#10#0" expanded="true" />
+            <element signature="e#0#13#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/character.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="161">
-          <caret line="918" column="37" lean-forward="false" selection-start-line="918" selection-start-column="37" selection-end-line="918" selection-end-column="37" />
+        <state relative-caret-position="144">
+          <caret line="313" column="0" lean-forward="false" selection-start-line="313" selection-start-column="0" selection-end-line="313" selection-end-column="0" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/battlemat.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="178">
+          <caret line="158" column="0" lean-forward="false" selection-start-line="158" selection-start-column="0" selection-end-line="158" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ai.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="330">
+          <caret line="359" column="33" lean-forward="false" selection-start-line="359" selection-start-column="33" selection-end-line="359" selection-end-column="33" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
           </folding>
         </state>
       </provider>

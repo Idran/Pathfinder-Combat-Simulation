@@ -322,7 +322,7 @@ class AI:
 
         if self.tactic[0] in ["Close"]:
             # print ("{} is considering Close options".format(self.char.name))
-            if not ranged or (dist_to_target - speed < max_tr):
+            if not ranged or (dist_to_target - speed <= max_tr):
                 # print("{} is thinking about melee".format(self.char.name))
                 if curr_weap != melee_weap:
                     act.append(["swap", melee_weap])
@@ -334,6 +334,7 @@ class AI:
                     act.append(["swap", ranged])
                     self.char.set_weapon(ranged)
                     swap = True
+                    atk_type = "ranged"
 
         elif self.tactic[0] in ["Maneuver"]:
             if self.char.weap_name() == "unarmed strike" and curr_weap != melee_weap:
@@ -341,18 +342,23 @@ class AI:
                 self.char.set_weapon(melee_weap)
                 swap = True
 
+        weap_type = self.char.weap_type()
+
         if self.mat.can_attack(self.char, self.char.target):
             if swap and self.char.weap_swap() == "move":
                 self.moves += 1
-            if melee_type == "weap":
+            if "M" in weap_type:
+                if melee_type == "weap":
+                    self.node = "Attacking"
+                elif melee_type == "fob":
+                    self.node = "Special Attack"
+                    self.node_arg = "fob"
+                else:
+                    log.append("{0} does nothing".format(self.char.name))
+                    self.node = "Decided"
+                    act.append(["end"])
+            elif "R" in weap_type:
                 self.node = "Attacking"
-            elif melee_type == "fob":
-                self.node = "Special Attack"
-                self.node_arg = "fob"
-            else:
-                log.append("{0} does nothing".format(self.char.name))
-                self.node = "Decided"
-                act.append(["end"])
 
         else:
             if swap and self.char.bab[0] == 0:
