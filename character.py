@@ -2798,7 +2798,7 @@ class Character(Foundation):
         self.damage = 0
         self.damage_con = "Normal"
         del self.conditions
-        self.conditions = copy.deepcopy(self.conditions)
+        self.conditions = copy.deepcopy(self.start_conditions)
         self.loc = self.startloc
         
         self.rage_dur = 0
