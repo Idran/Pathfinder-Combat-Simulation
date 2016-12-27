@@ -916,7 +916,7 @@ class Foundation:
             self.slots["wield"][0] = weap_num
             offhand = self.slots["wield"][1]
             if offhand and self.weap_hands(offhand) == 2:
-                self.slots["wield"][0] = None
+                self.slots["wield"][1] = None
         else:
             offhand = self.slots["wield"][1]
             if offhand and self.weap_hands(offhand) == 1:
