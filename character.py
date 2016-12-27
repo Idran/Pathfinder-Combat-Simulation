@@ -1414,7 +1414,7 @@ class Foundation:
         if self.has("Flat-footed") and not self.uncanny_dodge():
             return False
             
-        if "R" in self.weap_type() and not self.snap_shot():
+        if "R" in self.weap_type() and not self.feat.snap_shot(self):
             return False
         
         return True

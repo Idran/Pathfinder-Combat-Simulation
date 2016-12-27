@@ -3,6 +3,7 @@ import character
 import combat
 import equip
 import items
+import random
 import spell_list as spells
 import sys
 import traceback
@@ -142,8 +143,13 @@ temp = time.clock()
 print("Running {} iterations:".format(num_combat))
 
 for i in range(num_combat):
+    start_loc_list = []
     for fighter in fighter_list:
         fighter.reset()
+        gen_loc = [random.randint(1,20),random.randint(1,20)]
+        while gen_loc in start_loc_list:
+            gen_loc = [random.randint(1,20),random.randint(1,20)]
+        fighter.loc = gen_loc
         #if i < 20:
         #    print("Freeze test 2, {}: ".format(fighter.name))
         #    print("\tCur: {}".format(fighter.spell_list_mem))
