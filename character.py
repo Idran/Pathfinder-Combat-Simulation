@@ -2773,6 +2773,12 @@ class Character(Foundation):
             self.monk_ki_tot()
             self.monk_ki_check()
     
+    def save_state(self):
+    
+        self.freeze_equip()
+        self.freeze_spells()
+        self.freeze_conditions()
+    
     def freeze_equip(self):
         self.start_equip_list = copy.deepcopy(self.equip_list)
         self.start_melee_weaps = copy.deepcopy(self.melee_weaps)
@@ -2782,13 +2788,20 @@ class Character(Foundation):
     def freeze_spells(self):
     
         self.start_spell_list_mem = copy.deepcopy(self.spell_list_mem)
+    
+    def freeze_conditions(self):
+    
+        self.start_conditions = copy.deepcopy(self.conditions)
 
     def reset(self):
 
         self.damage = 0
         self.damage_con = "Normal"
-        self.conditions = dict()
+        del self.conditions
+        self.conditions = copy.deepcopy(self.conditions)
         self.loc = self.startloc
+        
+        self.rage_dur = 0
         self.ki_spent = 0
         
         del self.equip_list

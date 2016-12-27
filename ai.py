@@ -363,7 +363,7 @@ class AI:
         combatant_data = {"Ally":[],"Enemy":[]}
         
         for other in self.fighters:
-            log.append("\t{} checking activity of {}: {}".format(self.char.name,other.name,other.is_active()))
+            #log.append("\t{} checking activity of {}: {}".format(self.char.name,other.name,other.is_active()))
             active_check = other.is_active()
             if other.side == self.char.side:
                 side = "Ally"

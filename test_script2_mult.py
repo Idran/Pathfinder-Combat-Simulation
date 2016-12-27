@@ -114,10 +114,11 @@ fighter_list = [test_ftr1,test_monk1,test_wiz1,test_barb1]
 fighter_data = dict()
 fighter_side_data = dict()
 fight_log_collection = dict()
+shortest = [99,-1]
+longest = [0,-1]
 
 for fighter in fighter_list:
-    fighter.freeze_equip()
-    fighter.freeze_spells()
+    fighter.save_state()
     #print("Freeze test: {}".format(fighter.start_spell_list_mem))
     fighter_data[fighter.id] = [0,0,fighter.get_hp(),0]
     if fighter.side not in fighter_side_data.keys():
@@ -134,7 +135,7 @@ for fighter in fighter_list:
     print("\n")
 print("")
 
-num_combat = 10000
+num_combat = 2500
 
 temp = time.clock()
 
@@ -200,15 +201,23 @@ for i in range(num_combat):
             sys.exit()
     
     winning_side = fight.winning_side()
-    
     fighter_side_data[winning_side][0] += 1
+    
+    round_count = fight.round - 1
             
     for fighter in fighter_list:
         if fighter in fight.fighters:
             fighter_data[fighter.id][0] += 1
             fighter_data[fighter.id][1] += fighter.get_hp() - fighter.damage
-            fighter_data[fighter.id][3] += fight.round - 1
+            fighter_data[fighter.id][3] += round_count
             fighter_side_data[fighter.side][1] += 1
+    
+    if round_count < shortest[0]:
+        shortest[0] = round_count
+        shortest[1] = i
+    if round_count > longest[0]:
+        longest[0] = round_count
+        longest[1] = i
     
     fight_log_collection[i] = fight.output_log()
         
@@ -247,6 +256,8 @@ for side in fighter_side_data:
             else:
                 hp_output = "N/A"
             print("\tAverage HP when victorious: {}".format(hp_output))
+            if fighter_round != "N/A":
+                fighter_round = int(fighter_round)
             print("\tAverage rounds before end: {}\n".format(fighter_round))
     if side_win_count == 0:
         avg_surv_output = "N/A"
@@ -254,8 +265,11 @@ for side in fighter_side_data:
         avg_surv_output = "{:.1f}".format(float(side_size) / side_win_count)
     print("Average survivors on victory: {}\n".format(avg_surv_output))
     
-print("Sample combat log:\n")
-print(fight.output_log())
+print("Shortest combat log (Log {}, {} rounds):\n".format(shortest[1],shortest[0]))
+print(fight_log_collection[shortest[1]])
+print
+print("Longest combat log (Log {}, {} rounds):\n".format(longest[1],longest[0]))
+print(fight_log_collection[longest[1]])
 print
 print("Time elapsed: {:.3f} seconds".format(time_elapsed))
 print("Est. time per iteration: {:.3f} seconds".format(time_elapsed / num_combat))
