@@ -266,6 +266,18 @@ class Combat:
                     break
 
         return end
+    
+    def winning_side(self):
+        active_side = -1
+        for fighter in self.fighters:
+            if fighter.side != active_side:
+                if active_side == -1:
+                    active_side = fighter.side
+                else:
+                    active_side = -1
+                    break
+                    
+        return active_side
 
 ###################################################################
 #

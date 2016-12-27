@@ -211,7 +211,11 @@ class Foundation:
         if sum(i[1] for i in spells_mem) + count > self.spell_mem_max[spell_lev]:
             raise Exception("Not enough free spell slots of level {} to add spell".format(spell_lev))
         
-        self.spell_list_mem[spell_lev][spell.name] = [spell,count]
+        if spell.name not in self.spell_list_mem[spell_lev]:
+            self.spell_list_mem[spell_lev][spell.name] = [spell,count]
+        else:
+            cur_count = self.spell_list_mem[spell_lev][spell.name][1]
+            self.spell_list_mem[spell_lev][spell.name] = [spell,cur_count+count]
 
 ###################################################################
 #
@@ -2070,7 +2074,7 @@ class Foundation:
         if val == None:
             val = self.slots["wield"][0]
         if val == None:
-            return [5, self.reach]
+            return [[5, self.reach]]
             
         tr = []
         
@@ -2476,6 +2480,36 @@ class Foundation:
     
     def print_save_line(self):
         return "Fort {:+d}, Ref {:+d}, Will {:+d}".format(self.get_fort(),self.get_ref(),self.get_will())
+    
+    def print_spell_line(self):
+        
+        spell_line = [[] for i in range(0,self.max_spell_lvl+1)]
+        
+        for i in range(self.max_spell_lvl,-1,-1):
+            if i != 0:
+                spell_line[i] = self.ordinal(i) + " - "
+            else:
+                spell_line[i] = "0 - "
+                
+            spell_text = []
+            
+            for spell_name in self.spell_list_mem[i].keys():
+                spell = self.spell_list_mem[i][spell_name][0]
+                spell_count = self.spell_list_mem[i][spell_name][1]
+                
+                spell_desc = spell_name
+                
+                if spell_count > 1:
+                    spell_desc += " x{}".format(spell_count)
+                
+                if spell.has_save():
+                    spell_desc += " (DC {})".format(10 + i + self.stat_bonus(self.casttot()))
+                
+                spell_text.append(spell_desc)
+            
+            spell_line[i] += ", ".join(sorted(spell_text))
+        
+        return spell_line
 
 ###################################################################
 
@@ -2740,14 +2774,14 @@ class Character(Foundation):
             self.monk_ki_check()
     
     def freeze_equip(self):
-        self.start_equip_list = self.equip_list
-        self.start_melee_weaps = self.melee_weaps
-        self.start_ranged_weaps = self.ranged_weaps
-        self.start_slots = self.slots
+        self.start_equip_list = copy.deepcopy(self.equip_list)
+        self.start_melee_weaps = copy.deepcopy(self.melee_weaps)
+        self.start_ranged_weaps = copy.deepcopy(self.ranged_weaps)
+        self.start_slots = copy.deepcopy(self.slots)
     
     def freeze_spells(self):
     
-        self.start_spell_list_mem = self.spell_list_mem
+        self.start_spell_list_mem = copy.deepcopy(self.spell_list_mem)
 
     def reset(self):
 
@@ -2757,12 +2791,17 @@ class Character(Foundation):
         self.loc = self.startloc
         self.ki_spent = 0
         
-        self.equip_list = self.start_equip_list
-        self.melee_weaps = self.start_melee_weaps
-        self.ranged_weaps = self.start_ranged_weaps
-        self.slots = self.start_slots
+        del self.equip_list
+        self.equip_list = copy.deepcopy(self.start_equip_list)
+        del self.melee_weaps
+        self.melee_weaps = copy.deepcopy(self.start_melee_weaps)
+        del self.ranged_weaps
+        self.ranged_weaps = copy.deepcopy(self.start_ranged_weaps)
+        del self.slots
+        self.slots = copy.deepcopy(self.start_slots)
         
-        self.spell_list_mem = self.start_spell_list_mem
+        del self.spell_list_mem
+        self.spell_list_mem = copy.deepcopy(self.start_spell_list_mem)
 
     ############################################
 
@@ -2836,32 +2875,7 @@ class Character(Foundation):
             elif self.charClass in ["Bard","Sorcerer"]:
                 spell_type = "Known"
         
-        spell_line = [[] for i in range(0,self.max_spell_lvl+1)]
-        
-        for i in range(self.max_spell_lvl,-1,-1):
-            if i != 0:
-                spell_line[i] = self.ordinal(i) + " - "
-            else:
-                spell_line[i] = "0 - "
-                
-            spell_text = []
-            
-            for spell_name in self.spell_list_mem[i].keys():
-                spell = self.spell_list_mem[i][spell_name][0]
-                spell_count = self.spell_list_mem[i][spell_name][1]
-                
-                spell_desc = spell_name
-                
-                if spell_count > 1:
-                    spell_desc += " x{}".format(spell_count)
-                
-                if spell.has_save():
-                    spell_desc += " (DC {})".format(10 + i + self.stat_bonus(self.casttot()))
-                
-                spell_text.append(spell_desc)
-            
-            spell_line[i] += ", ".join(sorted(spell_text))
-                
+        spell_line = self.print_spell_line()
 
         wordwrap = self.textwrap.TextWrapper(subsequent_indent="  ", width=textwidth)
         wordwrap_indent = self.textwrap.TextWrapper(initial_indent="  ", subsequent_indent="    ", width=textwidth)

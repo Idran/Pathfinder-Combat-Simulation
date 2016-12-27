@@ -112,15 +112,25 @@ test_wiz1.add_spell_mem(spells.resistance.copy())
 
 fighter_list = [test_ftr1,test_monk1,test_wiz1,test_barb1]
 fighter_data = dict()
+fighter_side_data = dict()
+fight_log_collection = dict()
 
 for fighter in fighter_list:
     fighter.freeze_equip()
     fighter.freeze_spells()
+    #print("Freeze test: {}".format(fighter.start_spell_list_mem))
     fighter_data[fighter.id] = [0,0,fighter.get_hp(),0]
+    if fighter.side not in fighter_side_data.keys():
+        fighter_side_data[fighter.side] = [0,0]
     print("{} ({} {}):".format(fighter.name,fighter.charClass,fighter.level))
+    print("\tSide {}".format(fighter.side))
     print("\t{}".format(fighter.print_AC_line()))
     print("\t{}".format(fighter.print_save_line()))
     print("\t{}".format(fighter.print_all_atks()))
+    if fighter.CL() > 0:
+        print("\tSpells:")
+        for line in fighter.print_spell_line():
+            print("\t\t{}".format(line))
     print("\n")
 print("")
 
@@ -128,9 +138,15 @@ num_combat = 10000
 
 temp = time.clock()
 
+print("Running {} iterations:".format(num_combat))
+
 for i in range(num_combat):
     for fighter in fighter_list:
         fighter.reset()
+        #if i < 20:
+        #    print("Freeze test 2, {}: ".format(fighter.name))
+        #    print("\tCur: {}".format(fighter.spell_list_mem))
+        #    print("\tSaved: {}".format(fighter.start_spell_list_mem))
 
     mat = battlemat.Battlemat()
     fight = combat.Combat()
@@ -152,6 +168,10 @@ for i in range(num_combat):
             print("Dumping character log")
             print("=====================================================================================")
             print(fighter.print_stat_block())
+            print("=====================================================================================")
+            print("Dumping previous fight log")
+            print("=====================================================================================")
+            print(fight_log_collection[i-1])
             print("=====================================================================================")
             print("-----------------")
             print("Error details:")
@@ -178,12 +198,19 @@ for i in range(num_combat):
             print("Error details:")
             traceback.print_exc()
             sys.exit()
+    
+    winning_side = fight.winning_side()
+    
+    fighter_side_data[winning_side][0] += 1
             
     for fighter in fighter_list:
         if fighter in fight.fighters:
             fighter_data[fighter.id][0] += 1
             fighter_data[fighter.id][1] += fighter.get_hp() - fighter.damage
             fighter_data[fighter.id][3] += fight.round - 1
+            fighter_side_data[fighter.side][1] += 1
+    
+    fight_log_collection[i] = fight.output_log()
         
 #    if i % 100 == 0:
 #        print("i: {}".format(i))
@@ -202,18 +229,33 @@ time_elapsed = time.clock()
 
 print("Multi-side fight, {} iterations:\n".format(num_combat))
 
-for fighter in fighter_list:
-    [fighter_count,fighter_hp,fighter_maxhp,fighter_round] = fighter_data[fighter.id]
+for side in fighter_side_data:
+    [side_win_count,side_size] = fighter_side_data[side]
     
-    fighter_hp = (fighter_hp / fighter_count) if fighter_count > 0 else "N/A"
-    fighter_round = (fighter_round / fighter_count) if fighter_count > 0 else "N/A"
+    print("Side {} victory: {:.2%}".format(side,float(side_win_count) / num_combat))
+
+    for fighter in fighter_list:
+        if fighter.side == side:
+            [fighter_count,fighter_hp,fighter_maxhp,fighter_round] = fighter_data[fighter.id]
+            
+            fighter_hp = (fighter_hp / fighter_count) if fighter_count > 0 else "N/A"
+            fighter_round = (fighter_round / fighter_count) if fighter_count > 0 else "N/A"
+            
+            print("\t{} survival: {:.2%}".format(fighter.name,float(fighter_count) / num_combat))
+            if fighter_hp != "N/A":
+                hp_output = "{}/{}".format(int(fighter_hp),fighter_maxhp)
+            else:
+                hp_output = "N/A"
+            print("\tAverage HP when victorious: {}".format(hp_output))
+            print("\tAverage rounds before end: {}\n".format(fighter_round))
+    if side_win_count == 0:
+        avg_surv_output = "N/A"
+    else:
+        avg_surv_output = "{:.1f}".format(float(side_size) / side_win_count)
+    print("Average survivors on victory: {}\n".format(avg_surv_output))
     
-    print("{}: {:.2%}".format(fighter.name,float(fighter_count) / num_combat))
-    print("Average HP when victorious: {}/{}".format(int(fighter_hp),fighter_maxhp))
-    print("Average rounds before end: {}\n".format(int(fighter_round)))
-    
-#print("Sample combat log:\n")
-#print(fight.output_log())
+print("Sample combat log:\n")
+print(fight.output_log())
 print
 print("Time elapsed: {:.3f} seconds".format(time_elapsed))
 print("Est. time per iteration: {:.3f} seconds".format(time_elapsed / num_combat))
