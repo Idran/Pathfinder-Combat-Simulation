@@ -1,17 +1,26 @@
 import copy
 
+
 class Weapon:
     """Weapon data structure"""
 
-    def __init__(self, name=None, type="Simple", group=[], atk_type="M", atk_damage=[1,8], range=5, crit_range=20, crit_mult=2, weap_bon=0, reach=False, spb="S", material=None, mwk=False, enchants=[], ammo=0, hands=1, disarm=False, trip=False):
+    def __init__(self, name=None, weap_type="Simple", group=None, atk_type="M", atk_damage=None, weap_range=5, crit_range=20,
+                 crit_mult=2, weap_bon=0, reach=False, spb="S", material=None, mwk=False,
+                 enchants=None, ammo=0, hands=1, disarm=False, trip=False):
+        if group is None:
+            group = []
+        if atk_damage is None:
+            atk_damage = [1, 8]
+        if enchants is None:
+            enchants = []
         self.name = name
         self.item = "weapon"
         self.default = False
-        self.type = type
+        self.weap_type = weap_type
         self.group = group
         self.atk_type = atk_type
         self.atk_damage = atk_damage
-        self.range = range
+        self.weap_range = weap_range
         self.crit_range = crit_range
         self.crit_mult = crit_mult
         self.weap_bon = weap_bon
@@ -44,8 +53,8 @@ class Weapon:
 
         return out
 
-    def set_type(self, type):
-        self.atk_type = type
+    def set_type(self, weap_type):
+        self.atk_type = weap_type
 
     def set_mwk(self):
         if self.mwk:
@@ -65,14 +74,19 @@ class Weapon:
     def copy(self):
         return copy.copy(self)
 
+
 class Armor:
     """Armor data structure"""
 
-    def __init__(self, name=None, type="Light", armor_bon=0, shield_bon=0, max_dex=99, asf=0, armor_check=0, material=None, mwk=False, ench_bon=0, enchants=[], hands=0):
+    def __init__(self, name=None, weap_type="Light", armor_bon=0, shield_bon=0, max_dex=99, asf=0, armor_check=0,
+                 material=None, mwk=False, ench_bon=0,
+                 enchants=None, hands=0):
+        if enchants is None:
+            enchants = []
         self.name = name
         self.item = "armor"
         self.default = False
-        self.type = type
+        self.weap_type = weap_type
         self.armor_bon = armor_bon
         self.shield_bon = shield_bon
         self.max_dex = max_dex
@@ -104,7 +118,7 @@ class Armor:
         if self.mwk:
             return None
         self.mwk = True
-        self.armor_check = min(0,self.armor_check + 1)
+        self.armor_check = min(0, self.armor_check + 1)
 
     def set_bon(self, bon):
         self.set_mwk()
