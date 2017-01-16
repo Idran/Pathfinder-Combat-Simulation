@@ -17,6 +17,10 @@ class AI:
         self.move_acts = self.char.get_move_acts()
         self.loc = self.char.loc
 
+        self.act_array = []
+        self.log = []
+        self.node_list = []
+
         self.mat = mat
         self.tactic = ["Attack"]
         self.motivation = "Neutral"
@@ -35,8 +39,9 @@ class AI:
     def act(self):
 
         self.node = "Ready"
-        act = []
-        log = []
+        self.act_array = []
+        self.log = []
+        self.node_list = ["{} Ready".format(self.char.name)]
 
         self.update()
 
@@ -44,13 +49,19 @@ class AI:
         # self.build_map()
         # pass
 
+        node_count = 0
+
         while self.node != "Decided":
             temp = self.pick_action()
             # print("{}: {}".format(self.char.name,self.node))
-            act += temp[0]
-            log += temp[1]
+            self.act_array += temp[0]
+            self.log += temp[1]
+            self.node_list.append("{} {}".format(self.char.name,self.node))
+            node_count += 1
+            if node_count > 30:
+                raise OverflowError("AI stuck in loop")
 
-        return [act, log]
+        return [self.act_array, self.log]
 
     def update_model(self):
 
@@ -109,9 +120,9 @@ class AI:
         else:
             pass
 
-            ###################################################################
-            #
-            # Value-setting functions
+    ###################################################################
+    #
+    # Value-setting functions
 
     def set_tactic(self, tactic):
 
@@ -213,24 +224,11 @@ class AI:
                     act.append(["end"])
 
         if self.tactic[0] in ["Spell"]:
-            spell = self.node_spell
-
-            if spell.dmg:
-                spell_range = spell.get_range(self.char)
-                dist_to_target = self.mat.dist_ft(self.char.loc, self.char.target.loc)
-                move = min(self.char.get_move(), dist_to_target - spell_range)
-                log.append("{}".format(move))
-                pre_move = self.char.loc
-                act = self.move_to_target(act, move)
-                self.char.loc = self.loc
-
-                log.append("{} will move from {} to {} before casting".format(self.char.name, pre_move, self.char.loc))
-
-                if self.moves < self.move_acts:
-                    self.node = "Selecting Spell"
-                else:
-                    self.node = "Decided"
-                    act.append(["end"])
+            if self.moves < self.move_acts:
+                self.node = "Selecting Spell"
+            else:
+                self.node = "Decided"
+                act.append(["end"])
 
         self.node_arg = ""
 
@@ -435,92 +433,110 @@ class AI:
         spell_choice = []
         spell_pick = False
         spell_info = []
+        avail_tile_list = self.mat.tile_circle_fill(self.loc,self.char.get_move())
+        check_area = []
 
         if self.tactic[1] in ["Damage"]:
             for spell in spell_list:
+                if spell.cast_time == "std":
+                    check_area = avail_tile_list
+                else:
+                    check_area = [self.loc]
                 avg_dmg = 0
-                if spell.aim[0] == "t":
-                    target_table = []
-                    for i in range(0, spell.targ_parse(self.char)):
-                        avg_dmg_table = self.single_target_dmg_spell_eval(spell, combatant_data["Enemy"])
+                wtd_avg_dmg = 0
+                avg_dist = 0
+                for loc in check_area:
+                    self.char.loc = loc
+                    if spell.aim[0] == "t":
+                        target_table = []
+                        max_range = spell.get_range(self.char)
+                        for i in range(0, spell.targ_parse(self.char)):
+                            avg_dmg_table = self.single_target_dmg_spell_eval(spell, combatant_data["Enemy"])
 
-                        if not avg_dmg_table:
-                            continue
+                            if not avg_dmg_table:
+                                continue
 
-                        selection = avg_dmg_table[0]
-                        target_table.append(selection[1])
-                        avg_dmg += selection[2]
-                        selection[1].temp_dmg_add(selection[2])
+                            selection = avg_dmg_table[0]
+                            target_table.append(selection[1])
+                            avg_dmg += selection[2]
+                            avg_dist += self.mat.dist_ft(self.char.loc,selection[1].loc)
+                            selection[1].temp_dmg_add(selection[2])
+                        if target_table:
+                            avg_dist /= len(target_table)
+                        # Weight avg damage from 0.5 to 1 by average distance from targets, higher weight for further away
+                        wtd_avg_dmg = avg_dmg * ((avg_dist / max_range * 0.5) + 0.5)
+                        for enemy in combatant_data["Enemy"]:
+                            enemy.temp_dmg_reset()
+                        log_line = "{} attempts to cast {} at target(s) {}".format(self.char.name, spell.name, list(
+                            map(lambda i: "{} ({})".format(i.name,i.loc), target_table)))
+                        spell_choice.append([spell, wtd_avg_dmg, target_table[:], log_line, loc])
+                    elif spell.aim[0] == "a" and spell.aim[1][1] not in ['S', 'Y']:
+                        spell_area, desc = spell.get_area(self.char)
+                        target_list = self.mat.get_spell_targets(spell_area, self.char)
+                        max_range = spell.get_range(self.char)
 
-                    for enemy in combatant_data["Enemy"]:
-                        enemy.temp_dmg_reset()
-                    log_line = "{} attempts to cast {} at target(s) {}".format(self.char.name, spell.name, list(
-                        map(lambda i: i.name, target_table)))
-                    spell_choice.append([spell, avg_dmg, target_table[:], log_line])
-                elif spell.aim[0] == "a" and spell.aim[1][1] not in ['S', 'Y']:
-                    spell_area, desc = spell.get_area(self.char)
-                    target_list = self.mat.get_spell_targets(spell_area, self.char)
+                        avg_dmg_table = []
+                        # print("=====")
+                        corner = ["bottom-left", "top-left", "bottom-right", "top-right"]
+                        for j in range(0, 4):
+                            for i, area in enumerate(target_list[j]):
+                                avg_dmg_tot = 0
+                                # print("{}, {}: {}".format(j,i,list(map(lambda j:[j[0]+self.char.loc[0],j[1]+self.char.loc[1]], spell_area[i]))))
+                                if not area:
+                                    # print("\tNo targets".format(j,i))
+                                    pass
+                                else:
+                                    for target in area:
+                                        avg_dist += self.mat.dist_ft(self.char.loc, target.loc)
+                                        # print("\t{}: {}".format(target.name,target.loc))
+                                        avg_dmg = spell.avg_damage(self.char, target)
+                                        # print("\t\tAvg dmg: {}".format(avg_dmg))
+                                        if target.side == self.char.side:
+                                            avg_dmg_tot -= 2 * avg_dmg
+                                        elif target.damage_con != "Normal":
+                                            avg_dmg_tot += 0.5 * avg_dmg  # damage to dying/dead characters not as relevant
+                                        else:
+                                            avg_dmg_tot += avg_dmg
+                                    if area:
+                                        avg_dist /= len(area)
+                                # print("\tTotal expected damage: {}".format(avg_dmg_tot))
+                                # Weight avg damage from 0.5 to 1 by average distance from targets, higher weight for further away
+                                wtd_avg_dmg = avg_dmg_tot * ((avg_dist / max_range * 0.5) + 0.5)
+                                avg_dmg_table.append([wtd_avg_dmg, j, i])
+                                # print("=====")
+                        avg_dmg_table.sort(key=lambda i: i[0], reverse=True)
+                        avg_dmg, j, i = avg_dmg_table[0]
+                        log_line = "{} attempts to cast {} towards {} from {} corner of {}, striking target(s) {}".format(
+                            self.char.name, spell.name, desc[i], corner[j], self.char.loc, list(map(lambda i: "{} ({})".format(i.name, i.loc), target_list[j][i])))
+                        spell_choice.append([spell, avg_dmg, target_list[j][i][:], log_line, loc])
+                self.char.loc = self.char_perm.loc
 
-                    avg_dmg_table = []
-                    # print("=====")
-                    corner = ["bottom-left", "top-left", "bottom-right", "top-right"]
-                    for j in range(0, 4):
-                        for i, area in enumerate(target_list[j]):
-                            avg_dmg_tot = 0
-                            # print("{}, {}: {}".format(j,i,list(map(lambda j:[j[0]+self.char.loc[0],j[1]+self.char.loc[1]], spell_area[i]))))
-                            if not area:
-                                # print("\tNo targets".format(j,i))
-                                pass
-                            else:
-                                for target in area:
-                                    # print("\t{}: {}".format(target.name,target.loc))
-                                    avg_dmg = spell.avg_damage(self.char, target)
-                                    # print("\t\tAvg dmg: {}".format(avg_dmg))
-                                    if target.side == self.char.side:
-                                        avg_dmg_tot -= 2 * avg_dmg
-                                    elif target.damage_con != "Normal":
-                                        avg_dmg_tot += 0.5 * avg_dmg  # damage to dying/dead characters not as relevant
-                                    else:
-                                        avg_dmg_tot += avg_dmg
-                            # print("\tTotal expected damage: {}".format(avg_dmg_tot))
-                            avg_dmg_table.append([avg_dmg_tot, j, i])
-                            # print("=====")
-                    avg_dmg_table.sort(key=lambda i: i[0], reverse=True)
-                    avg_dmg, j, i = avg_dmg_table[0]
-                    log_line = "{} attempts to cast {} towards {} from {} corner, striking target(s) {}".format(
-                        self.char.name, spell.name, desc[i], corner[j], list(map(lambda i: i.name, target_list[j][i])))
-                    spell_choice.append([spell, avg_dmg, target_list[j][i][:], log_line])
-
+            #spell_choice: spell, avg damage, target list, log line, casting loc
             spell_choice.sort(key=lambda i: i[1], reverse=True)
             if spell_choice[0][2] and (spell_choice[0][1] > 0 or spell_choice[0][0].debuff):
-                spell_info = [spell_choice[0][0], spell_choice[0][2], spell_choice[0][3]]
+                spell_info = [spell_choice[0][0], spell_choice[0][2], spell_choice[0][3], spell_choice[0][4]]
                 spell_pick = True
             else:
-                spell_info = [spell_choice[0][0], spell_choice[0][2], spell_choice[0][3]]
+                spell_info = [spell_choice[0][0], spell_choice[0][2], spell_choice[0][3], spell_choice[0][4]]
+
+        # spell_info: spell, target list, log line, casting loc
 
         # for entry in spell_choice:
         #    print("[{},{},{},{}]".format(entry[0].name,entry[1],list(map(lambda i:i.name,entry[2])),entry[3]))
 
         if spell_pick:
             self.node = "Decided"
-            act.append(["cast", spell_info[0], spell_info[1]])
+            act, log = self.set_spell(act, log, spell_info)
             act.append(["end"])
-            log.append(spell_info[2])
         elif spell_info[1]:
-            log.append("Out of usable spells; switching to Close tactic")
+            log.append("No usable spells; switching to Close tactic")
             self.set_tactic("Close")
             self.node = "Ready"
             return [[], log]
         else:
-            log.append("{} cannot cast a spell".format(self.char.name))
-            if self.moves < self.move_acts:
-                log.append("{} moving in range".format(self.char.name))
-                self.node = "Targeting"
-                self.node_spell = spell_info[0]
-            else:
-                log.append("{} cannot act".format(self.char.name))
-                self.node = "Decided"
-                act.append(["end"])
+            log.append("{} cannot act".format(self.char.name))
+            self.node = "Decided"
+            act.append(["end"])
 
         return [act, log]
 
@@ -582,11 +598,25 @@ class AI:
     #
     # Action functions
 
+    def set_spell(self, act, log, spell_info):
+
+        # spell_info: spell, target list, log line, casting loc
+
+        act = self.move_to_tile(act, spell_info[3])
+        log.append("{} moving to {} before casting".format(self.char.name, spell_info[3]))
+        if self.loc == spell_info[3]:
+            act.append(["cast", spell_info[0], spell_info[1]])
+            log.append(spell_info[2])
+        else:
+            log.append("Could not move to {}, not casting".format(spell_info[3]))
+
+        return [act, log]
+
     #############################
     #
     # Movement functions
 
-    def move_to_target(self, act, move=-1):
+    def move_to_tile(self, act, loc, move=-1, adj=False):
 
         if self.is_down() and self.safe_to_stand():
             act.append(["stand"])
@@ -594,10 +624,20 @@ class AI:
         else:
             if move == -1:
                 move = self.char.get_move()
-            path = self.mat.partial_path(self.char, self.char.target, move)
+            #print("{}".format(self.char.name))
+            #print("\tLoc: {}".format(self.loc))
+            #print("\tDest Loc: {}".format(loc))
+            #print("\tMove: {}".format(move))
+            path = self.mat.partial_path(self.char.loc, loc, move, False, adj=adj)
             act.append(["move", path])
             self.moves += 1
+            #print("\tPath: {}".format(path))
             self.loc = path[-1:][0]
+
+        return act
+
+    def move_to_target(self, act, move=-1):
+        act = self.move_to_tile(act, self.char.target.loc, move, True)
 
         return act
 

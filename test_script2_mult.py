@@ -159,9 +159,9 @@ for fighter in fighter_list:
     print("\n")
 print("")
 
-rand_start_locs = False
+rand_start_locs = True
 
-num_combat = 1
+num_combat = 100
 
 temp = time.clock()
 
@@ -224,7 +224,7 @@ for i in range(num_combat):
         try:
             fight.combat_round()
         except:
-            print("Unexpected error, dumping log")
+            print("Unexpected error in fight {}, dumping log".format(i))
             print("=====================================================================================")
             print(fight.output_log())
             print("=====================================================================================")
@@ -299,8 +299,8 @@ for side in fighter_side_data:
         avg_surv_output = "{:.1f}".format(float(side_size) / side_win_count)
     print("Average survivors on victory: {}\n".format(avg_surv_output))
 
-show_extremes = False
-show_last = True
+show_extremes = True
+show_last = False
 
 if show_extremes:
     print("Shortest combat log (Log {}, {} rounds):\n".format(shortest[1], shortest[0]))

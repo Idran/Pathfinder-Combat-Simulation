@@ -100,6 +100,25 @@ class Battlemat:
 
         return tile_list
 
+    def tile_circle_fill(self, center, rad):
+        tile_list = []
+        center_tile = Tile(center)
+        rad //= 5
+
+        corner1 = [center_tile.loc[0] - rad, center_tile.loc[1] - rad]
+        corner2 = [center_tile.loc[0] + rad, center_tile.loc[1] + rad]
+        base_area = self.tile_rect_fill(corner1,corner2)
+
+        for coord in base_area:
+            dist = self.dist_tile(center, coord)
+
+            if dist <= rad:
+                tile_list.append(coord)
+
+        del base_area
+
+        return tile_list
+
     def threatened_tiles(self, token):
         threat_range = token.threat_range()
         out_list = []
@@ -202,7 +221,7 @@ class Battlemat:
 
         return out_tile
 
-    def partial_path(self, token1, token2, move=20000, tile=True, size1=None, size2=None):
+    def partial_path(self, token1, token2, move=20000, tile=True, size1=None, size2=None, adj=True):
         path = []
         if not tile:
             orig = token1
@@ -210,11 +229,14 @@ class Battlemat:
             token1 = Tile(orig, size1)
             token2 = Tile(dest, size2)
         tile = Tile(token1.loc, token1.tilesize)
-        tile_dest = Tile(self.closest_adj_tile(token1, token2))
+        if adj:
+            tile_dest = Tile(self.closest_adj_tile(token1, token2))
+        else:
+            tile_dest = token2
         step = self.closest_adj_tile(tile_dest, tile)
         total_move = self.dist_ft(token1.loc, step)
         path.append(step)
-        while not self.token_overlap(tile, token2) and total_move <= move and len(path) < 50 and step != tile_dest.loc:
+        while (not adj or not self.token_overlap(tile, token2)) and total_move <= move and len(path) < 50 and step != tile_dest.loc:
             tile.loc = step
             step = self.closest_adj_tile(tile_dest, tile)
             total_move = self.dist_ft(token1.loc, step)

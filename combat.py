@@ -142,120 +142,126 @@ class Combat:
         self.log("\nRound {}\n".format(self.round))
         self.reset_aoo_count()
         for init_entry in self.init_order:
-            fighter = init_entry[0]
-            round_changes = fighter.round_pass()
-            for cond in round_changes[0]:
-                self.log("{} loses {}".format(fighter.name, cond))
+            try:
+                fighter = init_entry[0]
+                round_changes = fighter.round_pass()
+                for cond in round_changes[0]:
+                    self.log("{} loses {}".format(fighter.name, cond))
 
-            #############################
-            #
-            # Skip disabled/defeated combatants
+                #############################
+                #
+                # Skip disabled/defeated combatants
 
-            if fighter in self.defeated:
-                continue
+                if fighter in self.defeated:
+                    continue
 
-            #############################
-            #
-            # Skip combatants that cannot act temporarily
+                #############################
+                #
+                # Skip combatants that cannot act temporarily
 
-            act_status = fighter.can_act()
+                act_status = fighter.can_act()
 
-            if act_status[1] in ["Dying", "Dead"]:
-                self.log("{} is {}".format(fighter.name, act_status[1]))
-                self.disable_fighter(fighter)
-                continue
+                if act_status[1] in ["Dying", "Dead"]:
+                    self.log("{} is {}".format(fighter.name, act_status[1]))
+                    self.disable_fighter(fighter)
+                    continue
 
-            if not act_status[0]:
-                self.log("{} unable to act due to {} condition".format(fighter.name, act_status[1]))
-                continue
+                if not act_status[0]:
+                    self.log("{} unable to act due to {} condition".format(fighter.name, act_status[1]))
+                    continue
 
-            #############################
-            #
-            # Remove FF from those actually acting                
+                #############################
+                #
+                # Remove FF from those actually acting
 
-            if not self.has_acted[fighter.name]:
-                self.has_acted[fighter.name] = True
-                fighter.drop_condition("Flat-Footed")
+                if not self.has_acted[fighter.name]:
+                    self.has_acted[fighter.name] = True
+                    fighter.drop_condition("Flat-Footed")
 
-            #############################
-            #
-            # Run AI routine
+                #############################
+                #
+                # Run AI routine
 
-            if fighter.target in self.defeated:
-                self.clear_target(fighter)
+                if fighter.target in self.defeated:
+                    self.clear_target(fighter)
 
-            result = fighter.ai.act()
+                result = fighter.ai.act()
 
-            self.combatlog += result[1]
+                self.combatlog += result[1]
 
-            survive = True
+                survive = True
 
-            post_damage = 0
+                post_damage = 0
 
-            iter_result = iter(result[0])
+                iter_result = iter(result[0])
 
-            print("{} action list:".format(fighter.name))
-
-            for action in iter_result:
-                print("\t{}".format(action))
-                if fighter.target:
-                    pre_damage = post_damage
-                    post_damage = fighter.target.damage
-                else:
-                    pre_damage = 0
-                    post_damage = 0
-                if action[0] == "end":
-                    break
-                elif action[0] == "if":
-                    if action[1] == "dmg":
-                        if post_damage == pre_damage:
-                            self.log("Conditional failed, no damage taken")
-                            next(iter_result)
-                            continue
-                        else:
-                            self.log("Conditional passed")
-                elif action[0] == "move":
-                    survive = self.move_path(fighter, action[1])
-                elif action[0] == "attack":
-                    self.attack(fighter, fighter.target, fighter.target_model, action[1])
-                elif action[0] == "satk":
-                    self.satk(fighter, fighter.target, fighter.target_model, action[1])
-                elif action[0] == "cast":
-                    survive = self.cast(fighter, action[2], action[1])
-                elif action[0] == "stand":
-                    self.log("{} stands up".format(fighter.name))
-                    fighter.drop_condition("Prone")
-                    self.check_for_aoo(fighter, fighter.loc)
-                    if self.check_death(fighter):
-                        break
-                elif action[0] == "swap":
-                    fighter.set_weapon(action[1])
-                    if type(action[1]) is not list:
-                        self.log("{} switches weapons to {}".format(fighter.name, fighter.weap_name(action[1])))
+                for action in iter_result:
+                    if fighter.target:
+                        pre_damage = post_damage
+                        post_damage = fighter.target.damage
                     else:
-                        log_line = "{} switches weapons to ".format(fighter.name)
-                        log_array = []
-                        for weap in action[1]:
-                            log_array.append(fighter.weap_name(weap))
-                        log_line += ", ".join(log_array)
-                        self.log(log_line)
-                elif action[0] == "cond":
-                    self.set_cond(fighter, fighter.target, fighter.target_model, action[1:])
-                elif action[0] == "disarm":
-                    self.disarm(fighter, fighter.target, fighter.target_model)
-                elif action[0] == "trip":
-                    self.trip(fighter, fighter.target, fighter.target_model)
-                else:
-                    pass
+                        pre_damage = 0
+                        post_damage = 0
+                    if action[0] == "end":
+                        break
+                    elif action[0] == "if":
+                        if action[1] == "dmg":
+                            if post_damage == pre_damage:
+                                self.log("Conditional failed, no damage taken")
+                                next(iter_result)
+                                continue
+                            else:
+                                self.log("Conditional passed")
+                    elif action[0] == "move":
+                        survive = self.move_path(fighter, action[1])
+                    elif action[0] == "attack":
+                        self.attack(fighter, fighter.target, fighter.target_model, action[1])
+                    elif action[0] == "satk":
+                        self.satk(fighter, fighter.target, fighter.target_model, action[1])
+                    elif action[0] == "cast":
+                        survive = self.cast(fighter, action[2], action[1])
+                    elif action[0] == "stand":
+                        self.log("{} stands up".format(fighter.name))
+                        fighter.drop_condition("Prone")
+                        self.check_for_aoo(fighter, fighter.loc)
+                        if self.check_death(fighter):
+                            break
+                    elif action[0] == "swap":
+                        fighter.set_weapon(action[1])
+                        if type(action[1]) is not list:
+                            self.log("{} switches weapons to {}".format(fighter.name, fighter.weap_name(action[1])))
+                        else:
+                            log_line = "{} switches weapons to ".format(fighter.name)
+                            log_array = []
+                            for weap in action[1]:
+                                log_array.append(fighter.weap_name(weap))
+                            log_line += ", ".join(log_array)
+                            self.log(log_line)
+                    elif action[0] == "cond":
+                        self.set_cond(fighter, fighter.target, fighter.target_model, action[1:])
+                    elif action[0] == "disarm":
+                        self.disarm(fighter, fighter.target, fighter.target_model)
+                    elif action[0] == "trip":
+                        self.trip(fighter, fighter.target, fighter.target_model)
+                    else:
+                        pass
+
+                    if not survive:
+                        break
 
                 if not survive:
-                    break
+                    continue
 
-            if not survive:
-                continue
-
-            if self.check_death(fighter.target):
-                self.clear_target(fighter)
+                if self.check_death(fighter.target):
+                    self.clear_target(fighter)
+            except:
+                for line in fighter.ai.log:
+                    self.log(line)
+                for line in fighter.ai.act_array:
+                    self.log("{}".format(line))
+                for line in fighter.ai.node_list:
+                    self.log("{}".format(line))
+                raise
 
         self.round += 1
         if self.round == 51:
