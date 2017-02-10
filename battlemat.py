@@ -20,6 +20,10 @@ class Battlemat:
         self.tokens = []
         self.token_id_index = dict()
         self.items = []
+        self.avglocs = dict()
+        self.threat_tile_cache = dict()
+        self.threat_map = dict()
+        self.side_list = dict()
 
     def __sizeof__(self):
         return object.__sizeof__(self) + \
@@ -35,6 +39,16 @@ class Battlemat:
 
         self.tokens.append(token)
         self.token_id_index[token.id] = token
+
+        side = "{}".format(self.token.side)
+
+        if side not in self.side_list:
+            self.side_list[side] = dict()
+
+        self.side_list[side].append(token)
+
+        self.update_avglocs(token,"add")
+        self.update_threat_map(token)
         return token
 
     def remove_token(self, token):
@@ -42,6 +56,15 @@ class Battlemat:
             return None
 
         self.tokens.remove(token)
+
+        side = "{}".format(self.token.side)
+
+        self.side_list[side].remove(token)
+        if not self.side_list[side]:
+            self.side_list.remove(side)
+
+        self.update_avglocs(token,"rem")
+        self.update_threat_map(token)
         del self.token_id_index[token.id]
 
     def add_item(self, item, loc):
@@ -54,7 +77,110 @@ class Battlemat:
     def move_token(self, token, tile):
         start_loc = token.loc
         token.loc = tile
+
+        self.update_avglocs(token,"move",start_loc)
+        self.update_threat_map(token)
+
         return self.dist_ft(start_loc, tile)
+
+    ###################################################################
+    #
+    # Upkeep functions
+
+    def update_avglocs(self, token_in, change, start_loc=None, full=False):
+
+        if change == "move" and start_loc == None:
+            return False
+
+        chng_array = {"add":-1,"rem":1,"move":0}
+        avg_tile = [0,0]
+        avg_tile_in = [0,0]
+        tile_count = len(self.tokens)
+        tile_in_count = len(self.side_list[side])
+        tile_count_pre = tile_count + chng_array[change]
+        tile_in_count_pre = tile_in_count + chng_array[change]
+        if change == "add":
+            start_loc = [0,0]
+            end_loc = token_in.loc
+        elif change == "rem":
+            start_loc = token_in.loc
+            end_loc = [0,0]
+        else:
+            end_loc = token_in.loc
+
+        side = token_in.side
+
+        if "0" not in self.avglocs or full:
+            tile_found = False
+            tile_in_found = False
+
+            for token in self.tokens:
+                avg_tile = [avg_tile[0] + token.loc[0], avg_tile[1] + token.loc[1]]
+                tile_found = True
+
+                if side != "0":
+                    if token.side == side:
+                        avg_tile_in = [avg_tile_in[0] + token.loc[0], avg_tile_in[1] + token.loc[1]]
+                        tile_in_found = True
+
+            if tile_found:
+                avg_tile = [avg_tile[0] / tile_count, avg_tile[1] / tile_count]
+                self.avglocs["0"] = avg_tile
+
+            if tile_in_found:
+                avg_tile_in = [avg_tile_in[0] / tile_in_count, avg_tile_in[1] / tile_in_count]
+                self.avglocs[side] = avg_tile_in
+        else:
+            avg_tile = self.avglocs["0"]
+            avg_tile = [avg_tile[0] * tile_count_pre, avg_tile[1] * tile_count_pre]
+            avg_tile = [avg_tile[0] - start_loc[0] + end_loc[0], avg_tile[1] - start_loc[1] + end_loc[1]]
+            avg_tile = [avg_tile[0] / tile_count, avg_tile[1] / tile_count]
+
+            if side not in self.avglocs:
+                tile_in_found = False
+
+                for token in self.side_list[side]:
+                    avg_tile = [avg_tile[0] + token.loc[0], avg_tile[1] + token.loc[1]]
+                    tile_in_found = True
+
+                if tile_in_found:
+                    avg_tile_in = [avg_tile[0] / tile_in_count, avg_tile[1] / tile_in_count]
+                    self.avglocs[side] = avg_tile
+
+            else:
+                avg_tile = self.avglocs[side]
+                avg_tile = [avg_tile[0] * tile_in_count_pre, avg_tile[1] * tile_in_count_pre]
+                avg_tile = [avg_tile[0] - start_loc[0] + end_loc[0], avg_tile[1] - start_loc[1] + end_loc[1]]
+                avg_tile = [avg_tile[0] / tile_in_count, avg_tile[1] / tile_in_count]
+
+    def update_threat_map(self, token):
+        self.threat_tile_cache.remove(token.id)
+        self.threatened_tiles(token)
+
+    ###################################################################
+    #
+    # Output functions
+
+    def avg_loc(self, side=0):
+        if side in self.avglocs:
+            avg_loc = self.avglocs[side]
+            return avg_loc[round(avg_loc[0]),round(avg_loc[1])]
+        else:
+            return [0,0]
+
+    def token_list_sorted(self):
+        s = sorted(self.tokens, key=lambda token: token.loc[1])
+        return sorted(s, key=lambda token: token.loc[0])
+
+    def output(self):
+        out = []
+
+        for token in self.tokens:
+            token_data = [token.name, token.loc, token.size, token.side]
+            out.append(token_data)
+
+        return out
+
 
     ###################################################################
     #
@@ -120,6 +246,9 @@ class Battlemat:
         return tile_list
 
     def threatened_tiles(self, token):
+        if token.id in self.threat_tile_cache:
+            return self.threat_tile_cache[token.id]
+
         threat_range = token.threat_range()
         out_list = []
 
@@ -145,6 +274,8 @@ class Battlemat:
                     if min_threat <= dist <= max_threat and tile not in out_list:
                         out_list.append(tile)
                         break
+
+        self.threat_tile_cache[token.id] = out_list
 
         return out_list
 
@@ -285,20 +416,3 @@ class Battlemat:
             # print("{}".format(list(map(lambda i:(lambda j:j.name, i), thing))))
 
         return target_list
-
-    ###################################################################
-    #
-    # Output functions
-
-    def token_list_sorted(self):
-        s = sorted(self.tokens, key=lambda token: token.loc[1])
-        return sorted(s, key=lambda token: token.loc[0])
-
-    def output(self):
-        out = []
-
-        for token in self.tokens:
-            token_data = [token.name, token.loc, token.size, token.side]
-            out.append(token_data)
-
-        return out

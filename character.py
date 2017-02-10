@@ -17,7 +17,7 @@ class Foundation:
         self.name = name
         self.id = uuid.uuid4()
         self.model = False
-        self.side = side
+        self.side = "{}".format(side)
         self.ambi = False
 
         self.armor_class = armor_class
