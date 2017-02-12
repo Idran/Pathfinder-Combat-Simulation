@@ -40,10 +40,10 @@ class Battlemat:
         self.tokens.append(token)
         self.token_id_index[token.id] = token
 
-        side = "{}".format(self.token.side)
+        side = "{}".format(token.side)
 
         if side not in self.side_list:
-            self.side_list[side] = dict()
+            self.side_list[side] = []
 
         self.side_list[side].append(token)
 
@@ -57,7 +57,7 @@ class Battlemat:
 
         self.tokens.remove(token)
 
-        side = "{}".format(self.token.side)
+        side = "{}".format(token.side)
 
         self.side_list[side].remove(token)
         if not self.side_list[side]:
@@ -92,6 +92,8 @@ class Battlemat:
         if change == "move" and start_loc == None:
             return False
 
+        side = token_in.side
+
         chng_array = {"add":-1,"rem":1,"move":0}
         avg_tile = [0,0]
         avg_tile_in = [0,0]
@@ -107,8 +109,6 @@ class Battlemat:
             end_loc = [0,0]
         else:
             end_loc = token_in.loc
-
-        side = token_in.side
 
         if "0" not in self.avglocs or full:
             tile_found = False
@@ -154,7 +154,8 @@ class Battlemat:
                 avg_tile = [avg_tile[0] / tile_in_count, avg_tile[1] / tile_in_count]
 
     def update_threat_map(self, token):
-        self.threat_tile_cache.remove(token.id)
+        if token.id in self.threat_tile_cache:
+            del self.threat_tile_cache[token.id]
         self.threatened_tiles(token)
 
     ###################################################################
@@ -185,6 +186,33 @@ class Battlemat:
     ###################################################################
     #
     # Calculation functions
+
+    @staticmethod
+    def tile_union(tile_list1, tile_list2):
+        tile_list = tile_list1
+        for coord in tile_list2:
+            if coord not in tile_list:
+                tile_list.append(coord)
+
+        return tile_list
+
+    @staticmethod
+    def tile_intersect(tile_list1, tile_list2):
+        tile_list = tile_list1
+        for coord in tile_list1:
+            if coord not in tile_list2 and coord in tile_list:
+                tile_list.remove(coord)
+
+        return tile_list
+
+    @staticmethod
+    def tile_subtract(tile_list1, tile_list2):
+        tile_list = tile_list1
+        for coord in tile_list2:
+            if coord in tile_list2 and coord in tile_list:
+                tile_list.remove(coord)
+
+        return tile_list
 
     @staticmethod
     def dist_tile(loc1, loc2):
@@ -245,6 +273,14 @@ class Battlemat:
 
         return tile_list
 
+    def enemy_count(self, token, list):
+        enemy_count = 0
+        for token_o in list:
+            if token_o.side != token.side:
+                enemy_count += 1
+
+        return enemy_count
+
     def threatened_tiles(self, token):
         if token.id in self.threat_tile_cache:
             return self.threat_tile_cache[token.id]
@@ -278,6 +314,20 @@ class Battlemat:
         self.threat_tile_cache[token.id] = out_list
 
         return out_list
+
+    def full_threatened_tiles(self, token):
+        side = token.side
+
+        threat_set = []
+
+        for token_o in self.tokens:
+            if token_o.side == side:
+                continue
+
+            add_threat = self.threatened_tiles(token_o)
+            threat_set = self.tile_union(threat_set,add_threat)
+
+        return threat_set
 
     def threaten(self, token1, token2):
         threat_tile_list = map(tuple, self.threatened_tiles(token1))
@@ -328,10 +378,13 @@ class Battlemat:
         return out_tile
 
     def token_occupy(self, token):
-        corner1 = token.loc
-        corner2 = [token.loc[0] + token.tilesize[0] - 1, token.loc[1] + token.tilesize[1] - 1]
+        if token.tilesize == [1,1]:
+            return [token.loc]
+        else:
+            corner1 = token.loc
+            corner2 = [token.loc[0] + token.tilesize[0] - 1, token.loc[1] + token.tilesize[1] - 1]
 
-        return self.tile_rect_fill(corner1, corner2)
+            return self.tile_rect_fill(corner1, corner2)
 
     def token_overlap(self, token1, token2):
         tile_list1 = map(tuple, self.token_occupy(token1))
@@ -392,19 +445,33 @@ class Battlemat:
 
         target_list = []
 
+        occupied_tile_list = []
+        occupied_tile_index = dict()
+        for token in self.tokens:
+            occupy_list = self.token_occupy(token)
+            self.tile_union(occupied_tile_list, occupy_list)
+            for tile in occupy_list:
+                occupied_tile_index[tuple(tile)] = token
+
         for x, y in base_loc:
             targ_list_square = []
             for area in spell_area:
                 # print("Area: {}".format(list(map(lambda i:[i[0] + x,i[1] + y],area))))
                 targ_sublist = []
-                for tile in map(lambda i: [i[0] + x, i[1] + y], area):
+                area_list = map(lambda i: [i[0] + x, i[1] + y], area)
+                check_list = self.tile_intersect(occupied_tile_list, area_list)
+                if not check_list:
+                    continue
+
+                for tile in check_list:
                     # print("Checking tile {}".format(tile))
-                    for token in self.tokens:
-                        # print("checking token {} for intersection".format(token.name))
-                        if tile in self.token_occupy(token):
-                            # print("    match")
-                            targ_sublist.append(token)
-                targ_list_square.append(list(set(targ_sublist[:])))
+                    tile_tuple = tuple(tile)
+                    token = occupied_tile_index[tile_tuple]
+                    if token in targ_sublist or token in targ_list_square:
+                        continue
+                    targ_sublist.append(token)
+
+                targ_list_square.append(targ_sublist[:])
             # print("List add: ")
             # print("\t{}".format(targ_list_square))
             # print("List copy add: ")

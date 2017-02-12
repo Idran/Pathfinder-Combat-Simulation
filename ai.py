@@ -434,6 +434,9 @@ class AI:
         spell_pick = False
         spell_info = []
         avail_tile_list = self.mat.tile_circle_fill(self.loc,self.char.get_move())
+        threat_tile_list = self.mat.full_threatened_tiles(self.char)
+        avail_tile_list = self.mat.tile_subtract(avail_tile_list, threat_tile_list)
+        #print("Tile opt count: {}".format(len(avail_tile_list)))
         check_area = []
 
         if self.tactic[1] in ["Damage"]:
@@ -482,7 +485,7 @@ class AI:
                             for i, area in enumerate(target_list[j]):
                                 avg_dmg_tot = 0
                                 # print("{}, {}: {}".format(j,i,list(map(lambda j:[j[0]+self.char.loc[0],j[1]+self.char.loc[1]], spell_area[i]))))
-                                if not area:
+                                if not area or self.mat.enemy_count(self.char, area) == 0:
                                     # print("\tNo targets".format(j,i))
                                     pass
                                 else:

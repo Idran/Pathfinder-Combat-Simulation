@@ -8,6 +8,7 @@ import spell_list as spells
 import sys
 import traceback
 import time
+import cProfile, pstats, io
 
 jaya = character.Character(char_class="Bard", level=10, stg=11, dex=18, con=14, inl=13, wis=10, cha=16,
                            feat_list=["Improved Initiative", "Point-Blank Shot", "Precise Shot", "Bullseye Shot",
@@ -161,14 +162,22 @@ print("")
 
 rand_start_locs = True
 
-num_combat = 100
+num_combat = input("Enter number of iterations: ")
+num_combat = int(num_combat)
+
+#num_combat = 5
 
 temp = time.clock()
+this_time = 0
+min_time = 99999
+min_time_run = -1
+
+pr = cProfile.Profile()
 
 fight = None
 
 print("Running {} iterations:".format(num_combat))
-
+pr.enable()
 for i in range(num_combat):
     start_loc_list = []
     for fighter in fighter_list:
@@ -254,6 +263,14 @@ for i in range(num_combat):
         longest[1] = i
 
     fight_log_collection[i] = fight.output_log()
+    last_time = this_time
+    this_time = time.clock()
+    time_diff = this_time - last_time
+    if time_diff < min_time:
+        min_time = time_diff
+        min_time_run = i
+
+pr.disable()
 
 # if i % 100 == 0:
 #        print("i: {}".format(i))
@@ -300,7 +317,9 @@ for side in fighter_side_data:
     print("Average survivors on victory: {}\n".format(avg_surv_output))
 
 show_extremes = True
-show_last = False
+show_last = True
+time_check = True
+profile_check = False
 
 if show_extremes:
     print("Shortest combat log (Log {}, {} rounds):\n".format(shortest[1], shortest[0]))
@@ -310,6 +329,17 @@ if show_extremes:
     print(fight_log_collection[longest[1]])
     print()
 if show_last:
+    print("Last combat log:\n")
     print(fight.output_log())
-print("Time elapsed: {:.3f} seconds".format(time_elapsed))
-print("Est. time per iteration: {:.3f} seconds".format(time_elapsed / num_combat))
+if time_check:
+    print("Time elapsed: {:.3f} seconds".format(time_elapsed))
+    print("Est. time per iteration: {:.3f} seconds".format(time_elapsed / num_combat))
+    print("Min time for iterations: {:.3f} seconds".format(min_time))
+    #print("Fastest run (Log {}):\n".format(min_time_run))
+    #print(fight_log_collection[min_time_run])
+if profile_check:
+    s = io.StringIO()
+    ps = pstats.Stats(pr, stream=s).strip_dirs().sort_stats("cumulative")
+    ps.print_stats(20)
+    ps.print_callers(20)
+    print(s.getvalue())
